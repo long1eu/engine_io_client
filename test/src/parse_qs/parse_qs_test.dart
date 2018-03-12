@@ -1,5 +1,4 @@
-import 'dart:collection';
-
+import 'package:built_collection/built_collection.dart';
 import 'package:socket_io/src/parse_qs/parse_qs.dart';
 import 'package:test/test.dart';
 
@@ -24,23 +23,23 @@ void main() {
   });
 
   test('encode', () {
-    Map<String, String> obj;
+    MapBuilder<String, String> obj;
 
-    obj = <String, String>{};
+    obj = new MapBuilder<String, String>();
     obj['a'] = 'b';
 
-    expect(ParseQS.encode(obj), 'a=b');
+    expect(ParseQS.encode(obj.build()), 'a=b');
 
-    obj = new LinkedHashMap<String, String>();
+    obj.clear();
     obj['a'] = 'b';
     obj['c'] = 'd';
-    expect(ParseQS.encode(obj), 'a=b&c=d');
+    expect(ParseQS.encode(obj.build()), 'a=b&c=d');
 
-    obj = new LinkedHashMap<String, String>();
+    obj.clear();
 
     obj['a'] = 'b';
     obj['c'] = 'nicolas is the best';
 
-    expect(ParseQS.encode(obj), 'a=b&c=nicolas%20is%20the%20best');
+    expect(ParseQS.encode(obj.build()), 'a=b&c=nicolas%20is%20the%20best');
   });
 }
