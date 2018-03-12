@@ -35,12 +35,9 @@ class Emitter {
   /// If neither one are specified, it will remove all registered listeners.
   /// [event] an event name.
   /// [callback]
-  Emitter off({String event, Listener callback}) {
+  Emitter off([String event, Listener callback]) {
     if (event != null && callback != null) {
-      final List<Listener> callbacks = _callbacks[event];
-      if (callbacks != null) {
-        callbacks.removeWhere((Listener it) => it == callback);
-      }
+      _callbacks[event]?.removeWhere((Listener it) => it == callback);
     } else if (event != null) {
       _callbacks.remove(event);
     } else {
@@ -54,13 +51,13 @@ class Emitter {
   /// @param event an event name.
   /// @param args
   /// @return a reference to this object.
-  Emitter emit(String event, dynamic args) {
-    final List<Listener> callbacks = _callbacks[event];
+  Emitter emit(String event, [dynamic args]) {
+    final List<Listener> callbacks = _callbacks[event]?.toList();
     if (callbacks != null) {
-      for (Listener callback in callbacks) {
-        callback.call(args);
-      }
+      callbacks.removeWhere((Listener callback) => callback.call(args));
+      _callbacks[event] = callbacks;
     }
+
     return this;
   }
 
@@ -68,22 +65,30 @@ class Emitter {
   ///
   /// @param event an event name.
   /// @return a reference to this object.
-
   List<Listener> listeners(String event) => _callbacks[event] ?? new List<Listener>(0);
 
   /// Check if this emitter has listeners for the specified event.
   ///
   /// @param event an event name.
   /// @return a reference to this object.
-
   bool hasListeners(String event) {
     final List<Listener> callbacks = _callbacks[event];
     return callbacks != null && callbacks.isNotEmpty;
   }
 }
 
-abstract class Listener {
-  void call(dynamic args);
+class Listener {
+  Listener._();
+
+  factory Listener.callback(void callback(dynamic args)) {
+    return new Listener._()
+      ..call = (dynamic args) {
+        callback(args);
+        return false;
+      };
+  }
+
+  Function call;
 }
 
 class _OnceListener implements Listener {
@@ -94,9 +99,14 @@ class _OnceListener implements Listener {
   final Emitter emitter;
 
   @override
-  void call(dynamic args) {
-    emitter.off(event: event, callback: this);
-    callback.call(args);
+  Function get call => (dynamic args) {
+        callback.call(args);
+        return true;
+      };
+
+  @override
+  set call(Function _call) {
+    call = _call;
   }
 
   @override
