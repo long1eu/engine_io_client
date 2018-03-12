@@ -77,7 +77,7 @@ class WebSocket extends Transport {
   }
 
   String get uri {
-    BuiltMap<String, String> query = options.query ?? new BuiltMap<String, String>();
+    final MapBuilder<String, String> query = options?.query?.toBuilder() ?? new MapBuilder<String, String>();
     final String schema = options.secure ? 'wss' : 'ws';
 
     String port = '';
@@ -86,11 +86,9 @@ class WebSocket extends Transport {
       port = ':${options.port}';
     }
 
-    if (options.timestampRequests) {
-      query = (query.toBuilder()..putIfAbsent(options.timestampParam, () => Yeast.yeast())).build();
-    }
+    if (options.timestampRequests) query[options.timestampParam] = Yeast.yeast();
 
-    String derivedQuery = ParseQS.encode(query);
+    String derivedQuery = ParseQS.encode(query.build());
     if (derivedQuery.isNotEmpty) {
       derivedQuery = '?$derivedQuery';
     }

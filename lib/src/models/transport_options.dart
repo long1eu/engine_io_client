@@ -7,7 +7,13 @@ import 'package:built_value/serializer.dart';
 part 'transport_options.g.dart';
 
 abstract class TransportOptions implements Built<TransportOptions, TransportOptionsBuilder> {
-  factory TransportOptions([TransportOptionsBuilder updates(TransportOptionsBuilder b)]) = _$TransportOptions;
+  factory TransportOptions([TransportOptionsBuilder updates(TransportOptionsBuilder b)]) => new _$TransportOptions((b) {
+        return b
+          ..port = -1
+          ..policyPort = -1
+          ..secure = false
+          ..update(updates);
+      });
 
   TransportOptions._();
 
@@ -15,8 +21,10 @@ abstract class TransportOptions implements Built<TransportOptions, TransportOpti
 
   String get path;
 
+  @nullable
   String get timestampParam;
 
+  @nullable
   bool get secure;
 
   bool get timestampRequests;

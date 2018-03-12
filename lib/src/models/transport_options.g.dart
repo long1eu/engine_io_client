@@ -33,11 +33,6 @@ class _$TransportOptionsSerializer
           specifiedType: const FullType(String)),
       'path',
       serializers.serialize(object.path, specifiedType: const FullType(String)),
-      'timestampParam',
-      serializers.serialize(object.timestampParam,
-          specifiedType: const FullType(String)),
-      'secure',
-      serializers.serialize(object.secure, specifiedType: const FullType(bool)),
       'timestampRequests',
       serializers.serialize(object.timestampRequests,
           specifiedType: const FullType(bool)),
@@ -51,6 +46,18 @@ class _$TransportOptionsSerializer
           specifiedType: const FullType(BuiltMap,
               const [const FullType(String), const FullType(String)])),
     ];
+    if (object.timestampParam != null) {
+      result
+        ..add('timestampParam')
+        ..add(serializers.serialize(object.timestampParam,
+            specifiedType: const FullType(String)));
+    }
+    if (object.secure != null) {
+      result
+        ..add('secure')
+        ..add(serializers.serialize(object.secure,
+            specifiedType: const FullType(bool)));
+    }
 
     return result;
   }
@@ -143,10 +150,6 @@ class _$TransportOptions extends TransportOptions {
       throw new BuiltValueNullFieldError('TransportOptions', 'hostname');
     if (path == null)
       throw new BuiltValueNullFieldError('TransportOptions', 'path');
-    if (timestampParam == null)
-      throw new BuiltValueNullFieldError('TransportOptions', 'timestampParam');
-    if (secure == null)
-      throw new BuiltValueNullFieldError('TransportOptions', 'secure');
     if (timestampRequests == null)
       throw new BuiltValueNullFieldError(
           'TransportOptions', 'timestampRequests');

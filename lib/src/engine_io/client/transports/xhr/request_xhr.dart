@@ -9,10 +9,10 @@ import 'package:socket_io/src/models/xhr_options.dart';
 const String BINARY_CONTENT_TYPE = 'application/octet-stream';
 const String TEXT_CONTENT_TYPE = 'text/plain;charset=UTF-8';
 
-class XhrRequest extends Emitter {
+class RequestXhr extends Emitter {
   static final Log log = new Log('XhrRequest');
 
-  XhrRequest(this.options);
+  RequestXhr(this.options);
 
   StreamedResponse response;
 
