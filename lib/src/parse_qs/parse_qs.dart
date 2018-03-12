@@ -1,17 +1,19 @@
+import 'package:built_collection/built_collection.dart';
 import 'package:socket_io/src/global/global.dart';
 
 class ParseQS {
   ParseQS._();
 
-  static String encode(Map<String, String> obj) {
+  static String encode(BuiltMap<String, String> obj) {
     final StringBuffer str = new StringBuffer();
-    for (MapEntry<String, String> entry in obj.entries) {
+
+    obj.forEach((String key, String value) {
       str
         ..write(str.length > 0 ? '&' : '')
-        ..write(Global.encodeURIComponent(entry.key))
+        ..write(Global.encodeURIComponent(key))
         ..write('=')
-        ..write(Global.encodeURIComponent(entry.value));
-    }
+        ..write(Global.encodeURIComponent(value));
+    });
     return str.toString();
   }
 

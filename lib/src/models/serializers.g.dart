@@ -15,6 +15,19 @@ part of serializers;
 // ignore_for_file: sort_constructors_first
 
 Serializers _$serializers = (new Serializers().toBuilder()
+      ..add(HandshakeData.serializer)
       ..add(Packet.serializer)
-      ..add(PacketType.serializer))
+      ..add(PacketType.serializer)
+      ..add(ReadyState.serializer)
+      ..add(TransportEvent.serializer)
+      ..add(TransportOptions.serializer)
+      ..add(XhrEvent.serializer)
+      ..add(XhrOptions.serializer)
+      ..addBuilderFactory(
+          const FullType(BuiltList, const [const FullType(String)]),
+          () => new ListBuilder<String>())
+      ..addBuilderFactory(
+          const FullType(
+              BuiltMap, const [const FullType(String), const FullType(String)]),
+          () => new MapBuilder<String, String>()))
     .build();
