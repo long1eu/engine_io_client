@@ -18,14 +18,27 @@ Serializers _$serializers = (new Serializers().toBuilder()
       ..add(HandshakeData.serializer)
       ..add(Packet.serializer)
       ..add(PacketType.serializer)
-      ..add(ReadyState.serializer)
+      ..add(SocketEvent.serializer)
+      ..add(SocketOptions.serializer)
       ..add(TransportEvent.serializer)
       ..add(TransportOptions.serializer)
+      ..add(TransportState.serializer)
       ..add(XhrEvent.serializer)
       ..add(XhrOptions.serializer)
       ..addBuilderFactory(
           const FullType(BuiltList, const [const FullType(String)]),
           () => new ListBuilder<String>())
+      ..addBuilderFactory(
+          const FullType(BuiltList, const [const FullType(String)]),
+          () => new ListBuilder<String>())
+      ..addBuilderFactory(
+          const FullType(BuiltMap,
+              const [const FullType(String), const FullType(TransportOptions)]),
+          () => new MapBuilder<String, TransportOptions>())
+      ..addBuilderFactory(
+          const FullType(
+              BuiltMap, const [const FullType(String), const FullType(String)]),
+          () => new MapBuilder<String, String>())
       ..addBuilderFactory(
           const FullType(
               BuiltMap, const [const FullType(String), const FullType(String)]),

@@ -2,17 +2,17 @@ import 'package:socket_io/src/emitter/emitter.dart';
 import 'package:socket_io/src/engine_io/client/engine_io_exception.dart';
 import 'package:socket_io/src/engine_io/parser/parser.dart';
 import 'package:socket_io/src/models/packet.dart';
-import 'package:socket_io/src/models/ready_state.dart';
 import 'package:socket_io/src/models/transport_event.dart';
 import 'package:socket_io/src/models/transport_options.dart';
+import 'package:socket_io/src/models/transport_state.dart';
 
 abstract class Transport extends Emitter {
   Transport(this.options, this.name);
 
-  final TransportOptions options;
   final String name;
+  TransportOptions options;
 
-  ReadyState readyState;
+  TransportState readyState;
   bool writable;
 
   Transport onError(String message, Exception desc) {
@@ -22,8 +22,8 @@ abstract class Transport extends Emitter {
   }
 
   Transport open() {
-    if (readyState == ReadyState.closed || readyState == null) {
-      readyState = ReadyState.opening;
+    if (readyState == TransportState.closed || readyState == null) {
+      readyState = TransportState.opening;
       doOpen();
     }
 
@@ -31,7 +31,7 @@ abstract class Transport extends Emitter {
   }
 
   Transport close() {
-    if (readyState == ReadyState.opening || readyState == ReadyState.open) {
+    if (readyState == TransportState.opening || readyState == TransportState.open) {
       doClose();
       onClose();
     }
@@ -40,7 +40,7 @@ abstract class Transport extends Emitter {
   }
 
   void send(List<Packet> packets) {
-    if (readyState == ReadyState.open) {
+    if (readyState == TransportState.open) {
       try {
         write(packets);
       } catch (err) {
@@ -52,7 +52,7 @@ abstract class Transport extends Emitter {
   }
 
   void onOpen() {
-    readyState = ReadyState.open;
+    readyState = TransportState.open;
     writable = true;
     emit(TransportEvent.open.name);
   }
@@ -70,7 +70,7 @@ abstract class Transport extends Emitter {
   }
 
   void onClose() {
-    readyState = ReadyState.closed;
+    readyState = TransportState.closed;
     emit(TransportEvent.close.name);
   }
 

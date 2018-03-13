@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of ready_state;
+part of transport_state;
 
 // **************************************************************************
 // Generator: BuiltValueGenerator
@@ -14,12 +14,12 @@ part of ready_state;
 // ignore_for_file: prefer_expression_function_bodies
 // ignore_for_file: sort_constructors_first
 
-const ReadyState _$opening = const ReadyState._('opening');
-const ReadyState _$open = const ReadyState._('open');
-const ReadyState _$closed = const ReadyState._('closed');
-const ReadyState _$paused = const ReadyState._('paused');
+const TransportState _$opening = const TransportState._('opening');
+const TransportState _$open = const TransportState._('open');
+const TransportState _$closed = const TransportState._('closed');
+const TransportState _$paused = const TransportState._('paused');
 
-ReadyState _$ReadyStateValueOf(String name) {
+TransportState _$ReadyStateValueOf(String name) {
   switch (name) {
     case 'opening':
       return _$opening;
@@ -34,29 +34,31 @@ ReadyState _$ReadyStateValueOf(String name) {
   }
 }
 
-final BuiltSet<ReadyState> _$ReadyStateValues =
-    new BuiltSet<ReadyState>(const <ReadyState>[
+final BuiltSet<TransportState> _$ReadyStateValues =
+    new BuiltSet<TransportState>(const <TransportState>[
   _$opening,
   _$open,
   _$closed,
   _$paused,
 ]);
 
-Serializer<ReadyState> _$readyStateSerializer = new _$ReadyStateSerializer();
+Serializer<TransportState> _$transportStateSerializer =
+    new _$TransportStateSerializer();
 
-class _$ReadyStateSerializer implements PrimitiveSerializer<ReadyState> {
+class _$TransportStateSerializer
+    implements PrimitiveSerializer<TransportState> {
   @override
-  final Iterable<Type> types = const <Type>[ReadyState];
+  final Iterable<Type> types = const <Type>[TransportState];
   @override
-  final String wireName = 'ReadyState';
+  final String wireName = 'TransportState';
 
   @override
-  Object serialize(Serializers serializers, ReadyState object,
+  Object serialize(Serializers serializers, TransportState object,
           {FullType specifiedType: FullType.unspecified}) =>
       object.name;
 
   @override
-  ReadyState deserialize(Serializers serializers, Object serialized,
+  TransportState deserialize(Serializers serializers, Object serialized,
           {FullType specifiedType: FullType.unspecified}) =>
-      ReadyState.valueOf(serialized as String);
+      TransportState.valueOf(serialized as String);
 }

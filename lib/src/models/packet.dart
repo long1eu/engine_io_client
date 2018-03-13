@@ -1,12 +1,14 @@
 library packet;
 
+import 'dart:collection';
+
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:socket_io/src/models/packet_type.dart';
 
 part 'packet.g.dart';
 
-abstract class Packet<T> implements Built<Packet<T>, PacketBuilder<T>> {
+abstract class Packet<T> extends LinkedListEntry<Packet<T>> implements Built<Packet<T>, PacketBuilder<T>> {
   factory Packet([PacketBuilder<T> updates(PacketBuilder<T> b)]) = _$Packet<T>;
 
   factory Packet.fromValues(int type, [T data]) {

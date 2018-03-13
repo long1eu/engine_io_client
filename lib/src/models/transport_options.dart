@@ -3,17 +3,20 @@ library transport_options;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
+import 'package:socket_io/src/engine_io/client/socket.dart';
 
 part 'transport_options.g.dart';
 
 abstract class TransportOptions implements Built<TransportOptions, TransportOptionsBuilder> {
-  factory TransportOptions([TransportOptionsBuilder updates(TransportOptionsBuilder b)]) => new _$TransportOptions((b) {
-        return b
-          ..port = -1
-          ..policyPort = -1
-          ..secure = false
-          ..update(updates);
-      });
+  factory TransportOptions([TransportOptionsBuilder updates(TransportOptionsBuilder b)]) {
+    return new _$TransportOptions((TransportOptionsBuilder b) {
+      return b
+        ..port = -1
+        ..policyPort = -1
+        ..secure = false
+        ..update(updates);
+    });
+  }
 
   TransportOptions._();
 
@@ -35,7 +38,8 @@ abstract class TransportOptions implements Built<TransportOptions, TransportOpti
 
   BuiltMap<String, String> get query;
 
-  //Socket get socket;
+  @BuiltValueField(serialize: false)
+  Socket get socket;
 
   static Serializer<TransportOptions> get serializer => _$transportOptionsSerializer;
 }

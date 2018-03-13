@@ -7,16 +7,17 @@ import 'package:socket_io/src/engine_io/client/engine_io_exception.dart';
 import 'package:socket_io/src/engine_io/client/transport.dart';
 import 'package:socket_io/src/engine_io/parser/parser.dart';
 import 'package:socket_io/src/models/packet.dart';
-import 'package:socket_io/src/models/ready_state.dart';
+import 'package:socket_io/src/models/transport_state.dart';
 import 'package:socket_io/src/models/transport_event.dart';
 import 'package:socket_io/src/models/transport_options.dart';
 import 'package:socket_io/src/parse_qs/parse_qs.dart';
 import 'package:socket_io/src/yeast/yeast.dart';
 
 class WebSocket extends Transport {
-  static final Log log = new Log('WebSocket');
+  static const String NAME = 'WebSocket';
+  static final Log log = new Log(NAME);
 
-  WebSocket(TransportOptions options) : super(options, 'WebSocket');
+  WebSocket(TransportOptions options) : super(options, NAME);
 
   io.WebSocket socket;
 
@@ -48,7 +49,7 @@ class WebSocket extends Transport {
 
     int total = packets.length;
     for (Packet<dynamic> packet in packets) {
-      if (readyState != ReadyState.opening && readyState != ReadyState.open) {
+      if (readyState != TransportState.opening && readyState != TransportState.open) {
         // Ensure we don't try to send anymore packets if the socket ends up being closed due to an exception
         break;
       }

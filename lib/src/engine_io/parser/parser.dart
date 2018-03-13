@@ -7,12 +7,13 @@ import 'package:utf/utf.dart';
 // ignore_for_file: avoid_as
 // ignore_for_file: always_specify_types
 const int MAX_INT_CHAR_LENGTH = 10;
-const int PROTOCOL = 3;
 
 typedef void VoidCallback<T>(T data);
 typedef bool DecodePayload<T>(Packet<T> packet, int index, int total);
 
 class Parser {
+  static const int PROTOCOL = 3;
+
   Parser._();
 
   static void encodePacket(Packet packet, EncodeCallback callback, [bool utf8encode = false]) {

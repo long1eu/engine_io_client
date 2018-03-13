@@ -6,16 +6,17 @@ import 'package:socket_io/src/engine_io/parser/parser.dart';
 import 'package:socket_io/src/models/packet.dart';
 import 'package:socket_io/src/models/packet_type.dart';
 import 'package:socket_io/src/models/polling_event.dart';
-import 'package:socket_io/src/models/ready_state.dart';
+import 'package:socket_io/src/models/transport_state.dart';
 import 'package:socket_io/src/models/transport_event.dart';
 import 'package:socket_io/src/models/transport_options.dart';
 import 'package:socket_io/src/parse_qs/parse_qs.dart';
 import 'package:socket_io/src/yeast/yeast.dart';
 
 abstract class Polling extends Transport {
-  static final Log log = new Log('Polling');
+  static const String NAME = 'Polling';
+  static final Log log = new Log(NAME);
 
-  Polling(TransportOptions options) : super(options, 'Polling');
+  Polling(TransportOptions options) : super(options, NAME);
 
   bool _polling;
 
@@ -25,11 +26,11 @@ abstract class Polling extends Transport {
   }
 
   void pause(void onPause()) {
-    readyState = ReadyState.paused;
+    readyState = TransportState.paused;
 
     void pause() {
       log.d('paused');
-      readyState = ReadyState.paused;
+      readyState = TransportState.paused;
       onPause();
     }
 
@@ -77,7 +78,7 @@ abstract class Polling extends Transport {
 
     final DecodePayloadCallback<dynamic> callback =
         new DecodePayloadCallback<dynamic>((Packet<dynamic> packet, int index, int total) {
-      if (readyState == ReadyState.open) {
+      if (readyState == TransportState.open) {
         onOpen();
       }
 
@@ -96,11 +97,11 @@ abstract class Polling extends Transport {
       Parser.decodeBinaryPayload(data, callback);
     }
 
-    if (readyState != ReadyState.closed) {
+    if (readyState != TransportState.closed) {
       _polling = false;
       emit(PollingEvent.pollComplete.name);
 
-      if (readyState == ReadyState.open) {
+      if (readyState == TransportState.open) {
         poll();
       } else {
         log.i('ignoring poll - transport state "$readyState"');
@@ -121,7 +122,7 @@ abstract class Polling extends Transport {
       }
     });
 
-    if (readyState == ReadyState.open) {
+    if (readyState == TransportState.open) {
       log.d('transport open - closing');
       close.call();
     } else {

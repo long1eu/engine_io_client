@@ -132,6 +132,8 @@ class _$TransportOptions extends TransportOptions {
   final int policyPort;
   @override
   final BuiltMap<String, String> query;
+  @override
+  final Socket socket;
 
   factory _$TransportOptions([void updates(TransportOptionsBuilder b)]) =>
       (new TransportOptionsBuilder()..update(updates)).build();
@@ -144,7 +146,8 @@ class _$TransportOptions extends TransportOptions {
       this.timestampRequests,
       this.port,
       this.policyPort,
-      this.query})
+      this.query,
+      this.socket})
       : super._() {
     if (hostname == null)
       throw new BuiltValueNullFieldError('TransportOptions', 'hostname');
@@ -159,6 +162,8 @@ class _$TransportOptions extends TransportOptions {
       throw new BuiltValueNullFieldError('TransportOptions', 'policyPort');
     if (query == null)
       throw new BuiltValueNullFieldError('TransportOptions', 'query');
+    if (socket == null)
+      throw new BuiltValueNullFieldError('TransportOptions', 'socket');
   }
 
   @override
@@ -180,7 +185,8 @@ class _$TransportOptions extends TransportOptions {
         timestampRequests == other.timestampRequests &&
         port == other.port &&
         policyPort == other.policyPort &&
-        query == other.query;
+        query == other.query &&
+        socket == other.socket;
   }
 
   @override
@@ -190,13 +196,15 @@ class _$TransportOptions extends TransportOptions {
             $jc(
                 $jc(
                     $jc(
-                        $jc($jc($jc(0, hostname.hashCode), path.hashCode),
-                            timestampParam.hashCode),
-                        secure.hashCode),
-                    timestampRequests.hashCode),
-                port.hashCode),
-            policyPort.hashCode),
-        query.hashCode));
+                        $jc(
+                            $jc($jc($jc(0, hostname.hashCode), path.hashCode),
+                                timestampParam.hashCode),
+                            secure.hashCode),
+                        timestampRequests.hashCode),
+                    port.hashCode),
+                policyPort.hashCode),
+            query.hashCode),
+        socket.hashCode));
   }
 
   @override
@@ -209,7 +217,8 @@ class _$TransportOptions extends TransportOptions {
           ..add('timestampRequests', timestampRequests)
           ..add('port', port)
           ..add('policyPort', policyPort)
-          ..add('query', query))
+          ..add('query', query)
+          ..add('socket', socket))
         .toString();
   }
 }
@@ -253,6 +262,10 @@ class TransportOptionsBuilder
       _$this._query ??= new MapBuilder<String, String>();
   set query(MapBuilder<String, String> query) => _$this._query = query;
 
+  Socket _socket;
+  Socket get socket => _$this._socket;
+  set socket(Socket socket) => _$this._socket = socket;
+
   TransportOptionsBuilder();
 
   TransportOptionsBuilder get _$this {
@@ -265,6 +278,7 @@ class TransportOptionsBuilder
       _port = _$v.port;
       _policyPort = _$v.policyPort;
       _query = _$v.query?.toBuilder();
+      _socket = _$v.socket;
       _$v = null;
     }
     return this;
@@ -294,7 +308,8 @@ class TransportOptionsBuilder
               timestampRequests: timestampRequests,
               port: port,
               policyPort: policyPort,
-              query: query.build());
+              query: query.build(),
+              socket: socket);
     } catch (_) {
       String _$failedField;
       try {
