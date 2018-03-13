@@ -28,14 +28,13 @@ abstract class SocketOptions implements Built<SocketOptions, SocketOptionsBuilde
     });
   }
 
-  factory SocketOptions.fromUri(Uri uri, SocketOptions options) {
-    final SocketOptionsBuilder builder = options?.toBuilder() ?? new SocketOptionsBuilder();
-
+  factory SocketOptions.fromUri(Uri uri, [SocketOptions options]) {
+    final SocketOptionsBuilder builder = options?.toBuilder() ?? new SocketOptions().toBuilder();
     builder
-      ..host = uri.host
+      ..host = uri.host ?? 'localhost'
       ..secure = uri.scheme == 'https' || uri.scheme == 'wss'
-      ..port = uri.port
-      ..rawQuery = uri.query.isNotEmpty ? uri.query : options.rawQuery;
+      ..port = uri.port == null || uri.port == 0 ? -1 : uri.port
+      ..rawQuery = uri.query.isNotEmpty ? uri.query : options?.rawQuery;
 
     return builder.build();
   }

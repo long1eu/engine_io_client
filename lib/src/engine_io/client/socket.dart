@@ -71,6 +71,8 @@ class Socket extends Emitter {
     onHeartbeatAsListener = (dynamic args) => onHeartbeat(args ?? -1);
   }
 
+  SocketOptions get options => _options;
+
   Future<Socket> open() async {
     String transportName;
     if (_options?.rememberUpgrade ?? true && _priorWebSocketSuccess && _options.transports.contains(WebSocket.NAME)) {
@@ -297,7 +299,7 @@ class Socket extends Emitter {
     id = data.sessionId;
     transport.options = (transport.options.toBuilder()..query['sid'] = data.sessionId).build();
 
-    upgrades = new BuiltList<String>(data.upgrades.takeWhile((upgrade) => _options.transports.contains(upgrade)));
+    upgrades = new BuiltList<String>(data.upgrades.takeWhile((String upgrade) => _options.transports.contains(upgrade)));
 
     _pingInterval = data.pingInterval;
     _pingTimeout = data.pingTimeout;
@@ -450,7 +452,6 @@ class Socket extends Emitter {
   }
 
   BuiltList<String> filterUpgrades(BuiltList<String> upgrades) {
-    log.d('filterUpgrades: $upgrades');
     final ListBuilder<String> filteredUpgrades = new ListBuilder<String>();
     for (String upgrade in upgrades) {
       if (_options.transports.contains(upgrade)) {
