@@ -32,11 +32,11 @@ class WebSocket extends Transport {
     onOpen();
   }
 
-  void onMessage(dynamic event) {
+  Future<Null> onMessage(dynamic event) async {
     log.d('onMessage: $event');
     if (event == null) return;
     if (event is String || event is List<int>) {
-      onData(event);
+      await onData(event);
     } else
       throw new EngineIOException(name, '$event is not String nor List<int>.');
   }
@@ -44,7 +44,7 @@ class WebSocket extends Transport {
   void onSocketError(Exception e) => onError('websocket error', e);
 
   @override
-  void write(List<Packet> packets) {
+  Future<Null> write(List<Packet> packets) async {
     writable = false;
 
     int total = packets.length;
@@ -54,27 +54,24 @@ class WebSocket extends Transport {
         break;
       }
 
-      Parser.encodePacket(packet, new EncodeCallback((dynamic data) {
-        log.d('write: $data');
-        try {
-          socket.add(data);
-        } catch (e) {
-          log.e('WebSocket closed before we could write.');
-        }
+      final dynamic encoded = Parser.encodePacket(packet);
+      log.d('write: $encoded');
+      try {
+        socket.add(encoded);
+      } catch (e) {
+        log.e('WebSocket closed before we could write.');
+      }
 
-        if (0 == --total) {
-          Timer.run(() {
-            writable = true;
-            emit(TransportEvent.drain.name);
-          });
-        }
-      }));
+      if (0 == --total) {
+        writable = true;
+        emit(TransportEvent.drain.name);
+      }
     }
   }
 
   @override
   Future<Null> doClose() async {
-    socket?.close(1000, '');
+    await socket?.close(1000, '');
     socket = null;
   }
 

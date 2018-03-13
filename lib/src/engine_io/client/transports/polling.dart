@@ -71,25 +71,12 @@ abstract class Polling extends Transport {
   Future<Null> _onData(dynamic data) async {
     log.i('polling got data $data ');
 
-    final DecodePayloadCallback callback = new DecodePayloadCallback((Packet packet, int index, int total) {
+    final List<Packet> packets = data is String ? Parser.decodePayload(data) : Parser.decodeBinaryPayload(data);
+    for (Packet packet in packets) {
       log.d('_onData: $packet');
-      if (readyState == TransportState.opening) {
-        onOpen();
-      }
-
-      if (packet.type == PacketType.close) {
-        onClose();
-        return false;
-      }
-
+      if (readyState == TransportState.opening) onOpen();
+      if (packet.type == PacketType.close) onClose();
       onPacket(packet);
-      return true;
-    });
-
-    if (data is String) {
-      Parser.decodePayload(data, callback);
-    } else if (data is List<int>) {
-      Parser.decodeBinaryPayload(data, callback);
     }
 
     if (readyState != TransportState.closed) {
@@ -127,20 +114,20 @@ abstract class Polling extends Transport {
   }
 
   @override
-  void write(List<Packet> packets) {
+  Future<Null> write(List<Packet> packets) async {
     writable = false;
     void callback() {
       writable = true;
       emit(TransportEvent.drain.name);
     }
 
-    Parser.encodePayload(packets, new EncodeCallback((dynamic data) async {
-      if (data is List<int> || data is String) {
-        await doWrite(data, callback);
-      } else {
-        log.w('Unexpected data: $data');
-      }
-    }));
+    final dynamic encoded = Parser.encodePayload(packets);
+
+    if (encoded is List<int> || encoded is String) {
+      await doWrite(encoded, callback);
+    } else {
+      log.w('Unexpected data: $encoded');
+    }
   }
 
   String get uri {

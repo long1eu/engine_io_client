@@ -70,16 +70,14 @@ abstract class Transport extends Emitter {
     }
   }
 
-  void onPacket(Packet packet) {
-    emit(TransportEvent.packet.name, packet);
-  }
+  void onPacket(Packet packet) => emit(TransportEvent.packet.name, packet);
 
   void onClose() {
     readyState = TransportState.closed;
     emit(TransportEvent.close.name);
   }
 
-  void write(List<Packet> packets);
+  Future<Null> write(List<Packet> packets);
 
   Future<Null> doOpen();
 
