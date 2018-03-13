@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io' as io;
 
 import 'package:built_collection/built_collection.dart';
 import 'package:flutter_logger/flutter_logger.dart';
@@ -12,6 +11,7 @@ import 'package:socket_io/src/models/transport_options.dart';
 import 'package:socket_io/src/models/transport_state.dart';
 import 'package:socket_io/src/parse_qs/parse_qs.dart';
 import 'package:socket_io/src/yeast/yeast.dart';
+import 'package:web_socket_channel/io.dart';
 
 class WebSocket extends Transport {
   static const String NAME = 'websocket';
@@ -19,16 +19,14 @@ class WebSocket extends Transport {
 
   WebSocket(TransportOptions options) : super(options, NAME);
 
-  io.WebSocket socket;
+  IOWebSocketChannel socket;
 
   @override
   Future<Null> doOpen() async {
     final Map<String, List<String>> headers = <String, List<String>>{};
     emit(TransportEvent.requestHeaders.name, headers);
-
-    log.d('uri: $uri');
-    socket = await io.WebSocket.connect(uri);
-    socket.listen(onMessage, onError: onSocketError, onDone: onClose);
+    socket = new IOWebSocketChannel.connect(uri, headers: headers);
+    socket.stream.listen(onMessage, onError: onSocketError, onDone: onClose);
     onOpen();
   }
 
@@ -55,9 +53,8 @@ class WebSocket extends Transport {
       }
 
       final dynamic encoded = Parser.encodePacket(packet);
-      log.d('write: $encoded');
       try {
-        socket.add(encoded);
+        socket.sink.add(encoded);
       } catch (e) {
         log.e('WebSocket closed before we could write.');
       }
@@ -71,7 +68,7 @@ class WebSocket extends Transport {
 
   @override
   Future<Null> doClose() async {
-    await socket?.close(1000, '');
+    await socket?.sink?.close(1000, '');
     socket = null;
   }
 

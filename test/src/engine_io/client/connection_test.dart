@@ -67,13 +67,11 @@ void main() {
   });
 
   test('notSendPacketsIfSocketCloses', () async {
-    bool noPacket;
+    bool noPacket = true;
 
     final Socket socket = new Socket(opts);
     socket.on(SocketEvent.open.name, (dynamic args) async {
-      socket.on(SocketEvent.packetCreate.name, (dynamic args) {
-        noPacket = false;
-      });
+      socket.on(SocketEvent.packetCreate.name, (dynamic args) => noPacket = false);
 
       await socket.close();
       socket.send('hi');
@@ -123,14 +121,12 @@ void main() {
   });
 
   test('notSendPacketsIfClosingIsDeferred', () async {
-    bool noPacket;
+    bool noPacket = true;
 
     final Socket socket = new Socket(opts);
     socket.on(SocketEvent.open.name, (dynamic args) {
       socket.on(SocketEvent.upgrading.name, (dynamic args) async {
-        socket.on(SocketEvent.packetCreate.name, (dynamic args) {
-          noPacket = false;
-        });
+        socket.on(SocketEvent.packetCreate.name, (dynamic args) => noPacket = false);
         await socket.close();
         socket.send('hi');
       });
@@ -147,9 +143,10 @@ void main() {
     final Socket socket = new Socket(opts);
     socket.on(SocketEvent.open.name, (dynamic args) {
       socket.on(SocketEvent.upgrading.name, (dynamic args) async {
-        socket.send('hi');
+        socket.send('hsi');
         await socket.close();
       }).on(SocketEvent.close.name, (dynamic args) {
+        log.d('close.name');
         length = socket.writeBuffer.length;
       });
     });

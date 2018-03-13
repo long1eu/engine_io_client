@@ -157,25 +157,21 @@ class Socket extends Emitter {
       if (failed) return;
       log.d('probe transport "$name" opened');
 
-      final Packet packet = new Packet.values(PacketType.ping, 'probe');
-      transport.send(<Packet>[packet]);
+      transport.send(<Packet>[new Packet.values(PacketType.ping, 'probe')]);
       transport.once(TransportEvent.packet.name, (dynamic args) {
         if (failed) return;
         final Packet message = args;
         if (message.type == PacketType.pong && message.data == 'probe') {
-          log.d('probe transport "$name" pong');
           upgrading = true;
-
           emit(SocketEvent.upgrading.name, transport);
-
           if (transport == null) return;
           _priorWebSocketSuccess = transport.name == WebSocket.NAME;
 
-          log.d('pausing current transport "${transport.name}"');
+          log.d('pausing current transport "${this.transport.name}"');
 
-          if (transport is Polling) {
+          if (this.transport is Polling) {
             // ignore: avoid_as
-            (transport as Polling).pause(() {
+            (this.transport as Polling).pause(() {
               if (failed) return;
               if (_readyState == SocketState.closed) return;
 
@@ -274,7 +270,6 @@ class Socket extends Emitter {
   }
 
   void onPacket(Packet packet) {
-    log.d('onPacket: $packet');
     if (_readyState == SocketState.opening || _readyState == SocketState.open || _readyState == SocketState.closing) {
       log.d('socket received: type "${packet.type}", data "${packet.data}"');
 
@@ -420,7 +415,7 @@ class Socket extends Emitter {
     onClose('transport error', error);
   }
 
-  void onClose(String reason, [dynamic desc]) {
+  Future<Null> onClose(String reason, [dynamic desc]) async {
     if (_readyState == SocketState.opening || _readyState == SocketState.open || _readyState == SocketState.closing) {
       log.d('socket close with reason: $reason');
 
@@ -432,7 +427,7 @@ class Socket extends Emitter {
       transport.off(SocketEvent.close.name);
 
       // ensure transport won't stay open
-      transport.close();
+      await transport.close();
 
       // ignore further transport communication
       transport.off();

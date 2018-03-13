@@ -56,7 +56,6 @@ abstract class Transport extends Emitter {
   }
 
   void onOpen() {
-    log.d('onOpen');
     readyState = TransportState.open;
     writable = true;
     emit(TransportEvent.open.name);

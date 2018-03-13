@@ -73,7 +73,6 @@ abstract class Polling extends Transport {
 
     final List<Packet> packets = data is String ? Parser.decodePayload(data) : Parser.decodeBinaryPayload(data);
     for (Packet packet in packets) {
-      log.d('_onData: $packet');
       if (readyState == TransportState.opening) onOpen();
       if (packet.type == PacketType.close) onClose();
       onPacket(packet);
