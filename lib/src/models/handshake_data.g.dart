@@ -28,7 +28,7 @@ class _$HandshakeDataSerializer implements StructuredSerializer<HandshakeData> {
       {FullType specifiedType: FullType.unspecified}) {
     final result = <Object>[
       'sid',
-      serializers.serialize(object.socketId,
+      serializers.serialize(object.sessionId,
           specifiedType: const FullType(String)),
       'upgrades',
       serializers.serialize(object.upgrades,
@@ -57,7 +57,7 @@ class _$HandshakeDataSerializer implements StructuredSerializer<HandshakeData> {
       final dynamic value = iterator.current;
       switch (key) {
         case 'sid':
-          result.socketId = serializers.deserialize(value,
+          result.sessionId = serializers.deserialize(value,
               specifiedType: const FullType(String)) as String;
           break;
         case 'upgrades':
@@ -83,7 +83,7 @@ class _$HandshakeDataSerializer implements StructuredSerializer<HandshakeData> {
 
 class _$HandshakeData extends HandshakeData {
   @override
-  final String socketId;
+  final String sessionId;
   @override
   final BuiltList<String> upgrades;
   @override
@@ -95,10 +95,10 @@ class _$HandshakeData extends HandshakeData {
       (new HandshakeDataBuilder()..update(updates)).build();
 
   _$HandshakeData._(
-      {this.socketId, this.upgrades, this.pingInterval, this.pingTimeout})
+      {this.sessionId, this.upgrades, this.pingInterval, this.pingTimeout})
       : super._() {
-    if (socketId == null)
-      throw new BuiltValueNullFieldError('HandshakeData', 'socketId');
+    if (sessionId == null)
+      throw new BuiltValueNullFieldError('HandshakeData', 'sessionId');
     if (upgrades == null)
       throw new BuiltValueNullFieldError('HandshakeData', 'upgrades');
     if (pingInterval == null)
@@ -118,7 +118,7 @@ class _$HandshakeData extends HandshakeData {
   bool operator ==(dynamic other) {
     if (identical(other, this)) return true;
     if (other is! HandshakeData) return false;
-    return socketId == other.socketId &&
+    return sessionId == other.sessionId &&
         upgrades == other.upgrades &&
         pingInterval == other.pingInterval &&
         pingTimeout == other.pingTimeout;
@@ -127,7 +127,7 @@ class _$HandshakeData extends HandshakeData {
   @override
   int get hashCode {
     return $jf($jc(
-        $jc($jc($jc(0, socketId.hashCode), upgrades.hashCode),
+        $jc($jc($jc(0, sessionId.hashCode), upgrades.hashCode),
             pingInterval.hashCode),
         pingTimeout.hashCode));
   }
@@ -135,7 +135,7 @@ class _$HandshakeData extends HandshakeData {
   @override
   String toString() {
     return (newBuiltValueToStringHelper('HandshakeData')
-          ..add('socketId', socketId)
+          ..add('sessionId', sessionId)
           ..add('upgrades', upgrades)
           ..add('pingInterval', pingInterval)
           ..add('pingTimeout', pingTimeout))
@@ -147,9 +147,9 @@ class HandshakeDataBuilder
     implements Builder<HandshakeData, HandshakeDataBuilder> {
   _$HandshakeData _$v;
 
-  String _socketId;
-  String get socketId => _$this._socketId;
-  set socketId(String socketId) => _$this._socketId = socketId;
+  String _sessionId;
+  String get sessionId => _$this._sessionId;
+  set sessionId(String sessionId) => _$this._sessionId = sessionId;
 
   ListBuilder<String> _upgrades;
   ListBuilder<String> get upgrades =>
@@ -168,7 +168,7 @@ class HandshakeDataBuilder
 
   HandshakeDataBuilder get _$this {
     if (_$v != null) {
-      _socketId = _$v.socketId;
+      _sessionId = _$v.sessionId;
       _upgrades = _$v.upgrades?.toBuilder();
       _pingInterval = _$v.pingInterval;
       _pingTimeout = _$v.pingTimeout;
@@ -194,7 +194,7 @@ class HandshakeDataBuilder
     try {
       _$result = _$v ??
           new _$HandshakeData._(
-              socketId: socketId,
+              sessionId: sessionId,
               upgrades: upgrades.build(),
               pingInterval: pingInterval,
               pingTimeout: pingTimeout);

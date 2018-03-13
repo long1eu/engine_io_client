@@ -8,7 +8,7 @@ import 'package:socket_io/src/models/xhr_event.dart';
 import 'package:socket_io/src/models/xhr_options.dart';
 
 const String BINARY_CONTENT_TYPE = 'application/octet-stream';
-const String TEXT_CONTENT_TYPE = 'text/plain;charset=UTF-8';
+const String TEXT_CONTENT_TYPE = 'text/plain; charset=UTF-8';
 
 class RequestXhr extends Emitter {
   static final Log log = new Log('RequestXhr');

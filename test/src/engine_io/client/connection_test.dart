@@ -24,7 +24,7 @@ void main() {
       });
     });
     socket.open();
-    await new Future.delayed(const Duration(seconds: 1), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
 
     expect(values.first, 'hi');
     socket.close();
@@ -43,7 +43,7 @@ void main() {
       });
     });
     socket.open();
-    await new Future.delayed(const Duration(seconds: 1), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
 
     expect(values.first, 'cash money €€€');
   });
@@ -61,7 +61,7 @@ void main() {
       });
     });
     socket.open();
-    await new Future.delayed(const Duration(seconds: 1), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
 
     expect(values.first, '\uD800\uDC00-\uDB7F\uDFFF\uDB80\uDC00-\uDBFF\uDFFF\uE000-\uF8FF');
   });
@@ -77,7 +77,7 @@ void main() {
       socket.send('hi');
     });
     socket.open();
-    await new Future.delayed(const Duration(seconds: 1), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
 
     expect(noPacket, isTrue);
   });
@@ -95,7 +95,7 @@ void main() {
       });
     });
     socket.open();
-    await new Future.delayed(const Duration(seconds: 1), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
 
     expect(upgraded, isTrue);
   });
@@ -115,7 +115,7 @@ void main() {
       });
     });
     socket.open();
-    await new Future.delayed(const Duration(seconds: 1), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
 
     expect(upgradeError, isTrue);
   });
@@ -132,7 +132,7 @@ void main() {
       });
     });
     socket.open();
-    await new Future.delayed(const Duration(seconds: 1), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
 
     expect(noPacket, isTrue);
   });
@@ -151,7 +151,7 @@ void main() {
       });
     });
     socket.open();
-    await new Future.delayed(const Duration(seconds: 1), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
 
     expect(length, 0);
   });

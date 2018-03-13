@@ -294,8 +294,8 @@ class Socket extends Emitter {
 
   void onHandshake(HandshakeData data) {
     emit(SocketEvent.handshake.name, data);
-    id = data.socketId;
-    transport.options = (transport.options.toBuilder()..query['sid'] = data.socketId).build();
+    id = data.sessionId;
+    transport.options = (transport.options.toBuilder()..query['sid'] = data.sessionId).build();
 
     upgrades = new BuiltList<String>(data.upgrades.takeWhile((upgrade) => _options.transports.contains(upgrade)));
 
