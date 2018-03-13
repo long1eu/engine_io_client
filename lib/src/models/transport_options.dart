@@ -14,6 +14,7 @@ abstract class TransportOptions implements Built<TransportOptions, TransportOpti
         ..port = -1
         ..policyPort = -1
         ..secure = false
+        ..timestampRequests = false
         ..update(updates);
     });
   }
@@ -39,6 +40,7 @@ abstract class TransportOptions implements Built<TransportOptions, TransportOpti
   BuiltMap<String, String> get query;
 
   @BuiltValueField(serialize: false)
+  @nullable
   Socket get socket;
 
   static Serializer<TransportOptions> get serializer => _$transportOptionsSerializer;

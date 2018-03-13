@@ -7,14 +7,14 @@ import 'package:socket_io/src/engine_io/client/engine_io_exception.dart';
 import 'package:socket_io/src/engine_io/client/transport.dart';
 import 'package:socket_io/src/engine_io/parser/parser.dart';
 import 'package:socket_io/src/models/packet.dart';
-import 'package:socket_io/src/models/transport_state.dart';
 import 'package:socket_io/src/models/transport_event.dart';
 import 'package:socket_io/src/models/transport_options.dart';
+import 'package:socket_io/src/models/transport_state.dart';
 import 'package:socket_io/src/parse_qs/parse_qs.dart';
 import 'package:socket_io/src/yeast/yeast.dart';
 
 class WebSocket extends Transport {
-  static const String NAME = 'WebSocket';
+  static const String NAME = 'websocket';
   static final Log log = new Log(NAME);
 
   WebSocket(TransportOptions options) : super(options, NAME);
@@ -22,18 +22,18 @@ class WebSocket extends Transport {
   io.WebSocket socket;
 
   @override
-  void doOpen() async {
+  Future<Null> doOpen() async {
     final Map<String, List<String>> headers = <String, List<String>>{};
     emit(TransportEvent.requestHeaders.name, headers);
 
     log.d('uri: $uri');
     socket = await io.WebSocket.connect(uri);
     socket.listen(onMessage, onError: onSocketError, onDone: onClose);
-    emit(TransportEvent.responseHeaders.name, null);
     onOpen();
   }
 
   void onMessage(dynamic event) {
+    log.d('onMessage: $event');
     if (event == null) return;
     if (event is String || event is List<int>) {
       onData(event);
@@ -44,17 +44,18 @@ class WebSocket extends Transport {
   void onSocketError(Exception e) => onError('websocket error', e);
 
   @override
-  void write(List<Packet<dynamic>> packets) {
+  void write(List<Packet> packets) {
     writable = false;
 
     int total = packets.length;
-    for (Packet<dynamic> packet in packets) {
+    for (Packet packet in packets) {
       if (readyState != TransportState.opening && readyState != TransportState.open) {
         // Ensure we don't try to send anymore packets if the socket ends up being closed due to an exception
         break;
       }
 
-      Parser.encodePacket(packet, new EncodeCallback<dynamic>((dynamic data) {
+      Parser.encodePacket(packet, new EncodeCallback((dynamic data) {
+        log.d('write: $data');
         try {
           socket.add(data);
         } catch (e) {
@@ -72,7 +73,7 @@ class WebSocket extends Transport {
   }
 
   @override
-  void doClose() {
+  Future<Null> doClose() async {
     socket?.close(1000, '');
     socket = null;
   }

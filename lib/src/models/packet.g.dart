@@ -25,12 +25,6 @@ class _$PacketSerializer implements StructuredSerializer<Packet> {
   @override
   Iterable serialize(Serializers serializers, Packet object,
       {FullType specifiedType: FullType.unspecified}) {
-    final isUnderspecified =
-        specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
-    if (!isUnderspecified) serializers.expectBuilder(specifiedType);
-    final parameterT =
-        isUnderspecified ? FullType.object : specifiedType.parameters[0];
-
     final result = <Object>[
       'type',
       serializers.serialize(object.type,
@@ -39,7 +33,8 @@ class _$PacketSerializer implements StructuredSerializer<Packet> {
     if (object.data != null) {
       result
         ..add('data')
-        ..add(serializers.serialize(object.data, specifiedType: parameterT));
+        ..add(serializers.serialize(object.data,
+            specifiedType: const FullType(Object)));
     }
 
     return result;
@@ -48,15 +43,7 @@ class _$PacketSerializer implements StructuredSerializer<Packet> {
   @override
   Packet deserialize(Serializers serializers, Iterable serialized,
       {FullType specifiedType: FullType.unspecified}) {
-    final isUnderspecified =
-        specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
-    if (!isUnderspecified) serializers.expectBuilder(specifiedType);
-    final parameterT =
-        isUnderspecified ? FullType.object : specifiedType.parameters[0];
-
-    final result = isUnderspecified
-        ? new PacketBuilder<Object>()
-        : serializers.newBuilder(specifiedType) as PacketBuilder;
+    final result = new PacketBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -69,8 +56,8 @@ class _$PacketSerializer implements StructuredSerializer<Packet> {
               specifiedType: const FullType(PacketType)) as PacketType;
           break;
         case 'data':
-          result.data =
-              serializers.deserialize(value, specifiedType: parameterT);
+          result.data = serializers.deserialize(value,
+              specifiedType: const FullType(Object));
           break;
       }
     }
@@ -79,6 +66,84 @@ class _$PacketSerializer implements StructuredSerializer<Packet> {
   }
 }
 
-// Error: Please make the following changes to use BuiltValue:
-//
-//        1. Stop class extending other classes. Only "implements" and "extends Object with" are allowed.
+class _$Packet extends Packet {
+  @override
+  final PacketType type;
+  @override
+  final Object data;
+
+  factory _$Packet([void updates(PacketBuilder b)]) =>
+      (new PacketBuilder()..update(updates)).build();
+
+  _$Packet._({this.type, this.data}) : super._() {
+    if (type == null) throw new BuiltValueNullFieldError('Packet', 'type');
+  }
+
+  @override
+  Packet rebuild(void updates(PacketBuilder b)) =>
+      (toBuilder()..update(updates)).build();
+
+  @override
+  PacketBuilder toBuilder() => new PacketBuilder()..replace(this);
+
+  @override
+  bool operator ==(dynamic other) {
+    if (identical(other, this)) return true;
+    if (other is! Packet) return false;
+    return type == other.type && data == other.data;
+  }
+
+  @override
+  int get hashCode {
+    return $jf($jc($jc(0, type.hashCode), data.hashCode));
+  }
+
+  @override
+  String toString() {
+    return (newBuiltValueToStringHelper('Packet')
+          ..add('type', type)
+          ..add('data', data))
+        .toString();
+  }
+}
+
+class PacketBuilder implements Builder<Packet, PacketBuilder> {
+  _$Packet _$v;
+
+  PacketType _type;
+  PacketType get type => _$this._type;
+  set type(PacketType type) => _$this._type = type;
+
+  Object _data;
+  Object get data => _$this._data;
+  set data(Object data) => _$this._data = data;
+
+  PacketBuilder();
+
+  PacketBuilder get _$this {
+    if (_$v != null) {
+      _type = _$v.type;
+      _data = _$v.data;
+      _$v = null;
+    }
+    return this;
+  }
+
+  @override
+  void replace(Packet other) {
+    if (other == null) throw new ArgumentError.notNull('other');
+    _$v = other as _$Packet;
+  }
+
+  @override
+  void update(void updates(PacketBuilder b)) {
+    if (updates != null) updates(this);
+  }
+
+  @override
+  _$Packet build() {
+    final _$result = _$v ?? new _$Packet._(type: type, data: data);
+    replace(_$result);
+    return _$result;
+  }
+}

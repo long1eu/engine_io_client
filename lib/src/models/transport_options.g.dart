@@ -162,8 +162,6 @@ class _$TransportOptions extends TransportOptions {
       throw new BuiltValueNullFieldError('TransportOptions', 'policyPort');
     if (query == null)
       throw new BuiltValueNullFieldError('TransportOptions', 'query');
-    if (socket == null)
-      throw new BuiltValueNullFieldError('TransportOptions', 'socket');
   }
 
   @override

@@ -25,12 +25,6 @@ class _$XhrOptionsSerializer implements StructuredSerializer<XhrOptions> {
   @override
   Iterable serialize(Serializers serializers, XhrOptions object,
       {FullType specifiedType: FullType.unspecified}) {
-    final isUnderspecified =
-        specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
-    if (!isUnderspecified) serializers.expectBuilder(specifiedType);
-    final parameterT =
-        isUnderspecified ? FullType.object : specifiedType.parameters[0];
-
     final result = <Object>[
       'uri',
       serializers.serialize(object.uri, specifiedType: const FullType(String)),
@@ -41,7 +35,8 @@ class _$XhrOptionsSerializer implements StructuredSerializer<XhrOptions> {
     if (object.data != null) {
       result
         ..add('data')
-        ..add(serializers.serialize(object.data, specifiedType: parameterT));
+        ..add(serializers.serialize(object.data,
+            specifiedType: const FullType(Object)));
     }
 
     return result;
@@ -50,15 +45,7 @@ class _$XhrOptionsSerializer implements StructuredSerializer<XhrOptions> {
   @override
   XhrOptions deserialize(Serializers serializers, Iterable serialized,
       {FullType specifiedType: FullType.unspecified}) {
-    final isUnderspecified =
-        specifiedType.isUnspecified || specifiedType.parameters.isEmpty;
-    if (!isUnderspecified) serializers.expectBuilder(specifiedType);
-    final parameterT =
-        isUnderspecified ? FullType.object : specifiedType.parameters[0];
-
-    final result = isUnderspecified
-        ? new XhrOptionsBuilder<Object>()
-        : serializers.newBuilder(specifiedType) as XhrOptionsBuilder;
+    final result = new XhrOptionsBuilder();
 
     final iterator = serialized.iterator;
     while (iterator.moveNext()) {
@@ -75,8 +62,8 @@ class _$XhrOptionsSerializer implements StructuredSerializer<XhrOptions> {
               specifiedType: const FullType(String)) as String;
           break;
         case 'data':
-          result.data =
-              serializers.deserialize(value, specifiedType: parameterT);
+          result.data = serializers.deserialize(value,
+              specifiedType: const FullType(Object));
           break;
       }
     }
@@ -85,7 +72,7 @@ class _$XhrOptionsSerializer implements StructuredSerializer<XhrOptions> {
   }
 }
 
-class _$XhrOptions<T> extends XhrOptions<T> {
+class _$XhrOptions extends XhrOptions {
   @override
   final String uri;
   @override
@@ -93,10 +80,10 @@ class _$XhrOptions<T> extends XhrOptions<T> {
   @override
   final Client client;
   @override
-  final T data;
+  final Object data;
 
-  factory _$XhrOptions([void updates(XhrOptionsBuilder<T> b)]) =>
-      (new XhrOptionsBuilder<T>()..update(updates)).build();
+  factory _$XhrOptions([void updates(XhrOptionsBuilder b)]) =>
+      (new XhrOptionsBuilder()..update(updates)).build();
 
   _$XhrOptions._({this.uri, this.method, this.client, this.data}) : super._() {
     if (uri == null) throw new BuiltValueNullFieldError('XhrOptions', 'uri');
@@ -107,11 +94,11 @@ class _$XhrOptions<T> extends XhrOptions<T> {
   }
 
   @override
-  XhrOptions<T> rebuild(void updates(XhrOptionsBuilder<T> b)) =>
+  XhrOptions rebuild(void updates(XhrOptionsBuilder b)) =>
       (toBuilder()..update(updates)).build();
 
   @override
-  XhrOptionsBuilder<T> toBuilder() => new XhrOptionsBuilder<T>()..replace(this);
+  XhrOptionsBuilder toBuilder() => new XhrOptionsBuilder()..replace(this);
 
   @override
   bool operator ==(dynamic other) {
@@ -141,9 +128,8 @@ class _$XhrOptions<T> extends XhrOptions<T> {
   }
 }
 
-class XhrOptionsBuilder<T>
-    implements Builder<XhrOptions<T>, XhrOptionsBuilder<T>> {
-  _$XhrOptions<T> _$v;
+class XhrOptionsBuilder implements Builder<XhrOptions, XhrOptionsBuilder> {
+  _$XhrOptions _$v;
 
   String _uri;
   String get uri => _$this._uri;
@@ -157,16 +143,13 @@ class XhrOptionsBuilder<T>
   Client get client => _$this._client;
   set client(Client client) => _$this._client = client;
 
-  T _data;
-  T get data => _$this._data;
-  set data(T data) => _$this._data = data;
+  Object _data;
+  Object get data => _$this._data;
+  set data(Object data) => _$this._data = data;
 
-  XhrOptionsBuilder() {
-    if (T == dynamic)
-      throw new BuiltValueMissingGenericsError('XhrOptions', 'T');
-  }
+  XhrOptionsBuilder();
 
-  XhrOptionsBuilder<T> get _$this {
+  XhrOptionsBuilder get _$this {
     if (_$v != null) {
       _uri = _$v.uri;
       _method = _$v.method;
@@ -178,20 +161,20 @@ class XhrOptionsBuilder<T>
   }
 
   @override
-  void replace(XhrOptions<T> other) {
+  void replace(XhrOptions other) {
     if (other == null) throw new ArgumentError.notNull('other');
-    _$v = other as _$XhrOptions<T>;
+    _$v = other as _$XhrOptions;
   }
 
   @override
-  void update(void updates(XhrOptionsBuilder<T> b)) {
+  void update(void updates(XhrOptionsBuilder b)) {
     if (updates != null) updates(this);
   }
 
   @override
-  _$XhrOptions<T> build() {
+  _$XhrOptions build() {
     final _$result = _$v ??
-        new _$XhrOptions<T>._(
+        new _$XhrOptions._(
             uri: uri, method: method, client: client, data: data);
     replace(_$result);
     return _$result;

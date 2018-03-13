@@ -1,4 +1,5 @@
-import 'dart:convert';
+import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_logger/flutter_logger.dart';
 import 'package:http/http.dart';
@@ -10,15 +11,15 @@ const String BINARY_CONTENT_TYPE = 'application/octet-stream';
 const String TEXT_CONTENT_TYPE = 'text/plain;charset=UTF-8';
 
 class RequestXhr extends Emitter {
-  static final Log log = new Log('XhrRequest');
+  static final Log log = new Log('RequestXhr');
 
   RequestXhr(this.options);
 
   StreamedResponse response;
 
-  final XhrOptions<dynamic> options;
+  final XhrOptions options;
 
-  void create() async {
+  Future<Null> create() async {
     log.d('xhr open ${options.method}: ${options.uri}');
     final Map<String, List<String>> headers = <String, List<String>>{};
 
@@ -45,16 +46,15 @@ class RequestXhr extends Emitter {
       request.bodyBytes = options.data;
     }
 
-    options.client.send(request);
-
     try {
-      response = await request.send();
+      response = await options.client.send(request);
+
       onResponseHeaders(response.headers.map((String key, String value) {
         return new MapEntry<String, List<String>>(key, <String>[value]);
       }));
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        onLoad();
+        await onLoad();
       } else {
         onError(new Exception((response.statusCode)));
       }
@@ -72,7 +72,7 @@ class RequestXhr extends Emitter {
     onSuccess();
   }
 
-  void onError(Exception error) {
+  void onError(dynamic error) {
     emit(XhrEvent.error.name, error);
   }
 
@@ -84,14 +84,14 @@ class RequestXhr extends Emitter {
     emit(XhrEvent.responseHeaders.name, headers);
   }
 
-  void onLoad() async {
-    final String contentType = response.headers['content-type'];
-
+  Future<Null> onLoad() async {
+    final String contentType = response.headers['content-type'].split(';')[0];
     try {
       if (contentType.toLowerCase() == BINARY_CONTENT_TYPE) {
-        onData(response.stream.toBytes());
+        final Uint8List bytes = await response.stream.toBytes();
+        onData(bytes);
       } else {
-        final String body = await utf8.decodeStream(response.stream);
+        final String body = await response.stream.bytesToString();
         onData(body);
       }
     } catch (e) {

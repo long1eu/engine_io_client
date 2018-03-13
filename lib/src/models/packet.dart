@@ -1,26 +1,24 @@
 library packet;
 
-import 'dart:collection';
-
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:socket_io/src/models/packet_type.dart';
 
 part 'packet.g.dart';
 
-abstract class Packet<T> extends LinkedListEntry<Packet<T>> implements Built<Packet<T>, PacketBuilder<T>> {
-  factory Packet([PacketBuilder<T> updates(PacketBuilder<T> b)]) = _$Packet<T>;
+abstract class Packet implements Built<Packet, PacketBuilder> {
+  factory Packet([PacketBuilder updates(PacketBuilder b)]) = _$Packet;
 
-  factory Packet.fromValues(int type, [T data]) {
-    return new Packet<T>((PacketBuilder<T> b) {
+  factory Packet.fromValues(int type, [dynamic data]) {
+    return new Packet((PacketBuilder b) {
       b
         ..type = PacketType.values.elementAt(type)
         ..data = data;
     });
   }
 
-  factory Packet.values(PacketType type, [T data]) {
-    return new Packet<T>((PacketBuilder<T> b) {
+  factory Packet.values(PacketType type, [dynamic data]) {
+    return new Packet((PacketBuilder b) {
       b
         ..type = type
         ..data = data;
@@ -32,15 +30,15 @@ abstract class Packet<T> extends LinkedListEntry<Packet<T>> implements Built<Pac
   PacketType get type;
 
   @nullable
-  T get data;
+  Object get data;
 
-  static Packet<String> error = new Packet<String>((PacketBuilder<String> b) {
+  static Packet error = new Packet((PacketBuilder b) {
     b
       ..type = PacketType.error
       ..data = 'parser error';
   });
 
-  static Packet<List<int>> binaryError = new Packet<List<int>>((PacketBuilder<List<int>> b) {
+  static Packet binaryError = new Packet((PacketBuilder b) {
     b
       ..type = PacketType.error
       ..data = <int>[];

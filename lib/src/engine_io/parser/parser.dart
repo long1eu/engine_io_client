@@ -8,8 +8,8 @@ import 'package:utf/utf.dart';
 // ignore_for_file: always_specify_types
 const int MAX_INT_CHAR_LENGTH = 10;
 
-typedef void VoidCallback<T>(T data);
-typedef bool DecodePayload<T>(Packet<T> packet, int index, int total);
+typedef void VoidCallback(dynamic data);
+typedef bool DecodePayload(Packet packet, int index, int total);
 
 class Parser {
   static const int PROTOCOL = 3;
@@ -33,7 +33,7 @@ class Parser {
     callback.call(encoded);
   }
 
-  static Packet<String> decodePacket(String data, [bool utf8decode = false]) {
+  static Packet decodePacket(String data, [bool utf8decode = false]) {
     if (data == null) return Packet.error;
 
     int type;
@@ -54,19 +54,19 @@ class Parser {
     if (type < 0 || type >= PacketType.values.length) return Packet.error;
 
     if (data.length > 1) {
-      return new Packet<String>.fromValues(type, data.substring(1));
+      return new Packet.fromValues(type, data.substring(1));
     } else {
-      return new Packet<String>.fromValues(type);
+      return new Packet.fromValues(type);
     }
   }
 
-  static Packet<List<int>> decodeBytePacket(List<int> data) {
+  static Packet decodeBytePacket(List<int> data) {
     final int type = data[0];
     final List<int> intArray = <int>[];
 
     intArray.addAll(data.sublist(1));
 
-    return new Packet<List<int>>.fromValues(type, intArray);
+    return new Packet.fromValues(type, intArray);
   }
 
   static void encodePayload(List<Packet> packets, EncodeCallback callback) {
@@ -85,7 +85,7 @@ class Parser {
     final StringBuffer result = new StringBuffer();
 
     for (Packet packet in packets) {
-      encodePacket(packet, new EncodeCallback<dynamic>((dynamic message) {
+      encodePacket(packet, new EncodeCallback((dynamic message) {
         result.write(setLengthHeader(message as String));
       }), false);
     }
@@ -104,7 +104,7 @@ class Parser {
     final List<List<int>> results = new List<List<int>>.generate(packets.length, (_) => <int>[]);
 
     for (Packet packet in packets) {
-      encodeOneBinaryPacket(packet, new EncodeCallback<List<int>>((List<int> data) {
+      encodeOneBinaryPacket(packet, new EncodeCallback((dynamic data) {
         results.add(data);
       }));
     }
@@ -113,7 +113,7 @@ class Parser {
   }
 
   static void encodeOneBinaryPacket(Packet package, EncodeCallback doneCallback) {
-    encodePacket(package, new EncodeCallback<dynamic>((Object packet) {
+    encodePacket(package, new EncodeCallback((Object packet) {
       if (packet is String) {
         final String encodingLength = packet.length.toString();
         final List<int> sizeBuffer = new Int8List.fromList(new List<int>.generate(encodingLength.length + 2, (_) => 0));
@@ -143,7 +143,7 @@ class Parser {
 
   static int _getNumericValue(String encodingLength, int i) => int.parse(decodeUtf8(<int>[encodingLength.codeUnitAt(i)]));
 
-  static void decodePayload(String data, DecodePayloadCallback<String> callback) {
+  static void decodePayload(String data, DecodePayloadCallback callback) {
     if (data == null || data.isEmpty) {
       callback.call(Packet.error, 0, 1);
       return;
@@ -176,7 +176,7 @@ class Parser {
       }
 
       if (msg.isNotEmpty) {
-        final Packet<String> packet = decodePacket(msg, false);
+        final Packet packet = decodePacket(msg, false);
         if (Packet.error.type == packet.type && Packet.error.data == packet.data) {
           callback.call(Packet.error, 0, 1);
           return;
@@ -241,14 +241,14 @@ class Parser {
   }
 }
 
-class EncodeCallback<T> {
+class EncodeCallback {
   EncodeCallback(this.call);
 
-  final VoidCallback<T> call;
+  final VoidCallback call;
 }
 
-class DecodePayloadCallback<T> {
+class DecodePayloadCallback {
   DecodePayloadCallback(this.call);
 
-  final DecodePayload<T> call;
+  final DecodePayload call;
 }

@@ -25,7 +25,7 @@ const SocketEvent _$handshake = const SocketEvent._('handshake');
 const SocketEvent _$upgrading = const SocketEvent._('upgrading');
 const SocketEvent _$upgrade = const SocketEvent._('upgrade');
 const SocketEvent _$packet = const SocketEvent._('packet');
-const SocketEvent _$packet_create = const SocketEvent._('packetCreate');
+const SocketEvent _$packetCreate = const SocketEvent._('packetCreate');
 const SocketEvent _$heartbeat = const SocketEvent._('heartbeat');
 const SocketEvent _$data = const SocketEvent._('data');
 const SocketEvent _$ping = const SocketEvent._('ping');
@@ -57,7 +57,7 @@ SocketEvent _$SocketEventValueOf(String name) {
     case 'packet':
       return _$packet;
     case 'packetCreate':
-      return _$packet_create;
+      return _$packetCreate;
     case 'heartbeat':
       return _$heartbeat;
     case 'data':
@@ -86,7 +86,7 @@ final BuiltSet<SocketEvent> _$SocketEventValues =
   _$upgrading,
   _$upgrade,
   _$packet,
-  _$packet_create,
+  _$packetCreate,
   _$heartbeat,
   _$data,
   _$ping,

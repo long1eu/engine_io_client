@@ -20,7 +20,7 @@ class SocketEvent extends EnumClass {
   static const SocketEvent upgrading = _$upgrading;
   static const SocketEvent upgrade = _$upgrade;
   static const SocketEvent packet = _$packet;
-  static const SocketEvent packetCreate = _$packet_create;
+  static const SocketEvent packetCreate = _$packetCreate;
   static const SocketEvent heartbeat = _$heartbeat;
   static const SocketEvent data = _$data;
   static const SocketEvent ping = _$ping;

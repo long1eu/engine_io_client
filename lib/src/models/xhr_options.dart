@@ -6,11 +6,11 @@ import 'package:http/http.dart';
 
 part 'xhr_options.g.dart';
 
-abstract class XhrOptions<T> implements Built<XhrOptions<T>, XhrOptionsBuilder<T>> {
-  factory XhrOptions([XhrOptionsBuilder<T> updates(XhrOptionsBuilder<T> b)]) = _$XhrOptions<T>;
+abstract class XhrOptions implements Built<XhrOptions, XhrOptionsBuilder> {
+  factory XhrOptions([XhrOptionsBuilder updates(XhrOptionsBuilder b)]) = _$XhrOptions;
 
-  factory XhrOptions.get(String uri, T data, Client client, [String method = 'GET']) {
-    return new XhrOptions<T>((XhrOptionsBuilder<T> b) {
+  factory XhrOptions.get(String uri, dynamic data, Client client, [String method = 'GET']) {
+    return new XhrOptions((XhrOptionsBuilder b) {
       b
         ..uri = uri
         ..data = data
@@ -29,7 +29,7 @@ abstract class XhrOptions<T> implements Built<XhrOptions<T>, XhrOptionsBuilder<T
   Client get client;
 
   @nullable
-  T get data;
+  Object get data;
 
   static Serializer<XhrOptions> get serializer => _$xhrOptionsSerializer;
 }

@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter_logger/flutter_logger.dart';
 import 'package:socket_io/src/emitter/emitter.dart';
 import 'package:socket_io/src/engine_io/client/engine_io_exception.dart';
 import 'package:socket_io/src/engine_io/parser/parser.dart';
@@ -7,32 +10,33 @@ import 'package:socket_io/src/models/transport_options.dart';
 import 'package:socket_io/src/models/transport_state.dart';
 
 abstract class Transport extends Emitter {
+  static final Log log = new Log('Transport');
+
   Transport(this.options, this.name);
 
   final String name;
   TransportOptions options;
 
   TransportState readyState;
-  bool writable;
+  bool writable = false;
 
-  Transport onError(String message, Exception desc) {
-    final Exception err = new EngineIOException(message, desc);
-    emit(TransportEvent.error.name, err);
+  Transport onError(String message, dynamic desc) {
+    emit(TransportEvent.error.name, new EngineIOException(message, desc));
     return this;
   }
 
-  Transport open() {
+  Future<Transport> open() async {
     if (readyState == TransportState.closed || readyState == null) {
       readyState = TransportState.opening;
-      doOpen();
+      await doOpen();
     }
 
     return this;
   }
 
-  Transport close() {
+  Future<Transport> close() async {
     if (readyState == TransportState.opening || readyState == TransportState.open) {
-      doClose();
+      await doClose();
       onClose();
     }
 
@@ -52,12 +56,13 @@ abstract class Transport extends Emitter {
   }
 
   void onOpen() {
+    log.d('onOpen');
     readyState = TransportState.open;
     writable = true;
     emit(TransportEvent.open.name);
   }
 
-  void onData(dynamic data) {
+  Future<Null> onData(dynamic data) async {
     if (data is String) {
       onPacket(Parser.decodePacket(data));
     } else if (data is List<int>) {
@@ -76,7 +81,7 @@ abstract class Transport extends Emitter {
 
   void write(List<Packet> packets);
 
-  void doOpen();
+  Future<Null> doOpen();
 
-  void doClose();
+  Future<Null> doClose();
 }

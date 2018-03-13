@@ -43,8 +43,16 @@ class _$SocketOptionsSerializer implements StructuredSerializer<SocketOptions> {
             const FullType(String),
             const FullType(TransportOptions)
           ])),
+      'hostname',
+      serializers.serialize(object.hostname,
+          specifiedType: const FullType(String)),
       'path',
       serializers.serialize(object.path, specifiedType: const FullType(String)),
+      'timestampParam',
+      serializers.serialize(object.timestampParam,
+          specifiedType: const FullType(String)),
+      'secure',
+      serializers.serialize(object.secure, specifiedType: const FullType(bool)),
       'timestampRequests',
       serializers.serialize(object.timestampRequests,
           specifiedType: const FullType(bool)),
@@ -69,24 +77,6 @@ class _$SocketOptionsSerializer implements StructuredSerializer<SocketOptions> {
         ..add('rawQuery')
         ..add(serializers.serialize(object.rawQuery,
             specifiedType: const FullType(String)));
-    }
-    if (object.hostname != null) {
-      result
-        ..add('hostname')
-        ..add(serializers.serialize(object.hostname,
-            specifiedType: const FullType(String)));
-    }
-    if (object.timestampParam != null) {
-      result
-        ..add('timestampParam')
-        ..add(serializers.serialize(object.timestampParam,
-            specifiedType: const FullType(String)));
-    }
-    if (object.secure != null) {
-      result
-        ..add('secure')
-        ..add(serializers.serialize(object.secure,
-            specifiedType: const FullType(bool)));
     }
 
     return result;
@@ -231,8 +221,14 @@ class _$SocketOptions extends SocketOptions {
       throw new BuiltValueNullFieldError('SocketOptions', 'rememberUpgrade');
     if (transportOptions == null)
       throw new BuiltValueNullFieldError('SocketOptions', 'transportOptions');
+    if (hostname == null)
+      throw new BuiltValueNullFieldError('SocketOptions', 'hostname');
     if (path == null)
       throw new BuiltValueNullFieldError('SocketOptions', 'path');
+    if (timestampParam == null)
+      throw new BuiltValueNullFieldError('SocketOptions', 'timestampParam');
+    if (secure == null)
+      throw new BuiltValueNullFieldError('SocketOptions', 'secure');
     if (timestampRequests == null)
       throw new BuiltValueNullFieldError('SocketOptions', 'timestampRequests');
     if (port == null)

@@ -24,6 +24,7 @@ abstract class HandshakeData implements Built<HandshakeData, HandshakeDataBuilde
 
   HandshakeData._();
 
+  @BuiltValueField(wireName: 'sid')
   String get socketId;
 
   BuiltList<String> get upgrades;

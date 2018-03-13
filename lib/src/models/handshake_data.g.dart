@@ -27,7 +27,7 @@ class _$HandshakeDataSerializer implements StructuredSerializer<HandshakeData> {
   Iterable serialize(Serializers serializers, HandshakeData object,
       {FullType specifiedType: FullType.unspecified}) {
     final result = <Object>[
-      'socketId',
+      'sid',
       serializers.serialize(object.socketId,
           specifiedType: const FullType(String)),
       'upgrades',
@@ -56,7 +56,7 @@ class _$HandshakeDataSerializer implements StructuredSerializer<HandshakeData> {
       iterator.moveNext();
       final dynamic value = iterator.current;
       switch (key) {
-        case 'socketId':
+        case 'sid':
           result.socketId = serializers.deserialize(value,
               specifiedType: const FullType(String)) as String;
           break;

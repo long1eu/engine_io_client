@@ -1,5 +1,8 @@
+typedef void Listener(dynamic args);
+
 class Emitter {
   final Map<String, List<Listener>> _callbacks = <String, List<Listener>>{};
+  final Map<String, List<Listener>> _onceCallbacks = <String, List<Listener>>{};
 
   /// Listens on the event.
   /// @param event event name.
@@ -26,7 +29,16 @@ class Emitter {
   /// @return a reference to this object.
   Emitter once(final String event, final Listener callback) {
     assert(callback != null);
-    on(event, new _OnceListener(this, event, callback));
+    List<Listener> callbacks = _onceCallbacks[event];
+    if (callbacks == null) {
+      callbacks = <Listener>[];
+      final List<Listener> tempCallbacks = _onceCallbacks.putIfAbsent(event, () => callbacks);
+      if (tempCallbacks != null) {
+        callbacks = tempCallbacks;
+      }
+    }
+    callbacks.add(callback);
+
     return this;
   }
 
@@ -38,10 +50,13 @@ class Emitter {
   Emitter off([String event, Listener callback]) {
     if (event != null && callback != null) {
       _callbacks[event]?.removeWhere((Listener it) => it == callback);
+      _onceCallbacks[event]?.removeWhere((Listener it) => it == callback);
     } else if (event != null) {
       _callbacks.remove(event);
+      _onceCallbacks.remove(event);
     } else {
       _callbacks.clear();
+      _onceCallbacks.clear();
     }
     return this;
   }
@@ -52,11 +67,8 @@ class Emitter {
   /// @param args
   /// @return a reference to this object.
   Emitter emit(String event, [dynamic args]) {
-    final List<Listener> callbacks = _callbacks[event]?.toList();
-    if (callbacks != null) {
-      callbacks.removeWhere((Listener callback) => callback.call(args));
-      _callbacks[event] = callbacks;
-    }
+    _onceCallbacks?.remove(event)?.forEach((Listener listener) => listener(args));
+    _callbacks[event]?.forEach((Listener listener) => listener(args));
 
     return this;
   }
@@ -75,51 +87,4 @@ class Emitter {
     final List<Listener> callbacks = _callbacks[event];
     return callbacks != null && callbacks.isNotEmpty;
   }
-}
-
-class Listener {
-  Listener._();
-
-  factory Listener.callback(void callback(dynamic args)) {
-    return new Listener._()
-      ..call = (dynamic args) {
-        callback(args);
-        return false;
-      };
-  }
-
-  Function call;
-}
-
-class _OnceListener implements Listener {
-  _OnceListener(this.emitter, this.event, this.callback);
-
-  final String event;
-  final Listener callback;
-  final Emitter emitter;
-
-  @override
-  Function get call => (dynamic args) {
-        callback.call(args);
-        return true;
-      };
-
-  @override
-  set call(Function _call) {
-    call = _call;
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (callback == other) {
-      return true;
-    } else if (other is _OnceListener) {
-      return callback == other.callback;
-    } else {
-      return false;
-    }
-  }
-
-  @override
-  int get hashCode => event.hashCode;
 }

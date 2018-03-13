@@ -20,8 +20,10 @@ abstract class SocketOptions implements Built<SocketOptions, SocketOptionsBuilde
         ..secure = false
         ..upgrade = true
         ..timestampParam = 't'
+        ..timestampRequests = false
+        ..rememberUpgrade = false
         ..transportOptions = new MapBuilder<String, TransportOptions>()
-        ..transports = new ListBuilder<String>(<String>[WebSocket.NAME, Polling.NAME])
+        ..transports = new ListBuilder<String>(<String>[Polling.NAME, WebSocket.NAME])
         ..update(updates);
     });
   }
@@ -54,15 +56,12 @@ abstract class SocketOptions implements Built<SocketOptions, SocketOptionsBuilde
 
   BuiltMap<String, TransportOptions> get transportOptions;
 
-  @nullable
   String get hostname;
 
   String get path;
 
-  @nullable
   String get timestampParam;
 
-  @nullable
   bool get secure;
 
   bool get timestampRequests;
