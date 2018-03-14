@@ -365,7 +365,7 @@ class Socket extends Emitter {
     log.d('sendPacket: $packet');
 
     emit(SocketEvent.packetCreate.name, packet);
-    writeBuffer.insert(0, packet);
+    writeBuffer.add(packet);
     if (callback != null) once(SocketEvent.flush.name, (dynamic args) => callback());
     flush();
   }

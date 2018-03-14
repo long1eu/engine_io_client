@@ -37,43 +37,41 @@ void main() async {
       });
     });
     socket.open();
-    await new Future.delayed(const Duration(seconds: 2), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
 
     expect(values.first, binaryData);
     socket.close();
   });
 
-  /*
   test('receiveBinaryDataAndMultibyteUTF8String', () async {
     final List<dynamic> values = <dynamic>[];
-    final List<int> binaryData = <int>[]..length = 5;
-    for (int i = 0; i < binaryData.length; i++) {
-      binaryData[i] = i;
-    }
+    final List<int> binaryData = new List<int>.generate(5, (_) => 0);
+    for (int i = 0; i < binaryData.length; i++) binaryData[0] = i;
 
     final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-      b
-        ..port = Connection.PORT
-        ..transports = new ListBuilder<String>(<String>[Polling.NAME]);
+      b..port = Connection.PORT;
     });
 
     socket = new Socket(opts);
     socket.on(SocketEvent.open.name, (dynamic args) {
-      socket.send(binaryData);
-      socket.send('cash money €€€');
-      //socket.send('cash money ss €€€');
-      socket.on(SocketEvent.message.name, (dynamic args) {
-        log.d('args: $args');
-        if (args == 'hi') return;
-        values.add(args);
+      socket.on(SocketEvent.upgrade.name, (dynamic args) {
+        socket.on(SocketEvent.message.name, (dynamic args) {
+          log.d('args: $args');
+          if (args == 'hi') return;
+          values.add(args);
+        });
+
+        socket.send(binaryData);
+        socket.send('cash money €€€');
+        socket.send('cash money ss €€€');
       });
     });
     socket.open();
-    await new Future.delayed(const Duration(seconds: 2), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
 
-    log.d(values.toString());
-    //expect(values.first, binaryData);
-    //expect(values.last, 'cash money €€€');
+    expect(values[0], binaryData);
+    expect(values[1], 'cash money €€€');
+    expect(values[2], 'cash money ss €€€');
     socket.close();
-  });*/
+  });
 }
