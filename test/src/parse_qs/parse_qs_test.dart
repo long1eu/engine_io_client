@@ -1,5 +1,5 @@
 import 'package:built_collection/built_collection.dart';
-import 'package:socket_io/src/parse_qs/parse_qs.dart';
+import 'package:socket_io_engine/src/parse_qs/parse_qs.dart';
 import 'package:test/test.dart';
 
 // ignore_for_file: prefer_collection_literals

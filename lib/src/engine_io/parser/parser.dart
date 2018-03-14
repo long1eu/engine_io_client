@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:socket_io/src/models/packet.dart';
-import 'package:socket_io/src/models/packet_type.dart';
+import 'package:socket_io_engine/src/models/packet.dart';
+import 'package:socket_io_engine/src/models/packet_type.dart';
 import 'package:utf/utf.dart';
 
 // ignore_for_file: avoid_as

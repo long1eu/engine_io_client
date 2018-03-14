@@ -3,9 +3,9 @@ library socket_options;
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
-import 'package:socket_io/src/engine_io/client/transports/polling.dart';
-import 'package:socket_io/src/engine_io/client/transports/web_socket.dart';
-import 'package:socket_io/src/models/transport_options.dart';
+import 'package:socket_io_engine/src/engine_io/client/transports/polling.dart';
+import 'package:socket_io_engine/src/engine_io/client/transports/web_socket.dart';
+import 'package:socket_io_engine/src/models/transport_options.dart';
 
 part 'socket_options.g.dart';
 

@@ -1,4 +1,4 @@
-import 'package:socket_io/src/yeast/yeast.dart';
+import 'package:socket_io_engine/src/yeast/yeast.dart';
 import 'package:test/test.dart';
 
 void main() {

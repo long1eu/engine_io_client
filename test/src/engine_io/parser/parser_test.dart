@@ -1,6 +1,6 @@
-import 'package:socket_io/src/engine_io/parser/parser.dart';
-import 'package:socket_io/src/models/packet.dart';
-import 'package:socket_io/src/models/packet_type.dart';
+import 'package:socket_io_engine/src/engine_io/parser/parser.dart';
+import 'package:socket_io_engine/src/models/packet.dart';
+import 'package:socket_io_engine/src/models/packet_type.dart';
 import 'package:test/test.dart';
 
 // ignore_for_file: always_specify_types

@@ -2,7 +2,7 @@ library packet;
 
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
-import 'package:socket_io/src/models/packet_type.dart';
+import 'package:socket_io_engine/src/models/packet_type.dart';
 
 part 'packet.g.dart';
 

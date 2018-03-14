@@ -3,9 +3,9 @@ import 'dart:typed_data';
 
 import 'package:flutter_logger/flutter_logger.dart';
 import 'package:http/http.dart';
-import 'package:socket_io/src/emitter/emitter.dart';
-import 'package:socket_io/src/models/xhr_event.dart';
-import 'package:socket_io/src/models/xhr_options.dart';
+import 'package:socket_io_engine/src/emitter/emitter.dart';
+import 'package:socket_io_engine/src/models/xhr_event.dart';
+import 'package:socket_io_engine/src/models/xhr_options.dart';
 
 const String BINARY_CONTENT_TYPE = 'application/octet-stream';
 const String TEXT_CONTENT_TYPE = 'text/plain; charset=UTF-8';
