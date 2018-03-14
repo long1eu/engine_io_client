@@ -160,7 +160,7 @@ class Socket extends Emitter {
       log.d('probe transport "$name" opened');
 
       transport.send(<Packet>[new Packet.values(PacketType.ping, 'probe')]);
-      transport.once(TransportEvent.packet.name, (dynamic args) {
+      transport.once(TransportEvent.packet.name, (dynamic args) async {
         if (failed) return;
         final Packet message = args;
         if (message.type == PacketType.pong && message.data == 'probe') {
@@ -173,7 +173,7 @@ class Socket extends Emitter {
 
           if (this.transport is Polling) {
             // ignore: avoid_as
-            (this.transport as Polling).pause(() {
+            await (this.transport as Polling).pause(() async {
               if (failed) return;
               if (_readyState == SocketState.closed) return;
 
@@ -187,7 +187,7 @@ class Socket extends Emitter {
               emit(SocketEvent.upgrade.name, transport);
               transport = null;
               upgrading = false;
-              flush();
+              await flush();
             });
           }
         } else {
@@ -255,12 +255,12 @@ class Socket extends Emitter {
     await transport.open();
   }
 
-  void onOpen() {
+  Future<Null> onOpen() async {
     log.d('socket open');
     _readyState = SocketState.open;
     _priorWebSocketSuccess = transport.name == WebSocket.NAME;
     emit(SocketEvent.open.name);
-    flush();
+    await flush();
 
     if (_readyState == SocketState.open && _options.upgrade && transport is Polling) {
       log.d('starting upgrade probes: $upgrades');
@@ -334,40 +334,41 @@ class Socket extends Emitter {
 
   void ping() => sendPacket(new Packet.values(PacketType.ping), () => emit(SocketEvent.ping.name));
 
-  void onDrain() {
+  Future<Null> onDrain() async {
     writeBuffer.take(_prevBufferLen).toList().forEach(writeBuffer.remove);
 
     _prevBufferLen = 0;
     if (writeBuffer.isEmpty) {
       emit(SocketEvent.drain.name);
     } else {
-      flush();
+      await flush();
     }
   }
 
-  void flush() {
+  Future<Null> flush() async {
     if (_readyState != SocketState.closed && transport.writable && !upgrading && writeBuffer.isNotEmpty) {
       log.d('flushing ${writeBuffer.length} packets in socket');
 
       _prevBufferLen = writeBuffer.length;
-      transport.send(writeBuffer.toList());
+      await transport.send(writeBuffer.toList());
       emit(SocketEvent.flush.name);
     }
   }
 
-  void write(dynamic message, void callback()) => send(message, callback);
+  Future<Null> write(dynamic message, void callback()) async => send(message, callback);
 
-  void send(dynamic message, [void callback()]) => sendPacket(new Packet.values(PacketType.message, message), callback);
+  Future<Null> send(dynamic message, [void callback()]) async {
+    await sendPacket(new Packet.values(PacketType.message, message), callback);
+  }
 
-  void sendPacket(Packet packet, void callback()) {
+  Future<Null> sendPacket(Packet packet, void callback()) async {
     log.d('sendPacket: $packet');
     if (_readyState == SocketState.closing || _readyState == SocketState.closed) return;
-    log.d('sendPacket: $packet');
 
     emit(SocketEvent.packetCreate.name, packet);
     writeBuffer.add(packet);
     if (callback != null) once(SocketEvent.flush.name, (dynamic args) => callback());
-    flush();
+    await flush();
   }
 
   Future<Socket> close() async {

@@ -43,10 +43,10 @@ abstract class Transport extends Emitter {
     return this;
   }
 
-  void send(List<Packet> packets) {
+  Future<Null> send(List<Packet> packets) async {
     if (readyState == TransportState.open) {
       try {
-        write(packets);
+        await write(packets);
       } catch (err) {
         throw new StateError(err);
       }

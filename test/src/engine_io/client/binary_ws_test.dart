@@ -54,16 +54,16 @@ void main() async {
 
     socket = new Socket(opts);
     socket.on(SocketEvent.open.name, (dynamic args) {
-      socket.on(SocketEvent.upgrade.name, (dynamic args) {
+      socket.on(SocketEvent.upgrade.name, (dynamic args) async{
         socket.on(SocketEvent.message.name, (dynamic args) {
           log.d('args: $args');
           if (args == 'hi') return;
           values.add(args);
         });
 
-        socket.send(binaryData);
-        socket.send('cash money €€€');
-        socket.send('cash money ss €€€');
+        await socket.send(binaryData);
+        await socket.send('cash money €€€');
+        await socket.send('cash money ss €€€');
       });
     });
     socket.open();

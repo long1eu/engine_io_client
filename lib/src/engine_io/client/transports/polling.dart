@@ -22,7 +22,7 @@ abstract class Polling extends Transport {
   bool _polling;
 
   @override
-  Future<Null> doOpen() async => poll();
+  Future<Null> doOpen() async => await poll();
 
   void pause(void onPause()) {
     readyState = TransportState.paused;
