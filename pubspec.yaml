@@ -1,5 +1,5 @@
-name: socket_io_engine
-description: socket.io engine
+name: engine_io_client
+description: engine.io client
 version: 0.0.1
 author:
 homepage:

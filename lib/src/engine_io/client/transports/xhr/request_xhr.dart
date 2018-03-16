@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:http/http.dart';
-import 'package:socket_io_engine/src/emitter/emitter.dart';
-import 'package:socket_io_engine/src/logger.dart';
-import 'package:socket_io_engine/src/models/xhr_event.dart';
-import 'package:socket_io_engine/src/models/xhr_options.dart';
+import 'package:engine_io_client/src/emitter/emitter.dart';
+import 'package:engine_io_client/src/logger.dart';
+import 'package:engine_io_client/src/models/xhr_event.dart';
+import 'package:engine_io_client/src/models/xhr_options.dart';
 
 const String BINARY_CONTENT_TYPE = 'application/octet-stream';
 const String TEXT_CONTENT_TYPE = 'text/plain; charset=UTF-8';

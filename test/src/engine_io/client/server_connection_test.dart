@@ -1,14 +1,14 @@
 import 'dart:async';
 
 import 'package:built_collection/built_collection.dart';
-import 'package:socket_io_engine/src/engine_io/client/socket.dart';
-import 'package:socket_io_engine/src/engine_io/client/transport.dart';
-import 'package:socket_io_engine/src/engine_io/client/transports/polling.dart';
-import 'package:socket_io_engine/src/engine_io/client/transports/web_socket.dart';
-import 'package:socket_io_engine/src/models/handshake_data.dart';
-import 'package:socket_io_engine/src/models/socket_event.dart';
-import 'package:socket_io_engine/src/models/socket_options.dart';
-import 'package:socket_io_engine/src/models/transport_event.dart';
+import 'package:engine_io_client/src/engine_io/client/socket.dart';
+import 'package:engine_io_client/src/engine_io/client/transport.dart';
+import 'package:engine_io_client/src/engine_io/client/transports/polling.dart';
+import 'package:engine_io_client/src/engine_io/client/transports/web_socket.dart';
+import 'package:engine_io_client/src/models/handshake_data.dart';
+import 'package:engine_io_client/src/models/socket_event.dart';
+import 'package:engine_io_client/src/models/socket_options.dart';
+import 'package:engine_io_client/src/models/transport_event.dart';
 import 'package:test/test.dart';
 
 import 'connection.dart';

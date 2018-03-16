@@ -1,4 +1,4 @@
-import 'package:socket_io_engine/src/yeast/yeast.dart';
+import 'package:engine_io_client/src/yeast/yeast.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -13,7 +13,7 @@ void main() {
     final List<String> ids = <String>[Yeast.yeast(), Yeast.yeast(), Yeast.yeast(), Yeast.yeast()];
     print(ids);
     expect(ids[0].contains('.'), isFalse);
-    expect(ids[3].contains('.1'), isTrue);
+    expect(ids[3].contains('.'), isTrue);
   });
 
   test('resetsTheSeed', () {

@@ -1,13 +1,13 @@
 import 'dart:async';
 
-import 'package:socket_io_engine/src/emitter/emitter.dart';
-import 'package:socket_io_engine/src/engine_io/client/engine_io_exception.dart';
-import 'package:socket_io_engine/src/engine_io/parser/parser.dart';
-import 'package:socket_io_engine/src/logger.dart';
-import 'package:socket_io_engine/src/models/packet.dart';
-import 'package:socket_io_engine/src/models/transport_event.dart';
-import 'package:socket_io_engine/src/models/transport_options.dart';
-import 'package:socket_io_engine/src/models/transport_state.dart';
+import 'package:engine_io_client/src/emitter/emitter.dart';
+import 'package:engine_io_client/src/engine_io/client/engine_io_exception.dart';
+import 'package:engine_io_client/src/engine_io/parser/parser.dart';
+import 'package:engine_io_client/src/logger.dart';
+import 'package:engine_io_client/src/models/packet.dart';
+import 'package:engine_io_client/src/models/transport_event.dart';
+import 'package:engine_io_client/src/models/transport_options.dart';
+import 'package:engine_io_client/src/models/transport_state.dart';
 
 abstract class Transport extends Emitter {
   static final Log log = new Log('Transport');

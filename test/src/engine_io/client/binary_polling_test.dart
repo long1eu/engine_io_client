@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:built_collection/built_collection.dart';
-import 'package:socket_io_engine/src/engine_io/client/socket.dart';
-import 'package:socket_io_engine/src/engine_io/client/transports/polling.dart';
-import 'package:socket_io_engine/src/logger.dart';
-import 'package:socket_io_engine/src/models/socket_event.dart';
-import 'package:socket_io_engine/src/models/socket_options.dart';
+import 'package:engine_io_client/src/engine_io/client/socket.dart';
+import 'package:engine_io_client/src/engine_io/client/transports/polling.dart';
+import 'package:engine_io_client/src/logger.dart';
+import 'package:engine_io_client/src/models/socket_event.dart';
+import 'package:engine_io_client/src/models/socket_options.dart';
 import 'package:test/test.dart';
 
 import 'connection.dart';
@@ -28,14 +28,14 @@ void main() async {
     });
 
     socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (dynamic args) {
+    socket.on(SocketEvent.open.name, (dynamic args) async {
       log.d('open');
-      socket.send(binaryData);
       socket.on(SocketEvent.message.name, (dynamic args) {
         log.d('args: $args');
         if (args == 'hi') return;
         values.add(args);
       });
+      await socket.send(binaryData);
     });
     socket.open();
     await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
@@ -47,7 +47,8 @@ void main() async {
   test('receiveBinaryDataAndMultibyteUTF8String', () async {
     final List<dynamic> values = <dynamic>[];
     final List<int> binaryData = new List<int>.generate(5, (_) => 0);
-    for (int i = 0; i < binaryData.length; i++) binaryData[i] = i;
+    for (int i = 0; i < binaryData.length; i++)
+      binaryData[i] = i;
 
     final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
       b
@@ -68,8 +69,8 @@ void main() async {
       await socket.send('cash money €€€');
       await socket.send('cash money ss €€€');
     });
-    socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: 1000), () {});
+    await socket.open();
+    await new Future<Null>.delayed(const Duration(milliseconds: 2000), () {});
 
     log.d(values.toString());
     expect(values[0], binaryData);

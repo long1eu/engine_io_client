@@ -1,4 +1,4 @@
-import 'package:socket_io_engine/src/global/global.dart';
+import 'package:engine_io_client/src/global/global.dart';
 import 'package:test/test.dart';
 
 void main() {

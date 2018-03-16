@@ -1,5 +1,5 @@
 import 'package:built_collection/built_collection.dart';
-import 'package:socket_io_engine/src/global/global.dart';
+import 'package:engine_io_client/src/global/global.dart';
 
 class ParseQS {
   ParseQS._();

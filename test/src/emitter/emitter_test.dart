@@ -1,4 +1,4 @@
-import 'package:socket_io_engine/src/emitter/emitter.dart';
+import 'package:engine_io_client/src/emitter/emitter.dart';
 import 'package:test/test.dart';
 
 void main() {

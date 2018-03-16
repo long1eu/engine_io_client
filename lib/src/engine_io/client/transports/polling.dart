@@ -1,17 +1,17 @@
 import 'dart:async';
 
 import 'package:built_collection/built_collection.dart';
-import 'package:socket_io_engine/src/engine_io/client/transport.dart';
-import 'package:socket_io_engine/src/engine_io/parser/parser.dart';
-import 'package:socket_io_engine/src/logger.dart';
-import 'package:socket_io_engine/src/models/packet.dart';
-import 'package:socket_io_engine/src/models/packet_type.dart';
-import 'package:socket_io_engine/src/models/polling_event.dart';
-import 'package:socket_io_engine/src/models/transport_event.dart';
-import 'package:socket_io_engine/src/models/transport_options.dart';
-import 'package:socket_io_engine/src/models/transport_state.dart';
-import 'package:socket_io_engine/src/parse_qs/parse_qs.dart';
-import 'package:socket_io_engine/src/yeast/yeast.dart';
+import 'package:engine_io_client/src/engine_io/client/transport.dart';
+import 'package:engine_io_client/src/engine_io/parser/parser.dart';
+import 'package:engine_io_client/src/logger.dart';
+import 'package:engine_io_client/src/models/packet.dart';
+import 'package:engine_io_client/src/models/packet_type.dart';
+import 'package:engine_io_client/src/models/polling_event.dart';
+import 'package:engine_io_client/src/models/transport_event.dart';
+import 'package:engine_io_client/src/models/transport_options.dart';
+import 'package:engine_io_client/src/models/transport_state.dart';
+import 'package:engine_io_client/src/parse_qs/parse_qs.dart';
+import 'package:engine_io_client/src/yeast/yeast.dart';
 
 abstract class Polling extends Transport {
   static const String NAME = 'polling';
