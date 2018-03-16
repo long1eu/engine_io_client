@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter_logger/flutter_logger.dart';
 import 'package:socket_io_engine/src/engine_io/client/socket.dart';
+import 'package:socket_io_engine/src/logger.dart';
 import 'package:socket_io_engine/src/models/socket_event.dart';
 import 'package:socket_io_engine/src/models/socket_options.dart';
 import 'package:test/test.dart';
@@ -26,17 +26,17 @@ void main() async {
     socket = new Socket(opts);
     socket.on(SocketEvent.open.name, (dynamic args) {
       log.d('open');
-      socket.on(SocketEvent.upgrade.name, (dynamic args) {
+      socket.on(SocketEvent.upgrade.name, (dynamic args) async {
         log.d('upgrade');
-        socket.send(binaryData);
         socket.on(SocketEvent.message.name, (dynamic args) {
           log.d('args: $args');
           if (args == 'hi') return;
           values.add(args);
         });
+        await socket.send(binaryData);
       });
     });
-    socket.open();
+    await socket.open();
     await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
 
     expect(values.first, binaryData);
@@ -54,7 +54,7 @@ void main() async {
 
     socket = new Socket(opts);
     socket.on(SocketEvent.open.name, (dynamic args) {
-      socket.on(SocketEvent.upgrade.name, (dynamic args) async{
+      socket.on(SocketEvent.upgrade.name, (dynamic args) async {
         socket.on(SocketEvent.message.name, (dynamic args) {
           log.d('args: $args');
           if (args == 'hi') return;

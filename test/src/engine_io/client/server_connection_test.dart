@@ -121,6 +121,7 @@ void main() {
     socket.close();
   });
 
+  /*
   //This will fail because WebSocket doesn't have a way to retrieve the headers
   test('websocketHandshakeHeaders', () async {
     final List<dynamic> messages = <dynamic>[];
@@ -155,6 +156,7 @@ void main() {
 
     socket.close();
   });
+  */
 
   test('rememberWebsocket', () async {
     final List<dynamic> values = <dynamic>[];

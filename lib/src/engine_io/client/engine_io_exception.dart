@@ -8,6 +8,4 @@ class EngineIOException implements Exception {
   String toString() {
     return 'EngineIOException{transport: $transport, code: $code}';
   }
-
-
 }

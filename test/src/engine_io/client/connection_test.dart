@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter_logger/flutter_logger.dart';
 import 'package:socket_io_engine/src/engine_io/client/socket.dart';
+import 'package:socket_io_engine/src/logger.dart';
 import 'package:socket_io_engine/src/models/socket_event.dart';
 import 'package:socket_io_engine/src/models/socket_options.dart';
 import 'package:test/test.dart';

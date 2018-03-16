@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:built_collection/built_collection.dart';
-import 'package:flutter_logger/flutter_logger.dart';
 import 'package:socket_io_engine/src/engine_io/client/transport.dart';
 import 'package:socket_io_engine/src/engine_io/parser/parser.dart';
+import 'package:socket_io_engine/src/logger.dart';
 import 'package:socket_io_engine/src/models/packet.dart';
 import 'package:socket_io_engine/src/models/packet_type.dart';
 import 'package:socket_io_engine/src/models/polling_event.dart';

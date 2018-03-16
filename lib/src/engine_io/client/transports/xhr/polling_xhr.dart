@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:flutter_logger/flutter_logger.dart';
 import 'package:http/http.dart';
 import 'package:socket_io_engine/src/engine_io/client/transports/polling.dart';
 import 'package:socket_io_engine/src/engine_io/client/transports/xhr/request_xhr.dart';
+import 'package:socket_io_engine/src/logger.dart';
 import 'package:socket_io_engine/src/models/transport_event.dart';
 import 'package:socket_io_engine/src/models/transport_options.dart';
 import 'package:socket_io_engine/src/models/xhr_event.dart';

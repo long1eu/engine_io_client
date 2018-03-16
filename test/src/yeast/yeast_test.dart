@@ -10,10 +10,10 @@ void main() {
   test('prependsIteratedSeedWhenSamePreviousId', () {
     _waitUntilNextMillisecond();
 
-    final List<String> ids = <String>[Yeast.yeast(), Yeast.yeast(), Yeast.yeast()];
-    expect(ids[0], isNot(contains('.')));
-    expect(ids[1], contains('.0'));
-    expect(ids[2], contains('.1'));
+    final List<String> ids = <String>[Yeast.yeast(), Yeast.yeast(), Yeast.yeast(), Yeast.yeast()];
+    print(ids);
+    expect(ids[0].contains('.'), isFalse);
+    expect(ids[3].contains('.1'), isTrue);
   });
 
   test('resetsTheSeed', () {

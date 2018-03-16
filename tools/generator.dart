@@ -12,7 +12,7 @@ Future<Null> main(List<String> args) async {
         new PartBuilder(<Generator>[
           const BuiltValueGenerator(),
         ]),
-        'socket_io',
+        'socket_io_engine',
         inputs: const <String>['lib/src/models/**.dart'])
   ], deleteFilesByDefault: true);
 }

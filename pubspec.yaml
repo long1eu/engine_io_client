@@ -18,4 +18,9 @@ dev_dependencies:
   built_value_generator: ^5.0.0
   source_gen: ^0.7.0
   test: any
-  flutter_logger: ^0.0.1
+
+environment:
+  sdk: any
+
+flutter:
+  uses-material-design: true
