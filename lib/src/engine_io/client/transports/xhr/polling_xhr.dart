@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:engine_io_client/src/engine_io/client/transports/polling.dart';
 import 'package:engine_io_client/src/engine_io/client/transports/xhr/request_xhr.dart';
@@ -7,7 +8,6 @@ import 'package:engine_io_client/src/models/transport_event.dart';
 import 'package:engine_io_client/src/models/transport_options.dart';
 import 'package:engine_io_client/src/models/xhr_event.dart';
 import 'package:engine_io_client/src/models/xhr_options.dart';
-import 'package:http/http.dart';
 
 class PollingXhr extends Polling {
   static final Log log = new Log('EngineIo.PollingXhr');
@@ -15,7 +15,7 @@ class PollingXhr extends Polling {
   PollingXhr(TransportOptions options) : super(options);
 
   RequestXhr request([XhrOptions options]) {
-    options = options ?? new XhrOptions.get(uri, null, new Client());
+    options = options ?? new XhrOptions.get(uri, null, new HttpClient(context: this.options.securityContext));
 
     final RequestXhr request = new RequestXhr(options);
     request
@@ -31,7 +31,7 @@ class PollingXhr extends Polling {
       b
         ..method = 'POST'
         ..data = data
-        ..client = new Client()
+        ..client = new HttpClient(context: options.securityContext)
         ..uri = uri;
     });
 

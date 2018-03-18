@@ -1,5 +1,7 @@
 library transport_options;
 
+import 'dart:io' show SecurityContext;
+
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -42,6 +44,9 @@ abstract class TransportOptions implements Built<TransportOptions, TransportOpti
   @BuiltValueField(serialize: false)
   @nullable
   Socket get socket;
+
+  @nullable
+  SecurityContext get securityContext;
 
   static Serializer<TransportOptions> get serializer => _$transportOptionsSerializer;
 }

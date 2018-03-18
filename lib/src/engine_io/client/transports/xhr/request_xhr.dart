@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:async/async.dart';
 import 'package:engine_io_client/src/emitter/emitter.dart';
 import 'package:engine_io_client/src/logger.dart';
 import 'package:engine_io_client/src/models/xhr_event.dart';
@@ -46,7 +48,31 @@ class RequestXhr extends Emitter {
       }
 
       try {
-        response = await options.client.send(request);
+        final ByteStream stream = request.finalize();
+        final HttpClientRequest httpClientRequest = await options.client.openUrl(options.method, Uri.parse(options.uri));
+        headers.forEach(httpClientRequest.headers.set);
+        httpClientRequest
+          ..followRedirects = true
+          ..maxRedirects = 5
+          ..contentLength = request.contentLength == null ? -1 : request.contentLength
+          ..persistentConnection = true;
+
+        final HttpClientResponse rawResponse = await stream.pipe(DelegatingStreamConsumer.typed(httpClientRequest));
+        log.e(rawResponse.runtimeType);
+
+        final Map<String, String> h = <String, String>{};
+        rawResponse.headers.forEach((String key, List<String> values) => h[key] = values.join(','));
+
+        response = new StreamedResponse(
+          DelegatingStream.typed<List<int>>(rawResponse),
+          rawResponse.statusCode,
+          contentLength: rawResponse.contentLength == -1 ? null : rawResponse.contentLength,
+          request: request,
+          headers: h,
+          isRedirect: rawResponse.isRedirect,
+          persistentConnection: rawResponse.persistentConnection,
+          reasonPhrase: rawResponse.reasonPhrase,
+        );
 
         await onResponseHeaders(response.headers.map((String key, String value) {
           return new MapEntry<String, List<String>>(key, <String>[value]);
@@ -60,7 +86,6 @@ class RequestXhr extends Emitter {
       } on Error catch (e) {
         onError(<Error>[e]);
       }
-      print('result is $headers');
     });
   }
 

@@ -1,15 +1,16 @@
 library xhr_options;
 
+import 'dart:io';
+
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
-import 'package:http/http.dart';
 
 part 'xhr_options.g.dart';
 
 abstract class XhrOptions implements Built<XhrOptions, XhrOptionsBuilder> {
   factory XhrOptions([XhrOptionsBuilder updates(XhrOptionsBuilder b)]) = _$XhrOptions;
 
-  factory XhrOptions.get(String uri, dynamic data, Client client, [String method = 'GET']) {
+  factory XhrOptions.get(String uri, dynamic data, HttpClient client, [String method = 'GET']) {
     return new XhrOptions((XhrOptionsBuilder b) {
       b
         ..uri = uri
@@ -26,7 +27,7 @@ abstract class XhrOptions implements Built<XhrOptions, XhrOptionsBuilder> {
   String get method;
 
   @BuiltValueField(serialize: false)
-  Client get client;
+  HttpClient get client;
 
   @nullable
   Object get data;

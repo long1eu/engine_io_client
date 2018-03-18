@@ -78,7 +78,7 @@ class _$XhrOptions extends XhrOptions {
   @override
   final String method;
   @override
-  final Client client;
+  final HttpClient client;
   @override
   final Object data;
 
@@ -139,9 +139,9 @@ class XhrOptionsBuilder implements Builder<XhrOptions, XhrOptionsBuilder> {
   String get method => _$this._method;
   set method(String method) => _$this._method = method;
 
-  Client _client;
-  Client get client => _$this._client;
-  set client(Client client) => _$this._client = client;
+  HttpClient _client;
+  HttpClient get client => _$this._client;
+  set client(HttpClient client) => _$this._client = client;
 
   Object _data;
   Object get data => _$this._data;

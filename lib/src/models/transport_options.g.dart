@@ -58,6 +58,12 @@ class _$TransportOptionsSerializer
         ..add(serializers.serialize(object.secure,
             specifiedType: const FullType(bool)));
     }
+    if (object.securityContext != null) {
+      result
+        ..add('securityContext')
+        ..add(serializers.serialize(object.securityContext,
+            specifiedType: const FullType(SecurityContext)));
+    }
 
     return result;
   }
@@ -108,6 +114,11 @@ class _$TransportOptionsSerializer
                 const FullType(String)
               ])) as BuiltMap);
           break;
+        case 'securityContext':
+          result.securityContext = serializers.deserialize(value,
+                  specifiedType: const FullType(SecurityContext))
+              as SecurityContext;
+          break;
       }
     }
 
@@ -134,6 +145,8 @@ class _$TransportOptions extends TransportOptions {
   final BuiltMap<String, String> query;
   @override
   final Socket socket;
+  @override
+  final SecurityContext securityContext;
 
   factory _$TransportOptions([void updates(TransportOptionsBuilder b)]) =>
       (new TransportOptionsBuilder()..update(updates)).build();
@@ -147,7 +160,8 @@ class _$TransportOptions extends TransportOptions {
       this.port,
       this.policyPort,
       this.query,
-      this.socket})
+      this.socket,
+      this.securityContext})
       : super._() {
     if (hostname == null)
       throw new BuiltValueNullFieldError('TransportOptions', 'hostname');
@@ -184,7 +198,8 @@ class _$TransportOptions extends TransportOptions {
         port == other.port &&
         policyPort == other.policyPort &&
         query == other.query &&
-        socket == other.socket;
+        socket == other.socket &&
+        securityContext == other.securityContext;
   }
 
   @override
@@ -195,14 +210,18 @@ class _$TransportOptions extends TransportOptions {
                 $jc(
                     $jc(
                         $jc(
-                            $jc($jc($jc(0, hostname.hashCode), path.hashCode),
-                                timestampParam.hashCode),
-                            secure.hashCode),
-                        timestampRequests.hashCode),
-                    port.hashCode),
-                policyPort.hashCode),
-            query.hashCode),
-        socket.hashCode));
+                            $jc(
+                                $jc(
+                                    $jc($jc(0, hostname.hashCode),
+                                        path.hashCode),
+                                    timestampParam.hashCode),
+                                secure.hashCode),
+                            timestampRequests.hashCode),
+                        port.hashCode),
+                    policyPort.hashCode),
+                query.hashCode),
+            socket.hashCode),
+        securityContext.hashCode));
   }
 
   @override
@@ -216,7 +235,8 @@ class _$TransportOptions extends TransportOptions {
           ..add('port', port)
           ..add('policyPort', policyPort)
           ..add('query', query)
-          ..add('socket', socket))
+          ..add('socket', socket)
+          ..add('securityContext', securityContext))
         .toString();
   }
 }
@@ -264,6 +284,11 @@ class TransportOptionsBuilder
   Socket get socket => _$this._socket;
   set socket(Socket socket) => _$this._socket = socket;
 
+  SecurityContext _securityContext;
+  SecurityContext get securityContext => _$this._securityContext;
+  set securityContext(SecurityContext securityContext) =>
+      _$this._securityContext = securityContext;
+
   TransportOptionsBuilder();
 
   TransportOptionsBuilder get _$this {
@@ -277,6 +302,7 @@ class TransportOptionsBuilder
       _policyPort = _$v.policyPort;
       _query = _$v.query?.toBuilder();
       _socket = _$v.socket;
+      _securityContext = _$v.securityContext;
       _$v = null;
     }
     return this;
@@ -307,7 +333,8 @@ class TransportOptionsBuilder
               port: port,
               policyPort: policyPort,
               query: query.build(),
-              socket: socket);
+              socket: socket,
+              securityContext: securityContext);
     } catch (_) {
       String _$failedField;
       try {
