@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' as io;
 
 import 'package:built_collection/built_collection.dart';
 import 'package:engine_io_client/src/engine_io/client/engine_io_exception.dart';
@@ -11,7 +12,6 @@ import 'package:engine_io_client/src/models/transport_options.dart';
 import 'package:engine_io_client/src/models/transport_state.dart';
 import 'package:engine_io_client/src/parse_qs/parse_qs.dart';
 import 'package:engine_io_client/src/yeast/yeast.dart';
-import 'package:web_socket_channel/io.dart';
 
 class WebSocket extends Transport {
   static const String NAME = 'websocket';
@@ -19,14 +19,22 @@ class WebSocket extends Transport {
 
   WebSocket(TransportOptions options) : super(options, NAME);
 
-  IOWebSocketChannel socket;
+  io.WebSocket socket;
 
   @override
   Future<Null> doOpen() async {
     final Map<String, List<String>> headers = <String, List<String>>{};
     await emit(TransportEvent.requestHeaders, <Map<String, List<String>>>[headers]);
-    socket = new IOWebSocketChannel.connect(uri, headers: headers);
-    socket.stream.listen(onMessage, onError: onSocketError, onDone: onClose);
+
+    socket = await io.HttpOverrides.runZoned<Future<io.WebSocket>>(
+      () async {
+        socket = await io.WebSocket.connect(uri, headers: headers);
+      },
+      createHttpClient: (io.SecurityContext securityContext) {
+        return new io.HttpClient(context: options.securityContext);
+      },
+    );
+    socket.listen(onMessage, onError: onSocketError, onDone: onClose);
     await onOpen();
   }
 
@@ -54,7 +62,7 @@ class WebSocket extends Transport {
 
       final dynamic encoded = Parser.encodePacket(packet);
       try {
-        socket.sink.add(encoded);
+        socket.add(encoded);
       } catch (e) {
         log.e('WebSocket closed before we could write.');
       }
@@ -68,7 +76,7 @@ class WebSocket extends Transport {
 
   @override
   Future<Null> doClose() async {
-    await socket?.sink?.close(1000, '');
+    await socket?.close(1000, '');
     socket = null;
   }
 
