@@ -20,7 +20,7 @@ import 'package:engine_io_client/src/models/transport_options.dart';
 import 'package:engine_io_client/src/parse_qs/parse_qs.dart';
 
 class Socket extends Emitter {
-  static final Log log = new Log('Socket');
+  static final Log log = new Log('EngineIo.Socket');
   static const String PROBE_ERROR = 'probe error';
 
   SocketOptions _options;
@@ -29,7 +29,7 @@ class Socket extends Emitter {
   bool _priorWebSocketSuccess = false;
   bool upgrading = false;
 
-  SocketState _readyState;
+  SocketState readyState;
   Transport transport;
   BuiltList<String> upgrades;
 
@@ -68,7 +68,7 @@ class Socket extends Emitter {
     builder.policyPort = _options.policyPort != 0 ? _options.policyPort : 843;
     _options = builder.build();
 
-    onHeartbeatAsListener = (dynamic args) => onHeartbeat(args ?? -1);
+    onHeartbeatAsListener = (List<dynamic> args) => onHeartbeat(args ?? -1);
   }
 
   SocketOptions get options => _options;
@@ -78,12 +78,12 @@ class Socket extends Emitter {
     if (_options?.rememberUpgrade ?? true && _priorWebSocketSuccess && _options.transports.contains(WebSocket.NAME)) {
       transportName = WebSocket.NAME;
     } else if (_options.transports.isEmpty) {
-      emit(SocketEvent.error.name, new EngineIOException('No transports available', null));
+      emit(SocketEvent.error.name, <Error>[new EngineIOException('No transports available', null)]);
       return this;
     } else {
       transportName = _options.transports[0];
     }
-    _readyState = SocketState.opening;
+    readyState = SocketState.opening;
     final Transport transport = createTransport(transportName);
     setTransport(transport);
     await transport.open();
@@ -124,7 +124,7 @@ class Socket extends Emitter {
       throw new Exception();
     }
 
-    emit(SocketEvent.transport.name, transport);
+    emit(SocketEvent.transport.name, <Transport>[transport]);
     return transport;
   }
 
@@ -140,10 +140,10 @@ class Socket extends Emitter {
     this.transport = transport;
 
     transport
-        .on(TransportEvent.drain.name, (dynamic args) => onDrain())
-        .on(TransportEvent.packet.name, (dynamic args) => onPacket(args))
-        .on(TransportEvent.error.name, (dynamic args) => onError(args))
-        .on(TransportEvent.close.name, (dynamic args) => onClose('transport close'));
+      ..on(TransportEvent.drain.name, (List<dynamic> args) => onDrain())
+      ..on(TransportEvent.packet.name, (List<dynamic> args) => onPacket(args.isNotEmpty ? args[0] : null))
+      ..on(TransportEvent.error.name, (List<dynamic> args) => onError(args.isNotEmpty ? args[0] : null))
+      ..on(TransportEvent.close.name, (List<dynamic> args) => onClose('transport close'));
   }
 
   Future<Null> probe(String name) async {
@@ -155,17 +155,17 @@ class Socket extends Emitter {
 
     Function cleanup;
 
-    void onTransportOpen(dynamic args) {
+    void onTransportOpen() {
       if (failed) return;
       log.d('probe transport "$name" opened');
 
       transport.send(<Packet>[new Packet.values(PacketType.ping, 'probe')]);
-      transport.once(TransportEvent.packet.name, (dynamic args) async {
+      transport.once(TransportEvent.packet.name, (List<dynamic> args) async {
         if (failed) return;
-        final Packet message = args;
+        final Packet message = args[0];
         if (message.type == PacketType.pong && message.data == 'probe') {
           upgrading = true;
-          emit(SocketEvent.upgrading.name, transport);
+          emit(SocketEvent.upgrading.name, <Transport>[transport]);
           if (transport == null) return;
           _priorWebSocketSuccess = transport.name == WebSocket.NAME;
 
@@ -175,7 +175,7 @@ class Socket extends Emitter {
             // ignore: avoid_as
             await (this.transport as Polling).pause(() async {
               if (failed) return;
-              if (_readyState == SocketState.closed) return;
+              if (readyState == SocketState.closed) return;
 
               log.d('changing transport and sending upgrade packet');
 
@@ -184,7 +184,7 @@ class Socket extends Emitter {
               setTransport(transport);
               final Packet packet = new Packet.values(PacketType.upgrade);
               transport.send(<Packet>[packet]);
-              emit(SocketEvent.upgrade.name, transport);
+              emit(SocketEvent.upgrade.name, <Transport>[transport]);
               transport = null;
               upgrading = false;
               await flush();
@@ -193,12 +193,12 @@ class Socket extends Emitter {
         } else {
           log.d('probe transport "$name" failed');
 
-          emit(SocketEvent.upgradeError.name, new EngineIOException(transport.name, PROBE_ERROR));
+          emit(SocketEvent.upgradeError.name, <Error>[new EngineIOException(transport.name, PROBE_ERROR)]);
         }
       });
     }
 
-    void freezeTransport(dynamic args) {
+    void freezeTransport() {
       if (failed) return;
       failed = true;
       cleanup();
@@ -207,7 +207,7 @@ class Socket extends Emitter {
     }
 
     // Handle any error that happens while probing
-    void onError(dynamic err) {
+    void onError(List<Error> err) {
       EngineIOException error;
       if (err is Exception) {
         error = new EngineIOException(transport.name, PROBE_ERROR + err.toString());
@@ -217,52 +217,51 @@ class Socket extends Emitter {
         error = new EngineIOException(transport.name, PROBE_ERROR);
       }
 
-      freezeTransport(null);
+      freezeTransport();
 
       log.d('probe transport "$name" failed because of error: "$err"');
 
-      emit(SocketEvent.upgradeError.name, error);
+      emit(SocketEvent.upgradeError.name, <Error>[error]);
     }
 
-    void onTransportClose(dynamic args) => onError.call('transport closed');
-
-    // When the socket is closed while we're probing
-    void onClose(dynamic args) => onError.call('socket closed');
+    void onTransportClose() => onError(<Error>[new StateError('transport closed')]);
 
     // When the socket is upgraded while we're probing
-    void onUpgrade(dynamic to) {
+    void onUpgrade(Transport to) {
       if (transport != null && to.name != transport.name) {
         log.d('"${to.name}" works - aborting "${transport.name}"');
-        freezeTransport(null);
+        freezeTransport();
       }
     }
 
     cleanup = () {
-      transport.off(TransportEvent.open.name, onTransportOpen);
-      transport.off(TransportEvent.error.name, onError);
-      transport.off(TransportEvent.close.name, onTransportClose);
-      off(SocketEvent.close.name, onClose);
-      off(SocketEvent.drain.name, onUpgrade);
+      transport.off(TransportEvent.open.name, (List<dynamic> args) => onTransportOpen());
+      transport.off(TransportEvent.error.name, (List<dynamic> error) => onError(error));
+      transport.off(TransportEvent.close.name, (List<dynamic> args) => onTransportClose());
+      // When the socket is closed while we're probing
+      off(SocketEvent.close.name, (List<dynamic> args) => onError(<Error>[new StateError('transport closed')]));
+      off(SocketEvent.drain.name, (List<dynamic> args) => onUpgrade(args[0]));
     };
 
-    transport.once(TransportEvent.open.name, onTransportOpen);
-    transport.once(TransportEvent.error.name, onError);
-    transport.once(TransportEvent.close.name, onTransportClose);
+    transport.once(TransportEvent.open.name, (List<dynamic> args) => onTransportOpen());
+    transport.once(TransportEvent.error.name, (List<dynamic> error) => onError(error));
+    transport.once(TransportEvent.close.name, (List<dynamic> args) => onTransportClose());
 
-    once(SocketEvent.close.name, onClose);
-    once(SocketEvent.upgrading.name, onUpgrade);
+    // When the socket is closed while we're probing
+    once(SocketEvent.close.name, (List<dynamic> args) => onError(<Error>[new StateError('transport closed')]));
+    once(SocketEvent.upgrading.name, (List<dynamic> args) => onUpgrade(args[0]));
 
     await transport.open();
   }
 
   Future<Null> onOpen() async {
     log.d('socket open');
-    _readyState = SocketState.open;
+    readyState = SocketState.open;
     _priorWebSocketSuccess = transport.name == WebSocket.NAME;
     emit(SocketEvent.open.name);
     await flush();
 
-    if (_readyState == SocketState.open && _options.upgrade && transport is Polling) {
+    if (readyState == SocketState.open && _options.upgrade && transport is Polling) {
       log.d('starting upgrade probes: $upgrades');
       // ignore: prefer_foreach
       for (String upgrade in upgrades) {
@@ -272,10 +271,10 @@ class Socket extends Emitter {
   }
 
   void onPacket(Packet packet) {
-    if (_readyState == SocketState.opening || _readyState == SocketState.open || _readyState == SocketState.closing) {
+    if (readyState == SocketState.opening || readyState == SocketState.open || readyState == SocketState.closing) {
       log.d('socket received: type "${packet.type}", data "${packet.data}"');
 
-      emit(SocketEvent.packet.name, packet);
+      emit(SocketEvent.packet.name, <Packet>[packet]);
       emit(SocketEvent.heartbeat.name);
 
       if (packet.type == PacketType.open) {
@@ -286,16 +285,17 @@ class Socket extends Emitter {
       } else if (packet.type == PacketType.error) {
         onError(new EngineIOException('server error', packet.data));
       } else if (packet.type == PacketType.message) {
-        emit(SocketEvent.data.name, packet.data);
-        emit(SocketEvent.message.name, packet.data);
+        log.d('packet.data ${packet.data}');
+        emit(SocketEvent.message.name, <dynamic>[packet.data]);
+        emit(SocketEvent.data.name, <dynamic>[packet.data]);
       }
     } else {
-      log.d('packet received with socket readyState "$_readyState"');
+      log.d('packet received with socket readyState "$readyState"');
     }
   }
 
   void onHandshake(HandshakeData data) {
-    emit(SocketEvent.handshake.name, data);
+    emit(SocketEvent.handshake.name, <HandshakeData>[data]);
     id = data.sessionId;
     transport.options = (transport.options.toBuilder()..query['sid'] = data.sessionId).build();
 
@@ -306,7 +306,7 @@ class Socket extends Emitter {
     onOpen();
 
     // In case open handler closes socket
-    if (_readyState == SocketState.closed) return;
+    if (readyState == SocketState.closed) return;
     setPing();
 
     off(SocketEvent.heartbeat.name, onHeartbeatAsListener);
@@ -318,7 +318,7 @@ class Socket extends Emitter {
     if (timeout <= 0) timeout = _pingInterval + _pingTimeout;
 
     pingTimeoutTimer = new Timer(new Duration(milliseconds: timeout), () {
-      if (_readyState != SocketState.closed) onClose('ping timeout');
+      if (readyState != SocketState.closed) onClose('ping timeout');
     });
   }
 
@@ -346,7 +346,8 @@ class Socket extends Emitter {
   }
 
   Future<Null> flush() async {
-    if (_readyState != SocketState.closed && transport.writable && !upgrading && writeBuffer.isNotEmpty) {
+    log.d('flushing ${writeBuffer.length} packets in socket');
+    if (readyState != SocketState.closed && transport.writable && !upgrading && writeBuffer.isNotEmpty) {
       log.d('flushing ${writeBuffer.length} packets in socket');
 
       _prevBufferLen = writeBuffer.length;
@@ -363,17 +364,17 @@ class Socket extends Emitter {
 
   Future<Null> sendPacket(Packet packet, void callback()) async {
     log.d('sendPacket: $packet');
-    if (_readyState == SocketState.closing || _readyState == SocketState.closed) return;
+    if (readyState == SocketState.closing || readyState == SocketState.closed) return;
 
-    emit(SocketEvent.packetCreate.name, packet);
+    emit(SocketEvent.packetCreate.name, <Packet>[packet]);
     writeBuffer.add(packet);
-    if (callback != null) once(SocketEvent.flush.name, (dynamic args) => callback());
+    if (callback != null) once(SocketEvent.flush.name, (List<dynamic> args) => callback());
     await flush();
   }
 
   Future<Socket> close() async {
-    if (_readyState == SocketState.opening || _readyState == SocketState.open) {
-      _readyState = SocketState.closing;
+    if (readyState == SocketState.opening || readyState == SocketState.open) {
+      readyState = SocketState.closing;
 
       void close() {
         onClose('forced close');
@@ -381,20 +382,20 @@ class Socket extends Emitter {
         transport.close();
       }
 
-      void cleanupAndClose(dynamic args) {
-        off(SocketEvent.upgrade.name, cleanupAndClose);
-        off(SocketEvent.upgradeError.name, cleanupAndClose);
+      void cleanupAndClose() {
+        off(SocketEvent.upgrade.name, (List<dynamic> args) => cleanupAndClose());
+        off(SocketEvent.upgradeError.name, (List<dynamic> args) => cleanupAndClose());
         close();
       }
 
       void waitForUpgrade() {
         // wait for update to finish since we can't send packets while pausing a transport
-        once(SocketEvent.upgrade.name, cleanupAndClose);
-        once(SocketEvent.upgradeError.name, cleanupAndClose);
+        once(SocketEvent.upgrade.name, (List<dynamic> args) => cleanupAndClose());
+        once(SocketEvent.upgradeError.name, (List<dynamic> args) => cleanupAndClose());
       }
 
       if (writeBuffer.isNotEmpty) {
-        once(SocketEvent.drain.name, (dynamic args) {
+        once(SocketEvent.drain.name, (List<dynamic> args) {
           if (upgrading) {
             waitForUpgrade();
           } else {
@@ -411,15 +412,15 @@ class Socket extends Emitter {
     return this;
   }
 
-  void onError(dynamic error) {
+  void onError(Error error) {
     log.d('socket error $error');
     _priorWebSocketSuccess = false;
-    emit(SocketEvent.error.name, error);
+    emit(SocketEvent.error.name, <Error>[error]);
     onClose('transport error', error);
   }
 
   Future<Null> onClose(String reason, [dynamic desc]) async {
-    if (_readyState == SocketState.opening || _readyState == SocketState.open || _readyState == SocketState.closing) {
+    if (readyState == SocketState.opening || readyState == SocketState.open || readyState == SocketState.closing) {
       log.d('socket close with reason: $reason');
 
       // clear timers
@@ -436,7 +437,7 @@ class Socket extends Emitter {
       transport.off();
 
       // set ready state
-      _readyState = SocketState.closed;
+      readyState = SocketState.closed;
 
       // clear session id
       id = null;
@@ -468,7 +469,7 @@ class Socket extends Emitter {
     return 'Socket{_options: $_options,'
         ' id: $id, _priorWebSocketSuccess: $_priorWebSocketSuccess,\n'
         ' upgrading: $upgrading,\n'
-        ' _readyState: $_readyState,\n'
+        ' _readyState: $readyState,\n'
         ' transport: $transport,\n'
         ' upgrades: $upgrades,\n'
         ' _pingInterval: $_pingInterval,\n'

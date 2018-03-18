@@ -10,7 +10,7 @@ import 'package:engine_io_client/src/models/transport_options.dart';
 import 'package:engine_io_client/src/models/transport_state.dart';
 
 abstract class Transport extends Emitter {
-  static final Log log = new Log('Transport');
+  static final Log log = new Log('EngineIo.Transport');
 
   Transport(this.options, this.name);
 
@@ -20,27 +20,22 @@ abstract class Transport extends Emitter {
   TransportState readyState;
   bool writable = false;
 
-  Transport onError(String message, dynamic desc) {
-    emit(TransportEvent.error.name, new EngineIOException(message, desc));
-    return this;
+  void onError(String message, dynamic desc) {
+    emit(TransportEvent.error.name, <Error>[new EngineIOException(message, desc)]);
   }
 
-  Future<Transport> open() async {
+  Future<Null> open() async {
     if (readyState == TransportState.closed || readyState == null) {
       readyState = TransportState.opening;
       await doOpen();
     }
-
-    return this;
   }
 
-  Future<Transport> close() async {
+  Future<Null> close() async {
     if (readyState == TransportState.opening || readyState == TransportState.open) {
       await doClose();
       onClose();
     }
-
-    return this;
   }
 
   Future<Null> send(List<Packet> packets) async {
@@ -56,6 +51,7 @@ abstract class Transport extends Emitter {
   }
 
   void onOpen() {
+    log.d('onOpen: ');
     readyState = TransportState.open;
     writable = true;
     emit(TransportEvent.open.name);
@@ -69,7 +65,7 @@ abstract class Transport extends Emitter {
     }
   }
 
-  void onPacket(Packet packet) => emit(TransportEvent.packet.name, packet);
+  void onPacket(Packet packet) => emit(TransportEvent.packet.name, <Packet>[packet]);
 
   void onClose() {
     readyState = TransportState.closed;

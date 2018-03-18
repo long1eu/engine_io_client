@@ -9,13 +9,7 @@ part 'packet.g.dart';
 abstract class Packet implements Built<Packet, PacketBuilder> {
   factory Packet([PacketBuilder updates(PacketBuilder b)]) = _$Packet;
 
-  factory Packet.fromValues(int type, [dynamic data]) {
-    return new Packet((PacketBuilder b) {
-      b
-        ..type = PacketType.values.elementAt(type)
-        ..data = data;
-    });
-  }
+  factory Packet.fromValues(int type, [dynamic data]) => new Packet.values(PacketType.values.elementAt(type), data);
 
   factory Packet.values(PacketType type, [dynamic data]) {
     return new Packet((PacketBuilder b) {
@@ -32,18 +26,9 @@ abstract class Packet implements Built<Packet, PacketBuilder> {
   @nullable
   Object get data;
 
-  static Packet error = new Packet((PacketBuilder b) {
-    b
-      ..type = PacketType.error
-      ..data = 'parser error';
-  });
+  static Packet error = new Packet.values(PacketType.error, 'parser error');
 
-  static Packet binaryError = new Packet((PacketBuilder b) {
-    b
-      ..type = PacketType.error
-      ..data = <int>[];
-  });
+  static Packet binaryError = new Packet.values(PacketType.error, <int>[]);
 
-  // ignore: always_specify_types
   static Serializer<Packet> get serializer => _$packetSerializer;
 }

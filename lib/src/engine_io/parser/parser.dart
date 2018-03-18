@@ -184,15 +184,14 @@ class Parser {
   }
 
   static List<Packet> decodeBinaryPayload(List<int> data) {
-    List<int> bufferTail = new Int8List.fromList(data);
+    Uint8List bufferTail = new Uint8List.fromList(data);
     final List<Object> buffers = <Object>[];
 
-    while (bufferTail.isNotEmpty) {
+    while (bufferTail.lengthInBytes > 0) {
       final StringBuffer strLen = new StringBuffer();
       final bool isString = (bufferTail[0] & 0xFF) == 0;
       for (int i = 1;; i++) {
         final int b = bufferTail[i] & 0xFF;
-
         if (b == 255) break;
         // supports only integer
         if (strLen.length > MAX_INT_CHAR_LENGTH) {
@@ -201,17 +200,16 @@ class Parser {
         strLen.write(b);
       }
 
+      final Uint8List currentList = bufferTail.sublist(strLen.length + 1);
       final int msgLength = int.parse(strLen.toString());
 
-      final List<int> msg = bufferTail.sublist(3, msgLength + 3);
-
+      final Uint8List msg = currentList.sublist(1, msgLength + 1);
       if (isString) {
-        buffers.add(new String.fromCharCodes(msg));
+        buffers.add(byteArrayToString(msg));
       } else {
         buffers.add(msg);
       }
-
-      bufferTail = bufferTail.sublist(msgLength + 3);
+      bufferTail = bufferTail.sublist(strLen.length + 1 + msgLength + 1);
     }
 
     final List<Packet> packets = <Packet>[];
@@ -226,5 +224,13 @@ class Parser {
     }
 
     return packets;
+  }
+
+  static String byteArrayToString(Uint8List bytes) {
+    final StringBuffer builder = new StringBuffer();
+    for (int b in bytes) {
+      builder.writeCharCode(b & 0xFF);
+    }
+    return builder.toString();
   }
 }

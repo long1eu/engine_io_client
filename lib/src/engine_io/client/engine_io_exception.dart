@@ -1,4 +1,4 @@
-class EngineIOException implements Exception {
+class EngineIOException extends Error {
   EngineIOException(this.transport, this.code);
 
   final String transport;

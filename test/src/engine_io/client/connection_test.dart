@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 import 'connection.dart';
 
 void main() {
-  final Log log = new Log('connection');
+  final Log log = new Log('EngineIo.connection');
   final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
     b..port = Connection.PORT;
   });
@@ -18,13 +18,13 @@ void main() {
     final List<dynamic> values = <dynamic>[];
 
     final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (dynamic args) {
-      socket.on(SocketEvent.message.name, (dynamic args) {
-        values.add(args);
+    socket.on(SocketEvent.open.name, (List<dynamic> args) {
+      socket.on(SocketEvent.message.name, (List<dynamic> args) {
+        values.add(args[0]);
       });
     });
     socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values.first, 'hi');
     socket.close();
@@ -34,16 +34,16 @@ void main() {
     final List<dynamic> values = <dynamic>[];
 
     final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (dynamic args) {
+    socket.on(SocketEvent.open.name, (List<dynamic> args) {
       socket.send('cash money €€€');
-      socket.on(SocketEvent.message.name, (dynamic args) {
-        if (args == 'hi') return;
-        values.add(args);
+      socket.on(SocketEvent.message.name, (List<dynamic> args) {
+        if (args[0] == 'hi') return;
+        values.add(args[0]);
         socket.close();
       });
     });
     socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values.first, 'cash money €€€');
   });
@@ -52,16 +52,16 @@ void main() {
     final List<dynamic> values = <dynamic>[];
 
     final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (dynamic args) {
+    socket.on(SocketEvent.open.name, (List<dynamic> args) {
       socket.send('\uD800\uDC00-\uDB7F\uDFFF\uDB80\uDC00-\uDBFF\uDFFF\uE000-\uF8FF');
-      socket.on(SocketEvent.message.name, (dynamic args) {
-        if (args == 'hi') return;
-        values.add(args);
+      socket.on(SocketEvent.message.name, (List<dynamic> args) {
+        if (args[0] == 'hi') return;
+        values.add(args[0]);
         socket.close();
       });
     });
     socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values.first, '\uD800\uDC00-\uDB7F\uDFFF\uDB80\uDC00-\uDBFF\uDFFF\uE000-\uF8FF');
   });
@@ -70,14 +70,14 @@ void main() {
     bool noPacket = true;
 
     final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (dynamic args) async {
-      socket.on(SocketEvent.packetCreate.name, (dynamic args) => noPacket = false);
+    socket.on(SocketEvent.open.name, (List<dynamic> args) async {
+      socket.on(SocketEvent.packetCreate.name, (List<dynamic> args) => noPacket = false);
 
       await socket.close();
       socket.send('hi');
     });
     socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(noPacket, isTrue);
   });
@@ -86,16 +86,18 @@ void main() {
     bool upgraded = false;
 
     final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (dynamic args) {
-      socket.on(SocketEvent.upgrade.name, (dynamic args) {
-        log.d('main: $args');
-        upgraded = true;
-      }).on(SocketEvent.upgrading.name, (dynamic args) async {
-        await socket.close();
-      });
+    socket.on(SocketEvent.open.name, (List<dynamic> args) {
+      socket
+        ..on(SocketEvent.upgrade.name, (List<dynamic> args) {
+          log.d('main: $args');
+          upgraded = true;
+        })
+        ..on(SocketEvent.upgrading.name, (List<dynamic> args) async {
+          await socket.close();
+        });
     });
     socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(upgraded, isTrue);
   });
@@ -104,18 +106,20 @@ void main() {
     bool upgradeError;
 
     final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (dynamic args) {
-      socket.on(SocketEvent.upgradeError.name, (dynamic args) {
-        log.d('main: $args');
-        upgradeError = true;
-      }).on(SocketEvent.upgrading.name, (dynamic args) async {
-        log.d('main: $args');
-        await socket.close();
-        socket.transport.onError('upgrade error c', new Exception());
-      });
+    socket.on(SocketEvent.open.name, (List<dynamic> args) {
+      socket
+        ..on(SocketEvent.upgradeError.name, (List<dynamic> args) {
+          log.d('main: $args');
+          upgradeError = true;
+        })
+        ..on(SocketEvent.upgrading.name, (List<dynamic> args) async {
+          log.d('main: $args');
+          await socket.close();
+          socket.transport.onError('upgrade error c', new Exception());
+        });
     });
     socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(upgradeError, isTrue);
   });
@@ -124,15 +128,15 @@ void main() {
     bool noPacket = true;
 
     final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (dynamic args) {
-      socket.on(SocketEvent.upgrading.name, (dynamic args) async {
-        socket.on(SocketEvent.packetCreate.name, (dynamic args) => noPacket = false);
+    socket.on(SocketEvent.open.name, (List<dynamic> args) {
+      socket.on(SocketEvent.upgrading.name, (List<dynamic> args) async {
+        socket.on(SocketEvent.packetCreate.name, (List<dynamic> args) => noPacket = false);
         await socket.close();
         socket.send('hi');
       });
     });
     socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(noPacket, isTrue);
   });
@@ -141,17 +145,19 @@ void main() {
     int length;
 
     final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (dynamic args) {
-      socket.on(SocketEvent.upgrading.name, (dynamic args) async {
-        socket.send('hsi');
-        await socket.close();
-      }).on(SocketEvent.close.name, (dynamic args) {
-        log.d('close.name');
-        length = socket.writeBuffer.length;
-      });
+    socket.on(SocketEvent.open.name, (List<dynamic> args) {
+      socket
+        ..on(SocketEvent.upgrading.name, (List<dynamic> args) async {
+          socket.send('hsi');
+          await socket.close();
+        })
+        ..on(SocketEvent.close.name, (List<dynamic> args) {
+          log.d('close.name');
+          length = socket.writeBuffer.length;
+        });
     });
     socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(length, 0);
   });

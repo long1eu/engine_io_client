@@ -15,7 +15,7 @@ abstract class HandshakeData implements Built<HandshakeData, HandshakeDataBuilde
   factory HandshakeData.fromJson(dynamic data) {
     Map<String, dynamic> map;
     if (data is String) {
-      map = JSON.decode(data);
+      map = json.decode(data);
     } else
       map = data;
 

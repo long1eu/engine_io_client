@@ -15,7 +15,7 @@ import 'package:engine_io_client/src/yeast/yeast.dart';
 
 abstract class Polling extends Transport {
   static const String NAME = 'polling';
-  static final Log log = new Log(NAME);
+  static final Log log = new Log('EngineIo.Polling');
 
   Polling(TransportOptions options) : super(options, NAME);
 
@@ -24,13 +24,13 @@ abstract class Polling extends Transport {
   @override
   Future<Null> doOpen() async => await poll();
 
-  void pause(void onPause()) {
+  Future<Null> pause(Future<Null> onPause()) async {
     readyState = TransportState.paused;
 
-    void pause() {
+    Future<Null> pause() async {
       log.d('paused');
       readyState = TransportState.paused;
-      onPause();
+      await onPause();
     }
 
     if (_polling || !writable) {
@@ -39,22 +39,22 @@ abstract class Polling extends Transport {
       if (_polling) {
         log.d('we are currently polling - waiting to pause');
         total++;
-        once(PollingEvent.pollComplete.name, (dynamic args) {
+        once(PollingEvent.pollComplete.name, (List<dynamic> args) async {
           log.d('pre-pause polling complete');
-          if (--total == 0) pause();
+          if (--total == 0) await pause();
         });
       }
 
       if (!writable) {
         log.d('we are currently writing - waiting to pause');
         total++;
-        once(TransportEvent.drain.name, (dynamic args) {
+        once(TransportEvent.drain.name, (List<dynamic> args) async {
           log.d('pre-pause writing complete');
-          if (--total == 0) pause();
+          if (--total == 0) await pause();
         });
       }
     } else {
-      pause();
+      await pause();
     }
   }
 
@@ -69,7 +69,7 @@ abstract class Polling extends Transport {
   Future<Null> onData(dynamic data) => _onData(data);
 
   Future<Null> _onData(dynamic data) async {
-    log.i('polling got data $data ');
+    log.i('polling got data:${data.runtimeType} $data ');
 
     final List<Packet> packets = data is String ? Parser.decodePayload(data) : Parser.decodeBinaryPayload(data);
     for (Packet packet in packets) {
@@ -92,7 +92,7 @@ abstract class Polling extends Transport {
 
   @override
   Future<Null> doClose() async {
-    void close(dynamic args) {
+    void close() {
       log.d('writing close packet');
       try {
         write(<Packet>[new Packet.values(PacketType.close)]);
@@ -103,12 +103,12 @@ abstract class Polling extends Transport {
 
     if (readyState == TransportState.open) {
       log.d('transport open - closing');
-      close(null);
+      close();
     } else {
       // in case we're trying to close while
       // handshaking is in progress (engine.io-client GH-164)
       log.d('transport not open - deferring close');
-      once(TransportEvent.open.name, close);
+      once(TransportEvent.open.name, (List<dynamic> args) => close());
     }
   }
 

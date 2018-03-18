@@ -1,17 +1,17 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:http/http.dart';
 import 'package:engine_io_client/src/emitter/emitter.dart';
 import 'package:engine_io_client/src/logger.dart';
 import 'package:engine_io_client/src/models/xhr_event.dart';
 import 'package:engine_io_client/src/models/xhr_options.dart';
+import 'package:http/http.dart';
 
 const String BINARY_CONTENT_TYPE = 'application/octet-stream';
 const String TEXT_CONTENT_TYPE = 'text/plain; charset=UTF-8';
 
 class RequestXhr extends Emitter {
-  static final Log log = new Log('RequestXhr');
+  static final Log log = new Log('EngineIo.RequestXhr');
 
   RequestXhr(this.options);
 
@@ -56,10 +56,10 @@ class RequestXhr extends Emitter {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         await onLoad();
       } else {
-        onError(new Exception((response.statusCode)));
+        onError(<Error>[new StateError(response.statusCode.toString())]);
       }
-    } catch (e) {
-      onError(e);
+    } on Error catch (e) {
+      onError(<Error>[e]);
     }
   }
 
@@ -67,21 +67,22 @@ class RequestXhr extends Emitter {
     emit(XhrEvent.success.name);
   }
 
+  /// Can be [String] or [List<int>]
   void onData(dynamic data) {
-    emit(XhrEvent.data.name, data);
+    emit(XhrEvent.data.name, <dynamic>[data]);
     onSuccess();
   }
 
-  void onError(dynamic error) {
+  void onError(List<Error> error) {
     emit(XhrEvent.error.name, error);
   }
 
   void onRequestHeaders(Map<String, List<String>> headers) {
-    emit(XhrEvent.requestHeaders.name, headers);
+    emit(XhrEvent.requestHeaders.name, <Map<String, List<String>>>[headers]);
   }
 
   void onResponseHeaders(Map<String, List<String>> headers) {
-    emit(XhrEvent.responseHeaders.name, headers);
+    emit(XhrEvent.responseHeaders.name, <Map<String, List<String>>>[headers]);
   }
 
   Future<Null> onLoad() async {
@@ -94,8 +95,8 @@ class RequestXhr extends Emitter {
         final String body = await response.stream.bytesToString();
         onData(body);
       }
-    } catch (e) {
-      onError(e);
+    } on Error catch (e) {
+      onError(<Error>[e]);
     }
   }
 }

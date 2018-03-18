@@ -11,8 +11,7 @@ import 'package:test/test.dart';
 import 'connection.dart';
 
 void main() async {
-  final Log log = new Log('binary_connection');
-  Socket socket;
+  final Log log = new Log('EngineIo.binary_connection');
 
   test('receiveBinaryData', () async {
     final List<dynamic> values = <dynamic>[];
@@ -27,28 +26,27 @@ void main() async {
         ..transports = new ListBuilder<String>(<String>[Polling.NAME]);
     });
 
-    socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (dynamic args) async {
+    final Socket socket = new Socket(opts);
+    socket.on(SocketEvent.open.name, (List<dynamic> args) async {
       log.d('open');
-      socket.on(SocketEvent.message.name, (dynamic args) {
+      socket.on(SocketEvent.message.name, (List<dynamic> args) {
         log.d('args: $args');
-        if (args == 'hi') return;
-        values.add(args);
+        if (args[0] == 'hi') return;
+        values.add(args[0]);
       });
       await socket.send(binaryData);
     });
     socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
-    expect(values.first, binaryData);
+    expect(values[0], binaryData);
     socket.close();
   });
 
   test('receiveBinaryDataAndMultibyteUTF8String', () async {
     final List<dynamic> values = <dynamic>[];
     final List<int> binaryData = new List<int>.generate(5, (_) => 0);
-    for (int i = 0; i < binaryData.length; i++)
-      binaryData[i] = i;
+    for (int i = 0; i < binaryData.length; i++) binaryData[i] = i;
 
     final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
       b
@@ -56,21 +54,22 @@ void main() async {
         ..transports = new ListBuilder<String>(<String>[Polling.NAME]);
     });
 
-    socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (dynamic args) async {
+    final Socket socket = new Socket(opts);
+    socket.on(SocketEvent.open.name, (List<dynamic> args) async {
       log.d('open');
-      socket.on(SocketEvent.message.name, (dynamic args) {
+      socket.on(SocketEvent.message.name, (List<dynamic> args) {
         log.d('args: $args');
-        if (args == 'hi') return;
-        values.add(args);
+        if (args[0] == 'hi') return;
+        values.add(args[0]);
       });
 
       await socket.send(binaryData);
       await socket.send('cash money €€€');
       await socket.send('cash money ss €€€');
+      await socket.send('20["getAckBinary",""]');
     });
     await socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: 2000), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     log.d(values.toString());
     expect(values[0], binaryData);

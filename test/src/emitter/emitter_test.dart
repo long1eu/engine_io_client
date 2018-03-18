@@ -6,19 +6,19 @@ void main() {
     final Emitter emitter = new Emitter();
     final List<dynamic> calls = <dynamic>[];
 
-    emitter.on('foo', (dynamic args) {
+    emitter.on('foo', (List<dynamic> args) {
       calls.add('one');
-      calls.add(args);
+      calls.add(args[0]);
     });
 
-    emitter.on('foo', (dynamic args) {
+    emitter.on('foo', (List<dynamic> args) {
       calls.add('two');
-      calls.add(args);
+      calls.add(args[0]);
     });
 
-    emitter.emit('foo', 1);
-    emitter.emit('bar', 1);
-    emitter.emit('foo', 2);
+    emitter.emit('foo', <dynamic>[1]);
+    emitter.emit('bar', <dynamic>[1]);
+    emitter.emit('foo', <dynamic>[2]);
 
     expect(calls, equals(<dynamic>['one', 1, 'two', 1, 'one', 2, 'two', 2]));
   });
@@ -27,15 +27,15 @@ void main() {
     final Emitter emitter = new Emitter();
     final List<dynamic> calls = <dynamic>[];
 
-    emitter.once('foo', (dynamic args) {
+    emitter.once('foo', (List<dynamic> args) {
       calls.add('one');
-      calls.add(args);
+      calls.add(args[0]);
     });
 
-    emitter.emit('foo', 1);
-    emitter.emit('foo', 2);
-    emitter.emit('foo', 3);
-    emitter.emit('bar', 1);
+    emitter.emit('foo', <dynamic>[1]);
+    emitter.emit('foo', <dynamic>[2]);
+    emitter.emit('foo', <dynamic>[3]);
+    emitter.emit('bar', <dynamic>[1]);
 
     expect(calls, equals(<dynamic>['one', 1]));
   });
@@ -44,8 +44,8 @@ void main() {
     final Emitter emitter = new Emitter();
     final List<dynamic> calls = <dynamic>[];
 
-    void one(dynamic args) => calls.add('one');
-    void two(dynamic args) => calls.add('two');
+    void one(List<dynamic> args) => calls.add('one');
+    void two(List<dynamic> args) => calls.add('two');
 
     emitter.on('foo', one);
     emitter.on('foo', two);
@@ -60,7 +60,7 @@ void main() {
     final Emitter emitter = new Emitter();
     final List<dynamic> calls = <dynamic>[];
 
-    void one(dynamic args) => calls.add('one');
+    void one(List<dynamic> args) => calls.add('one');
 
     emitter.once('foo', one);
     emitter.off('foo', one);
@@ -74,9 +74,9 @@ void main() {
     final Emitter emitter = new Emitter();
     bool called = false;
 
-    void b(dynamic args) => called = true;
+    void b(List<dynamic> args) => called = true;
 
-    emitter.on('tobi', (dynamic args) => emitter.off('tobi', b));
+    emitter.on('tobi', (List<dynamic> args) => emitter.off('tobi', b));
     emitter.once('tobi', b);
     emitter.emit('tobi');
 
@@ -91,8 +91,8 @@ void main() {
     final Emitter emitter = new Emitter();
     final List<dynamic> calls = <dynamic>[];
 
-    void one(dynamic args) => calls.add('one');
-    void two(dynamic args) => calls.add('two');
+    void one(List<dynamic> args) => calls.add('one');
+    void two(List<dynamic> args) => calls.add('two');
 
     emitter.on('foo', one);
     emitter.on('foo', two);
@@ -108,8 +108,8 @@ void main() {
     final Emitter emitter = new Emitter();
     final List<dynamic> calls = <dynamic>[];
 
-    void one(dynamic args) => calls.add('one');
-    void two(dynamic args) => calls.add('two');
+    void one(List<dynamic> args) => calls.add('one');
+    void two(List<dynamic> args) => calls.add('two');
 
     emitter.on('foo', one);
     emitter.on('bar', two);
@@ -127,7 +127,7 @@ void main() {
 
   test('listeners', () {
     final Emitter emitter = new Emitter();
-    void foo(dynamic args) {}
+    void foo(List<dynamic> args) {}
 
     emitter.on('foo', foo);
 
@@ -141,7 +141,7 @@ void main() {
 
   test('hasListeners', () {
     final Emitter emitter = new Emitter();
-    void foo(dynamic args) {}
+    void foo(List<dynamic> args) {}
 
     emitter.on('foo', foo);
 

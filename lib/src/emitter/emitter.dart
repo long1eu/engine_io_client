@@ -1,4 +1,4 @@
-typedef void Listener(dynamic args);
+typedef void Listener(List<dynamic> args);
 
 class Emitter {
   final Map<String, List<Listener>> _callbacks = <String, List<Listener>>{};
@@ -8,7 +8,7 @@ class Emitter {
   /// @param event event name.
   /// @param callback must not be null
   /// @return a reference to this object.
-  Emitter on(String event, Listener callback) {
+  void on(String event, Listener callback) {
     assert(callback != null);
     List<Listener> callbacks = _callbacks[event];
     if (callbacks == null) {
@@ -19,7 +19,6 @@ class Emitter {
       }
     }
     callbacks.add(callback);
-    return this;
   }
 
   /// Adds a one time listener for the event.
@@ -27,7 +26,7 @@ class Emitter {
   /// @param event an event name.
   /// @param callback must not be null
   /// @return a reference to this object.
-  Emitter once(final String event, final Listener callback) {
+  void once(final String event, final Listener callback) {
     assert(callback != null);
     List<Listener> callbacks = _onceCallbacks[event];
     if (callbacks == null) {
@@ -38,8 +37,6 @@ class Emitter {
       }
     }
     callbacks.add(callback);
-
-    return this;
   }
 
   /// If event both [event] and [callback] are provided, it will remove the listener.
@@ -47,7 +44,7 @@ class Emitter {
   /// If neither one are specified, it will remove all registered listeners.
   /// [event] an event name.
   /// [callback]
-  Emitter off([String event, Listener callback]) {
+  void off([String event, Listener callback]) {
     if (event != null && callback != null) {
       _callbacks[event]?.removeWhere((Listener it) => it == callback);
       _onceCallbacks[event]?.removeWhere((Listener it) => it == callback);
@@ -58,7 +55,6 @@ class Emitter {
       _callbacks.clear();
       _onceCallbacks.clear();
     }
-    return this;
   }
 
   /// Executes each of listeners with the given args.
@@ -66,11 +62,11 @@ class Emitter {
   /// @param event an event name.
   /// @param args
   /// @return a reference to this object.
-  Emitter emit(String event, [dynamic args]) {
-    _onceCallbacks?.remove(event)?.forEach((Listener listener) => listener(args));
-    _callbacks[event]?.forEach((Listener listener) => listener(args));
+  void emit(String event, [List<dynamic> args]) {
+    _onceCallbacks?.remove(event)?.toList()?.forEach((Listener listener) => listener(args));
 
-    return this;
+    final List<Listener> listeners = _callbacks[event]?.toList();
+    if (listeners != null) for (Listener l in listeners) l(args);
   }
 
   /// Returns a list of listeners for the specified event.

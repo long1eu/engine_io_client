@@ -15,7 +15,7 @@ import 'package:web_socket_channel/io.dart';
 
 class WebSocket extends Transport {
   static const String NAME = 'websocket';
-  static final Log log = new Log(NAME);
+  static final Log log = new Log('EngineIo.WebSocket');
 
   WebSocket(TransportOptions options) : super(options, NAME);
 
@@ -24,7 +24,7 @@ class WebSocket extends Transport {
   @override
   Future<Null> doOpen() async {
     final Map<String, List<String>> headers = <String, List<String>>{};
-    emit(TransportEvent.requestHeaders.name, headers);
+    emit(TransportEvent.requestHeaders.name, <Map<String, List<String>>>[headers]);
     socket = new IOWebSocketChannel.connect(uri, headers: headers);
     socket.stream.listen(onMessage, onError: onSocketError, onDone: onClose);
     onOpen();

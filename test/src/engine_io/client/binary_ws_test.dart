@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 import 'connection.dart';
 
 void main() async {
-  final Log log = new Log('binary_ws_connection');
+  final Log log = new Log('EngineIo.binary_ws_connection');
   Socket socket;
 
   test('receiveBinaryData', () async {
@@ -24,20 +24,20 @@ void main() async {
     });
 
     socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (dynamic args) {
+    socket.on(SocketEvent.open.name, (List<dynamic> args) {
       log.d('open');
-      socket.on(SocketEvent.upgrade.name, (dynamic args) async {
+      socket.on(SocketEvent.upgrade.name, (List<dynamic> args) async {
         log.d('upgrade');
-        socket.on(SocketEvent.message.name, (dynamic args) {
+        socket.on(SocketEvent.message.name, (List<dynamic> args) {
           log.d('args: $args');
-          if (args == 'hi') return;
-          values.add(args);
+          if (args[0] == 'hi') return;
+          values.add(args[0]);
         });
         await socket.send(binaryData);
       });
     });
     await socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values.first, binaryData);
     socket.close();
@@ -53,12 +53,12 @@ void main() async {
     });
 
     socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (dynamic args) {
-      socket.on(SocketEvent.upgrade.name, (dynamic args) async {
-        socket.on(SocketEvent.message.name, (dynamic args) {
+    socket.on(SocketEvent.open.name, (List<dynamic> args) {
+      socket.on(SocketEvent.upgrade.name, (List<dynamic> args) async {
+        socket.on(SocketEvent.message.name, (List<dynamic> args) {
           log.d('args: $args');
-          if (args == 'hi') return;
-          values.add(args);
+          if (args[0] == 'hi') return;
+          values.add(args[0]);
         });
 
         await socket.send(binaryData);
@@ -67,7 +67,7 @@ void main() async {
       });
     });
     socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: 500), () {});
+    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values[0], binaryData);
     expect(values[1], 'cash money €€€');
