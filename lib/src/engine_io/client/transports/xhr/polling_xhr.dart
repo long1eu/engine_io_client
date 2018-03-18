@@ -19,8 +19,8 @@ class PollingXhr extends Polling {
 
     final RequestXhr request = new RequestXhr(options);
     request
-      ..on(XhrEvent.requestHeaders.name, (List<dynamic> args) => emit(TransportEvent.requestHeaders.name, args))
-      ..on(XhrEvent.responseHeaders.name, (List<dynamic> args) => emit(TransportEvent.responseHeaders.name, args));
+      ..on(XhrEvent.requestHeaders, (List<dynamic> args) async => await emit(TransportEvent.requestHeaders, args))
+      ..on(XhrEvent.responseHeaders, (List<dynamic> args) async => await emit(TransportEvent.responseHeaders, args));
 
     return request;
   }
@@ -36,9 +36,9 @@ class PollingXhr extends Polling {
     });
 
     final RequestXhr req = request(opts);
-    req.on(XhrEvent.success.name, (List<dynamic> args) => callback());
+    req.on(XhrEvent.success, (List<dynamic> args) async => callback());
 
-    req.on(XhrEvent.error.name, (List<dynamic> args) => onError('xhr post error', args));
+    req.on(XhrEvent.error, (List<dynamic> args) async => await onError('xhr post error', args));
     await req.create();
   }
 
@@ -46,8 +46,8 @@ class PollingXhr extends Polling {
   Future<Null> doPoll() async {
     log.d('xhr poll');
     final RequestXhr req = request();
-    req.on(XhrEvent.data.name, (List<dynamic> args) => onData(args.isNotEmpty ? args[0] : null));
-    req.on(XhrEvent.error.name, (List<dynamic> args) => onError('xhr poll error', args));
+    req.on(XhrEvent.data, (List<dynamic> args) async => await onData(args.isNotEmpty ? args[0] : null));
+    req.on(XhrEvent.error, (List<dynamic> args) async => await onError('xhr poll error', args));
     await req.create();
   }
 }

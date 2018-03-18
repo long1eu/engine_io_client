@@ -1,22 +1,10 @@
-library socket_state;
+class SocketState {
+  const SocketState._();
 
-import 'package:built_collection/built_collection.dart';
-import 'package:built_value/built_value.dart';
-import 'package:built_value/serializer.dart';
+  static const String opening = 'opening';
+  static const String open = 'open';
+  static const String closing = 'closing';
+  static const String closed = 'closed';
 
-part 'socket_state.g.dart';
-
-class SocketState extends EnumClass {
-  const SocketState._(String name) : super(name);
-
-  static const SocketState opening = _$opening;
-  static const SocketState open = _$open;
-  static const SocketState closing = _$closing;
-  static const SocketState closed = _$closed;
-
-  static BuiltSet<SocketState> get values => _$SocketStateValues;
-
-  static SocketState valueOf(String name) => _$SocketStateValueOf(name);
-
-  static Serializer<SocketState> get serializer => _$socketStateSerializer;
+  static List<String> values = const <String>[opening, open, closing, closed];
 }

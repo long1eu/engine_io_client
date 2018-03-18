@@ -24,10 +24,10 @@ class WebSocket extends Transport {
   @override
   Future<Null> doOpen() async {
     final Map<String, List<String>> headers = <String, List<String>>{};
-    emit(TransportEvent.requestHeaders.name, <Map<String, List<String>>>[headers]);
+    await emit(TransportEvent.requestHeaders, <Map<String, List<String>>>[headers]);
     socket = new IOWebSocketChannel.connect(uri, headers: headers);
     socket.stream.listen(onMessage, onError: onSocketError, onDone: onClose);
-    onOpen();
+    await onOpen();
   }
 
   Future<Null> onMessage(dynamic event) async {
@@ -39,7 +39,7 @@ class WebSocket extends Transport {
       throw new EngineIOException(name, '$event is not String nor List<int>.');
   }
 
-  void onSocketError(Exception e) => onError('websocket error', e);
+  void onSocketError(Exception e) async => await onError('websocket error', e);
 
   @override
   Future<Null> write(List<Packet> packets) async {
@@ -61,7 +61,7 @@ class WebSocket extends Transport {
 
       if (0 == --total) {
         writable = true;
-        emit(TransportEvent.drain.name);
+        await emit(TransportEvent.drain);
       }
     }
   }

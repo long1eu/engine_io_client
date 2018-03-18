@@ -27,20 +27,20 @@ void main() async {
     });
 
     final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (List<dynamic> args) async {
-      log.d('open');
-      socket.on(SocketEvent.message.name, (List<dynamic> args) {
-        log.d('args: $args');
+    socket.on(SocketEvent.open, (List<dynamic> args) async {
+      log.e('open');
+      socket.on(SocketEvent.message, (List<dynamic> args) {
+        log.e('args: $args');
         if (args[0] == 'hi') return;
         values.add(args[0]);
       });
       await socket.send(binaryData);
     });
-    socket.open();
+    await socket.open();
     await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values[0], binaryData);
-    socket.close();
+    await socket.close();
   });
 
   test('receiveBinaryDataAndMultibyteUTF8String', () async {
@@ -55,9 +55,9 @@ void main() async {
     });
 
     final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (List<dynamic> args) async {
+    socket.on(SocketEvent.open, (List<dynamic> args) async {
       log.d('open');
-      socket.on(SocketEvent.message.name, (List<dynamic> args) {
+      socket.on(SocketEvent.message, (List<dynamic> args) {
         log.d('args: $args');
         if (args[0] == 'hi') return;
         values.add(args[0]);
@@ -75,6 +75,7 @@ void main() async {
     expect(values[0], binaryData);
     expect(values[1], 'cash money €€€');
     expect(values[2], 'cash money ss €€€');
-    socket.close();
+    expect(values[3], '20["getAckBinary",""]');
+    await socket.close();
   });
 }

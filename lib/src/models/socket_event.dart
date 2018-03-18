@@ -1,35 +1,41 @@
-library socket_event;
+class SocketEvent {
+  const SocketEvent._();
 
-import 'package:built_collection/built_collection.dart';
-import 'package:built_value/built_value.dart';
-import 'package:built_value/serializer.dart';
+  static const String open = 'open';
+  static const String close = 'close';
+  static const String message = 'message';
+  static const String error = 'error';
+  static const String upgradeError = 'upgradeError';
+  static const String flush = 'flush';
+  static const String drain = 'drain';
+  static const String handshake = 'handshake';
+  static const String upgrading = 'upgrading';
+  static const String upgrade = 'upgrade';
+  static const String packet = 'packet';
+  static const String packetCreate = 'packetCreate';
+  static const String heartbeat = 'heartbeat';
+  static const String data = 'data';
+  static const String ping = 'ping';
+  static const String pong = 'pong';
+  static const String transport = 'transport';
 
-part 'socket_event.g.dart';
-
-class SocketEvent extends EnumClass {
-  const SocketEvent._(String name) : super(name);
-
-  static const SocketEvent open = _$open;
-  static const SocketEvent close = _$close;
-  static const SocketEvent message = _$message;
-  static const SocketEvent error = _$error;
-  static const SocketEvent upgradeError = _$upgradeError;
-  static const SocketEvent flush = _$flush;
-  static const SocketEvent drain = _$drain;
-  static const SocketEvent handshake = _$handshake;
-  static const SocketEvent upgrading = _$upgrading;
-  static const SocketEvent upgrade = _$upgrade;
-  static const SocketEvent packet = _$packet;
-  static const SocketEvent packetCreate = _$packetCreate;
-  static const SocketEvent heartbeat = _$heartbeat;
-  static const SocketEvent data = _$data;
-  static const SocketEvent ping = _$ping;
-  static const SocketEvent pong = _$pong;
-  static const SocketEvent transport = _$transport;
-
-  static BuiltSet<SocketEvent> get values => _$SocketEventValues;
-
-  static SocketEvent valueOf(String name) => _$SocketEventValueOf(name);
-
-  static Serializer<SocketEvent> get serializer => _$socketEventSerializer;
+  static List<String> get values => const <String>[
+        open,
+        close,
+        message,
+        error,
+        upgradeError,
+        flush,
+        drain,
+        handshake,
+        upgrading,
+        upgrade,
+        packet,
+        packetCreate,
+        heartbeat,
+        data,
+        ping,
+        pong,
+        transport
+      ];
 }

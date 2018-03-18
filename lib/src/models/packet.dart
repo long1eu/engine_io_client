@@ -9,9 +9,9 @@ part 'packet.g.dart';
 abstract class Packet implements Built<Packet, PacketBuilder> {
   factory Packet([PacketBuilder updates(PacketBuilder b)]) = _$Packet;
 
-  factory Packet.fromValues(int type, [dynamic data]) => new Packet.values(PacketType.values.elementAt(type), data);
+  factory Packet.fromValues(int type, [dynamic data]) => new Packet.values(PacketType.values[type], data);
 
-  factory Packet.values(PacketType type, [dynamic data]) {
+  factory Packet.values(String type, [dynamic data]) {
     return new Packet((PacketBuilder b) {
       b
         ..type = type
@@ -21,7 +21,7 @@ abstract class Packet implements Built<Packet, PacketBuilder> {
 
   Packet._();
 
-  PacketType get type;
+  String get type;
 
   @nullable
   Object get data;

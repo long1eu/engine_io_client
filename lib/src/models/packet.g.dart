@@ -27,8 +27,7 @@ class _$PacketSerializer implements StructuredSerializer<Packet> {
       {FullType specifiedType: FullType.unspecified}) {
     final result = <Object>[
       'type',
-      serializers.serialize(object.type,
-          specifiedType: const FullType(PacketType)),
+      serializers.serialize(object.type, specifiedType: const FullType(String)),
     ];
     if (object.data != null) {
       result
@@ -53,7 +52,7 @@ class _$PacketSerializer implements StructuredSerializer<Packet> {
       switch (key) {
         case 'type':
           result.type = serializers.deserialize(value,
-              specifiedType: const FullType(PacketType)) as PacketType;
+              specifiedType: const FullType(String)) as String;
           break;
         case 'data':
           result.data = serializers.deserialize(value,
@@ -68,7 +67,7 @@ class _$PacketSerializer implements StructuredSerializer<Packet> {
 
 class _$Packet extends Packet {
   @override
-  final PacketType type;
+  final String type;
   @override
   final Object data;
 
@@ -110,9 +109,9 @@ class _$Packet extends Packet {
 class PacketBuilder implements Builder<Packet, PacketBuilder> {
   _$Packet _$v;
 
-  PacketType _type;
-  PacketType get type => _$this._type;
-  set type(PacketType type) => _$this._type = type;
+  String _type;
+  String get type => _$this._type;
+  set type(String type) => _$this._type = type;
 
   Object _data;
   Object get data => _$this._data;

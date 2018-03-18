@@ -17,11 +17,11 @@ abstract class Transport extends Emitter {
   final String name;
   TransportOptions options;
 
-  TransportState readyState;
+  String readyState;
   bool writable = false;
 
-  void onError(String message, dynamic desc) {
-    emit(TransportEvent.error.name, <Error>[new EngineIOException(message, desc)]);
+  Future<Null> onError(String message, dynamic desc) async {
+    await emit(TransportEvent.error, <Error>[new EngineIOException(message, desc)]);
   }
 
   Future<Null> open() async {
@@ -34,7 +34,7 @@ abstract class Transport extends Emitter {
   Future<Null> close() async {
     if (readyState == TransportState.opening || readyState == TransportState.open) {
       await doClose();
-      onClose();
+      await onClose();
     }
   }
 
@@ -50,26 +50,26 @@ abstract class Transport extends Emitter {
     }
   }
 
-  void onOpen() {
+  Future<Null> onOpen() async {
     log.d('onOpen: ');
     readyState = TransportState.open;
     writable = true;
-    emit(TransportEvent.open.name);
+    await emit(TransportEvent.open);
   }
 
   Future<Null> onData(dynamic data) async {
     if (data is String) {
-      onPacket(Parser.decodePacket(data));
+      await onPacket(Parser.decodePacket(data));
     } else if (data is List<int>) {
-      onPacket(Parser.decodeBytePacket(data));
+      await onPacket(Parser.decodeBytePacket(data));
     }
   }
 
-  void onPacket(Packet packet) => emit(TransportEvent.packet.name, <Packet>[packet]);
+  Future<Null> onPacket(Packet packet) async => await emit(TransportEvent.packet, <Packet>[packet]);
 
-  void onClose() {
+  Future<Null> onClose() async {
     readyState = TransportState.closed;
-    emit(TransportEvent.close.name);
+    await emit(TransportEvent.close);
   }
 
   Future<Null> write(List<Packet> packets);

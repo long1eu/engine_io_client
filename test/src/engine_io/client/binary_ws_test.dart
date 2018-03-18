@@ -24,12 +24,12 @@ void main() async {
     });
 
     socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (List<dynamic> args) {
-      log.d('open');
-      socket.on(SocketEvent.upgrade.name, (List<dynamic> args) async {
-        log.d('upgrade');
-        socket.on(SocketEvent.message.name, (List<dynamic> args) {
-          log.d('args: $args');
+    socket.on(SocketEvent.open, (List<dynamic> args) {
+      log.e('open');
+      socket.on(SocketEvent.upgrade, (List<dynamic> args) async {
+        log.e('upgrade');
+        socket.on(SocketEvent.message, (List<dynamic> args) {
+          log.e('args: $args');
           if (args[0] == 'hi') return;
           values.add(args[0]);
         });
@@ -40,7 +40,7 @@ void main() async {
     await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values.first, binaryData);
-    socket.close();
+    await socket.close();
   });
 
   test('receiveBinaryDataAndMultibyteUTF8String', () async {
@@ -53,9 +53,11 @@ void main() async {
     });
 
     socket = new Socket(opts);
-    socket.on(SocketEvent.open.name, (List<dynamic> args) {
-      socket.on(SocketEvent.upgrade.name, (List<dynamic> args) async {
-        socket.on(SocketEvent.message.name, (List<dynamic> args) {
+    socket.on(SocketEvent.open, (List<dynamic> args) {
+      log.e('main: open');
+      socket.on(SocketEvent.upgrade, (List<dynamic> args) async {
+        log.e('main: upgrade');
+        socket.on(SocketEvent.message, (List<dynamic> args) {
           log.d('args: $args');
           if (args[0] == 'hi') return;
           values.add(args[0]);
@@ -66,12 +68,12 @@ void main() async {
         await socket.send('cash money ss €€€');
       });
     });
-    socket.open();
+    await socket.open();
     await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
-
+    log.d(values.toString());
     expect(values[0], binaryData);
     expect(values[1], 'cash money €€€');
     expect(values[2], 'cash money ss €€€');
-    socket.close();
+    await socket.close();
   });
 }

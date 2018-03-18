@@ -39,7 +39,7 @@ abstract class Polling extends Transport {
       if (_polling) {
         log.d('we are currently polling - waiting to pause');
         total++;
-        once(PollingEvent.pollComplete.name, (List<dynamic> args) async {
+        once(PollingEvent.pollComplete, (List<dynamic> args) async {
           log.d('pre-pause polling complete');
           if (--total == 0) await pause();
         });
@@ -48,7 +48,7 @@ abstract class Polling extends Transport {
       if (!writable) {
         log.d('we are currently writing - waiting to pause');
         total++;
-        once(TransportEvent.drain.name, (List<dynamic> args) async {
+        once(TransportEvent.drain, (List<dynamic> args) async {
           log.d('pre-pause writing complete');
           if (--total == 0) await pause();
         });
@@ -62,7 +62,7 @@ abstract class Polling extends Transport {
     log.d('polling');
     _polling = true;
     await doPoll();
-    emit(PollingEvent.poll.name);
+    await emit(PollingEvent.poll);
   }
 
   @override
@@ -73,14 +73,14 @@ abstract class Polling extends Transport {
 
     final List<Packet> packets = data is String ? Parser.decodePayload(data) : Parser.decodeBinaryPayload(data);
     for (Packet packet in packets) {
-      if (readyState == TransportState.opening) onOpen();
-      if (packet.type == PacketType.close) onClose();
-      onPacket(packet);
+      if (readyState == TransportState.opening) await onOpen();
+      if (packet.type == PacketType.close) await onClose();
+      await onPacket(packet);
     }
 
     if (readyState != TransportState.closed) {
       _polling = false;
-      emit(PollingEvent.pollComplete.name);
+      await emit(PollingEvent.pollComplete);
 
       if (readyState == TransportState.open) {
         await poll();
@@ -92,10 +92,10 @@ abstract class Polling extends Transport {
 
   @override
   Future<Null> doClose() async {
-    void close() {
+    Future<Null> close() async {
       log.d('writing close packet');
       try {
-        write(<Packet>[new Packet.values(PacketType.close)]);
+        await write(<Packet>[new Packet.values(PacketType.close)]);
       } catch (err) {
         throw new Exception(err);
       }
@@ -103,21 +103,21 @@ abstract class Polling extends Transport {
 
     if (readyState == TransportState.open) {
       log.d('transport open - closing');
-      close();
+      await close();
     } else {
       // in case we're trying to close while
       // handshaking is in progress (engine.io-client GH-164)
       log.d('transport not open - deferring close');
-      once(TransportEvent.open.name, (List<dynamic> args) => close());
+      once(TransportEvent.open, (List<dynamic> args) async => await close());
     }
   }
 
   @override
   Future<Null> write(List<Packet> packets) async {
     writable = false;
-    void callback() {
+    Future<Null> callback() async {
       writable = true;
-      emit(TransportEvent.drain.name);
+      await emit(TransportEvent.drain);
     }
 
     final dynamic encoded = Parser.encodePayload(packets);

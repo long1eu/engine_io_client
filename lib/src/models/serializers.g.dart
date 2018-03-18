@@ -17,13 +17,8 @@ part of serializers;
 Serializers _$serializers = (new Serializers().toBuilder()
       ..add(HandshakeData.serializer)
       ..add(Packet.serializer)
-      ..add(PacketType.serializer)
-      ..add(SocketEvent.serializer)
       ..add(SocketOptions.serializer)
-      ..add(TransportEvent.serializer)
       ..add(TransportOptions.serializer)
-      ..add(TransportState.serializer)
-      ..add(XhrEvent.serializer)
       ..add(XhrOptions.serializer)
       ..addBuilderFactory(
           const FullType(BuiltList, const [const FullType(String)]),

@@ -33,56 +33,57 @@ class RequestXhr extends Emitter {
 
     headers['Accept'] = <String>['*/*'];
 
-    onRequestHeaders(headers);
+    onRequestHeaders(headers).then((_) async {
+      log.d('sending xhr with url ${options.uri} | data ${options.data}');
 
-    log.d('sending xhr with url ${options.uri} | data ${options.data}');
+      final Request request = new Request(options.method, Uri.parse(options.uri));
+      request.headers.addAll(headers.map((String key, List<String> value) => new MapEntry<String, String>(key, value.first)));
 
-    final Request request = new Request(options.method, Uri.parse(options.uri));
-    request.headers.addAll(headers.map((String key, List<String> value) => new MapEntry<String, String>(key, value.first)));
-
-    if (options.data is String) {
-      request.body = options.data;
-    } else if (options.data is List<int>) {
-      request.bodyBytes = options.data;
-    }
-
-    try {
-      response = await options.client.send(request);
-
-      onResponseHeaders(response.headers.map((String key, String value) {
-        return new MapEntry<String, List<String>>(key, <String>[value]);
-      }));
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        await onLoad();
-      } else {
-        onError(<Error>[new StateError(response.statusCode.toString())]);
+      if (options.data is String) {
+        request.body = options.data;
+      } else if (options.data is List<int>) {
+        request.bodyBytes = options.data;
       }
-    } on Error catch (e) {
-      onError(<Error>[e]);
-    }
+
+      try {
+        response = await options.client.send(request);
+
+        await onResponseHeaders(response.headers.map((String key, String value) {
+          return new MapEntry<String, List<String>>(key, <String>[value]);
+        }));
+
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          await onLoad();
+        } else {
+          onError(<Error>[new StateError(response.statusCode.toString())]);
+        }
+      } on Error catch (e) {
+        onError(<Error>[e]);
+      }
+      print('result is $headers');
+    });
   }
 
-  void onSuccess() {
-    emit(XhrEvent.success.name);
+  Future<Null> onSuccess() async {
+    await emit(XhrEvent.success);
   }
 
   /// Can be [String] or [List<int>]
-  void onData(dynamic data) {
-    emit(XhrEvent.data.name, <dynamic>[data]);
-    onSuccess();
+  Future<Null> onData(dynamic data) async {
+    await emit(XhrEvent.data, <dynamic>[data]);
+    await onSuccess();
   }
 
-  void onError(List<Error> error) {
-    emit(XhrEvent.error.name, error);
+  Future<Null> onError(List<Error> error) async {
+    await emit(XhrEvent.error, error);
   }
 
-  void onRequestHeaders(Map<String, List<String>> headers) {
-    emit(XhrEvent.requestHeaders.name, <Map<String, List<String>>>[headers]);
+  Future<Null> onRequestHeaders(Map<String, List<String>> headers) async {
+    return await emit(XhrEvent.requestHeaders, <Map<String, List<String>>>[headers]);
   }
 
-  void onResponseHeaders(Map<String, List<String>> headers) {
-    emit(XhrEvent.responseHeaders.name, <Map<String, List<String>>>[headers]);
+  Future<Null> onResponseHeaders(Map<String, List<String>> headers) async {
+    await emit(XhrEvent.responseHeaders, <Map<String, List<String>>>[headers]);
   }
 
   Future<Null> onLoad() async {
@@ -90,13 +91,13 @@ class RequestXhr extends Emitter {
     try {
       if (contentType.toLowerCase() == BINARY_CONTENT_TYPE) {
         final Uint8List bytes = await response.stream.toBytes();
-        onData(bytes);
+        await onData(bytes);
       } else {
         final String body = await response.stream.bytesToString();
-        onData(body);
+        await onData(body);
       }
     } on Error catch (e) {
-      onError(<Error>[e]);
+      await onError(<Error>[e]);
     }
   }
 }

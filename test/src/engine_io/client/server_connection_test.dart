@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:built_collection/built_collection.dart';
+import 'package:engine_io_client/engine_io_client.dart';
 import 'package:engine_io_client/src/engine_io/client/socket.dart';
 import 'package:engine_io_client/src/engine_io/client/transport.dart';
 import 'package:engine_io_client/src/engine_io/client/transports/polling.dart';
@@ -14,6 +15,8 @@ import 'package:test/test.dart';
 import 'connection.dart';
 
 void main() {
+  final Log log = new Log('server_connection_test');
+
   final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
     b..port = Connection.PORT;
   });
@@ -23,10 +26,10 @@ void main() {
 
     final Socket socket = new Socket(opts);
     socket
-      ..on(SocketEvent.open.name, (List<dynamic> args) => values.add('onOpen'))
-      ..on(SocketEvent.close.name, (List<dynamic> args) => values.add('onClose'));
+      ..on(SocketEvent.open, (List<dynamic> args) async => values.add('onOpen'))
+      ..on(SocketEvent.close, (List<dynamic> args) async => values.add('onClose'));
 
-    socket.open();
+    await socket.open();
     await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
     expect(values.first, 'onOpen');
     await socket.close();
@@ -40,22 +43,22 @@ void main() {
 
     final Socket socket = new Socket(opts);
     socket
-      ..on(SocketEvent.open.name, (List<dynamic> args) => socket.send('hello'))
-      ..on(SocketEvent.message.name, (List<dynamic> args) => values.add(args[0]));
+      ..on(SocketEvent.open, (List<dynamic> args) => socket.send('hello'))
+      ..on(SocketEvent.message, (List<dynamic> args) async => values.add(args[0]));
 
     await socket.open();
     await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values[0], 'hi');
     expect(values[1], 'hello');
-    socket.close();
+    await socket.close();
   });
 
   test('handshake', () async {
     final List<dynamic> values = <dynamic>[];
 
     final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.handshake.name, (List<dynamic> args) => values.add(args));
+    socket.on(SocketEvent.handshake, (List<dynamic> args) async => values.add(args));
     await socket.open();
     await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
@@ -67,7 +70,7 @@ void main() {
     expect(handshakeData.pingTimeout > 0, isTrue);
     expect(handshakeData.pingInterval > 0, isTrue);
 
-    socket.close();
+    await socket.close();
   });
 
   test('upgrade', () async {
@@ -75,8 +78,8 @@ void main() {
 
     final Socket socket = new Socket(opts);
     socket
-      ..on(SocketEvent.upgrading.name, (List<dynamic> args) => values.add(args[0]))
-      ..on(SocketEvent.upgrade.name, (List<dynamic> args) => values.add(args[0]));
+      ..on(SocketEvent.upgrading, (List<dynamic> args) async => values.add(args[0]))
+      ..on(SocketEvent.upgrade, (List<dynamic> args) async => values.add(args[0]));
     await socket.open();
 
     await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
@@ -86,7 +89,7 @@ void main() {
     expect(values[1] is Transport, isTrue);
     expect(values[1], isNotNull);
 
-    socket.close();
+    await socket.close();
   });
 
   test('pollingHeaders', () async {
@@ -99,14 +102,16 @@ void main() {
     });
 
     final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.transport.name, (List<dynamic> args) {
+    socket.on(SocketEvent.transport, (List<dynamic> args) async {
       final Transport transport = args[0];
       transport
-        ..on(TransportEvent.requestHeaders.name, (List<dynamic> args) {
+        ..on(TransportEvent.requestHeaders, (List<dynamic> args)  {
+          log.e('main: requestHeaders');
           final Map<String, List<String>> headers = args[0];
           headers['X-EngineIO'] = <String>['foo'];
         })
-        ..on(TransportEvent.responseHeaders.name, (List<dynamic> args) {
+        ..on(TransportEvent.responseHeaders, (List<dynamic> args) {
+          log.e('main: responseHeaders');
           final Map<String, List<String>> headers = args[0];
           print(headers);
 
@@ -122,8 +127,8 @@ void main() {
     expect(messages[0], 'hi');
     expect(messages[1], 'foo');
 
-    socket.close();
-  });
+    await socket.close();
+  }, timeout: new Timeout(const Duration(minutes: 2)));
 
   /*
   //This will fail because WebSocket doesn't have a way to retrieve the headers
@@ -166,7 +171,7 @@ void main() {
     final List<dynamic> values = <dynamic>[];
 
     final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.upgrade.name, (List<dynamic> args) async {
+    socket.on(SocketEvent.upgrade, (List<dynamic> args) async {
       final Transport transport = args[0];
       await socket.close();
 
@@ -180,7 +185,7 @@ void main() {
         final Socket socket2 = new Socket(opts);
         await socket2.open();
         values.add(socket2.transport.name);
-        socket2.close();
+        await socket2.close();
       }
     });
     await socket.open();
@@ -191,14 +196,14 @@ void main() {
     expect(values[0], Polling.NAME);
     expect(values[1], WebSocket.NAME);
 
-    socket.close();
+    await socket.close();
   });
 
   test('notRememberWebsocket', () async {
     final List<dynamic> values = <dynamic>[];
 
     final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.upgrade.name, (List<dynamic> args) async {
+    socket.on(SocketEvent.upgrade, (List<dynamic> args) async {
       final Transport transport = args[0];
       await socket.close();
 
@@ -212,7 +217,7 @@ void main() {
         final Socket socket2 = new Socket(opts);
         await socket2.open();
         values.add(socket2.transport.name);
-        socket2.close();
+        await socket2.close();
       }
     });
     await socket.open();
@@ -223,6 +228,6 @@ void main() {
     expect(values[0], Polling.NAME);
     expect(values[1], Polling.NAME);
 
-    socket.close();
+    await socket.close();
   });
 }

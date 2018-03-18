@@ -1,8 +1,10 @@
+import 'dart:async';
+
 import 'package:engine_io_client/src/emitter/emitter.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test('on', () {
+  test('on', () async {
     final Emitter emitter = new Emitter();
     final List<dynamic> calls = <dynamic>[];
 
@@ -16,14 +18,14 @@ void main() {
       calls.add(args[0]);
     });
 
-    emitter.emit('foo', <dynamic>[1]);
-    emitter.emit('bar', <dynamic>[1]);
-    emitter.emit('foo', <dynamic>[2]);
+    await emitter.emit('foo', <int>[1]);
+    await emitter.emit('bar', <int>[1]);
+    await emitter.emit('foo', <int>[2]);
 
     expect(calls, equals(<dynamic>['one', 1, 'two', 1, 'one', 2, 'two', 2]));
   });
 
-  test('once', () {
+  test('once', () async {
     final Emitter emitter = new Emitter();
     final List<dynamic> calls = <dynamic>[];
 
@@ -32,102 +34,104 @@ void main() {
       calls.add(args[0]);
     });
 
-    emitter.emit('foo', <dynamic>[1]);
-    emitter.emit('foo', <dynamic>[2]);
-    emitter.emit('foo', <dynamic>[3]);
-    emitter.emit('bar', <dynamic>[1]);
+    await emitter.emit('foo', <dynamic>[1]);
+    await emitter.emit('foo', <dynamic>[2]);
+    await emitter.emit('foo', <dynamic>[3]);
+    await emitter.emit('bar', <dynamic>[1]);
 
     expect(calls, equals(<dynamic>['one', 1]));
   });
 
-  test('off', () {
+  test('off', () async {
     final Emitter emitter = new Emitter();
     final List<dynamic> calls = <dynamic>[];
 
-    void one(List<dynamic> args) => calls.add('one');
-    void two(List<dynamic> args) => calls.add('two');
+    Future<Null> one(List<dynamic> args) async => calls.add('one');
+    Future<Null> two(List<dynamic> args) async => calls.add('two');
 
     emitter.on('foo', one);
     emitter.on('foo', two);
     emitter.off('foo', two);
 
-    emitter.emit('foo');
+    await emitter.emit('foo');
 
     expect(calls, equals(<dynamic>['one']));
   });
 
-  test('offWithOnce', () {
+  test('offWithOnce', () async {
     final Emitter emitter = new Emitter();
     final List<dynamic> calls = <dynamic>[];
 
-    void one(List<dynamic> args) => calls.add('one');
+    Future<Null> one(List<dynamic> args) async => calls.add('one');
 
     emitter.once('foo', one);
     emitter.off('foo', one);
 
-    emitter.emit('foo');
+    await emitter.emit('foo');
 
     expect(calls, equals(<dynamic>[]));
   });
 
-  test('offWhenCalledFromEvent', () {
+  test('offWhenCalledFromEvent', () async {
     final Emitter emitter = new Emitter();
     bool called = false;
 
-    void b(List<dynamic> args) => called = true;
+    Future<Null> b(List<dynamic> args) async {
+      called = true;
+    }
 
-    emitter.on('tobi', (List<dynamic> args) => emitter.off('tobi', b));
+    emitter.on('tobi', (List<dynamic> args) async => emitter.off('tobi', b));
     emitter.once('tobi', b);
-    emitter.emit('tobi');
+    await emitter.emit('tobi');
 
     expect(called, isTrue);
 
     called = false;
-    emitter.emit('tobi');
+    await emitter.emit('tobi');
     expect(called, isFalse);
   });
 
-  test('offEvent', () {
+  test('offEvent', () async {
     final Emitter emitter = new Emitter();
     final List<dynamic> calls = <dynamic>[];
 
-    void one(List<dynamic> args) => calls.add('one');
-    void two(List<dynamic> args) => calls.add('two');
+    Future<Null> one(List<dynamic> args) async => calls.add('one');
+    Future<Null> two(List<dynamic> args) async => calls.add('two');
 
     emitter.on('foo', one);
     emitter.on('foo', two);
     emitter.off('foo');
 
-    emitter.emit('foo');
-    emitter.emit('foo');
+    await emitter.emit('foo');
+    await emitter.emit('foo');
 
     expect(calls, equals(<dynamic>[]));
   });
 
-  test('offAll', () {
+  test('offAll', () async {
     final Emitter emitter = new Emitter();
     final List<dynamic> calls = <dynamic>[];
 
-    void one(List<dynamic> args) => calls.add('one');
-    void two(List<dynamic> args) => calls.add('two');
+    Future<Null> one(List<dynamic> args) async => calls.add('one');
+    Future<Null> two(List<dynamic> args) async => calls.add('two');
 
     emitter.on('foo', one);
     emitter.on('bar', two);
 
-    emitter.emit('foo');
-    emitter.emit('bar');
+    await emitter.emit('foo');
+    await emitter.emit('bar');
 
     emitter.off();
 
-    emitter.emit('foo');
-    emitter.emit('bar');
+    await emitter.emit('foo');
+    await emitter.emit('bar');
 
     expect(calls, equals(<dynamic>['one', 'two']));
   });
 
   test('listeners', () {
     final Emitter emitter = new Emitter();
-    void foo(List<dynamic> args) {}
+    Future<Null> foo(List<dynamic> args) async {}
 
     emitter.on('foo', foo);
 
@@ -141,7 +145,7 @@ void main() {
 
   test('hasListeners', () {
     final Emitter emitter = new Emitter();
-    void foo(List<dynamic> args) {}
+    Future<Null> foo(List<dynamic> args) async {}
 
     emitter.on('foo', foo);
 

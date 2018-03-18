@@ -1,23 +1,11 @@
-library xhr_event;
+class XhrEvent {
+  const XhrEvent._();
 
-import 'package:built_collection/built_collection.dart';
-import 'package:built_value/built_value.dart';
-import 'package:built_value/serializer.dart';
+  static const String success = 'success';
+  static const String data = 'data';
+  static const String error = 'error';
+  static const String requestHeaders = 'requestHeaders';
+  static const String responseHeaders = 'responseHeaders';
 
-part 'xhr_event.g.dart';
-
-class XhrEvent extends EnumClass {
-  const XhrEvent._(String name) : super(name);
-
-  static const XhrEvent success = _$success;
-  static const XhrEvent data = _$data;
-  static const XhrEvent error = _$error;
-  static const XhrEvent requestHeaders = _$requestHeaders;
-  static const XhrEvent responseHeaders = _$responseHeaders;
-
-  static BuiltSet<XhrEvent> get values => _$XhrEventValues;
-
-  static XhrEvent valueOf(String name) => _$XhrEventValueOf(name);
-
-  static Serializer<XhrEvent> get serializer => _$xhrEventSerializer;
+  static List<String> values = const <String>[success, data, error, requestHeaders, responseHeaders];
 }

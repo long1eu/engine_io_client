@@ -1,8 +1,10 @@
-typedef void Listener(List<dynamic> args);
+import 'dart:async';
+
+typedef FutureOr<Null> Listener(List<dynamic> args);
 
 class Emitter {
-  final Map<String, List<Listener>> _callbacks = <String, List<Listener>>{};
-  final Map<String, List<Listener>> _onceCallbacks = <String, List<Listener>>{};
+  final Map<String, Set<Listener>> _callbacks = <String, Set<Listener>>{};
+  final Map<String, Set<Listener>> _onceCallbacks = <String, Set<Listener>>{};
 
   /// Listens on the event.
   /// @param event event name.
@@ -10,15 +12,9 @@ class Emitter {
   /// @return a reference to this object.
   void on(String event, Listener callback) {
     assert(callback != null);
-    List<Listener> callbacks = _callbacks[event];
-    if (callbacks == null) {
-      callbacks = <Listener>[];
-      final List<Listener> tempCallbacks = _callbacks.putIfAbsent(event, () => callbacks);
-      if (tempCallbacks != null) {
-        callbacks = tempCallbacks;
-      }
-    }
+    final Set<Listener> callbacks = _callbacks[event] ?? new Set<Listener>();
     callbacks.add(callback);
+    _callbacks[event] = callbacks;
   }
 
   /// Adds a one time listener for the event.
@@ -28,15 +24,9 @@ class Emitter {
   /// @return a reference to this object.
   void once(final String event, final Listener callback) {
     assert(callback != null);
-    List<Listener> callbacks = _onceCallbacks[event];
-    if (callbacks == null) {
-      callbacks = <Listener>[];
-      final List<Listener> tempCallbacks = _onceCallbacks.putIfAbsent(event, () => callbacks);
-      if (tempCallbacks != null) {
-        callbacks = tempCallbacks;
-      }
-    }
+    final Set<Listener> callbacks = _onceCallbacks[event] ?? new Set<Listener>();
     callbacks.add(callback);
+    _onceCallbacks[event] = callbacks;
   }
 
   /// If event both [event] and [callback] are provided, it will remove the listener.
@@ -62,25 +52,26 @@ class Emitter {
   /// @param event an event name.
   /// @param args
   /// @return a reference to this object.
-  void emit(String event, [List<dynamic> args]) {
-    _onceCallbacks?.remove(event)?.toList()?.forEach((Listener listener) => listener(args));
+  Future<Null> emit(String event, [List<dynamic> args]) async {
+    final List<Listener> removed = _onceCallbacks?.remove(event)?.toList();
+    if (removed != null) for (Listener listener in removed) await listener(args);
 
     final List<Listener> listeners = _callbacks[event]?.toList();
-    if (listeners != null) for (Listener l in listeners) l(args);
+    if (listeners != null) for (Listener listener in listeners) await listener(args);
   }
 
   /// Returns a list of listeners for the specified event.
   ///
   /// @param event an event name.
   /// @return a reference to this object.
-  List<Listener> listeners(String event) => _callbacks[event] ?? new List<Listener>(0);
+  Set<Listener> listeners(String event) => _callbacks[event] ?? new Set<Listener>();
 
   /// Check if this emitter has listeners for the specified event.
   ///
   /// @param event an event name.
   /// @return a reference to this object.
   bool hasListeners(String event) {
-    final List<Listener> callbacks = _callbacks[event];
+    final Set<Listener> callbacks = _callbacks[event];
     return callbacks != null && callbacks.isNotEmpty;
   }
 }
