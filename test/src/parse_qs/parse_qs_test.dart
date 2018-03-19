@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 // ignore_for_file: prefer_collection_literals
 void main() {
   test('decode', () {
-    Map<String, String> queryObject = ParseQS.decode('foo=bar');
+    MapBuilder<String, String> queryObject = ParseQS.decode('foo=bar');
     expect(queryObject['foo'], 'bar');
 
     queryObject = ParseQS.decode('france=paris&germany=berlin');

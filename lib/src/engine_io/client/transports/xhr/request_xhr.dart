@@ -35,57 +35,66 @@ class RequestXhr extends Emitter {
 
     headers['Accept'] = <String>['*/*'];
 
-    onRequestHeaders(headers).then((_) async {
-      log.d('sending xhr with url ${options.uri} | data ${options.data}');
+    onRequestHeaders(headers);
+    await new Future<Null>.delayed(const Duration(milliseconds: 100));
 
-      final Request request = new Request(options.method, Uri.parse(options.uri));
-      request.headers.addAll(headers.map((String key, List<String> value) => new MapEntry<String, String>(key, value.first)));
+    log.d('sending xhr with url ${options
+        .uri} | data ${options.data}');
 
-      if (options.data is String) {
-        request.body = options.data;
-      } else if (options.data is List<int>) {
-        request.bodyBytes = options.data;
+    final Request request = new Request(options.method, Uri.parse(options.uri));
+
+    request.headers.addAll(headers.map((String key, List<String> value) => new MapEntry<String, String>(key, value.first)));
+
+    if (options.data is String) {
+      request.body = options.data;
+    } else if (options.data is List<int>) {
+      request.bodyBytes = options.data;
+    }
+
+    try {
+      final ByteStream stream = request.finalize();
+
+      final HttpClientRequest httpClientRequest = await options.client.openUrl(options.method, Uri.parse(options.uri));
+
+      headers.forEach(httpClientRequest.headers.set);
+
+      httpClientRequest
+        ..followRedirects = true
+        ..maxRedirects = 5
+        ..contentLength = request.contentLength == null ? -1 : request.contentLength
+        ..persistentConnection = true;
+
+      final HttpClientResponse rawResponse = await stream.pipe(DelegatingStreamConsumer.typed(httpClientRequest));
+
+      final Map<String, String> h = <String, String>{};
+      rawResponse.headers.forEach((String key, List<String> values) => h[key] = values.join(','));
+
+      response = new StreamedResponse(
+        DelegatingStream.typed<List<int>>(rawResponse),
+        rawResponse.statusCode,
+        contentLength: rawResponse.contentLength == -1 ? null : rawResponse.contentLength,
+        request: request,
+        headers: h,
+        isRedirect: rawResponse.isRedirect,
+        persistentConnection: rawResponse.persistentConnection,
+        reasonPhrase: rawResponse.reasonPhrase,
+      );
+
+      await onResponseHeaders(response.headers.map((String key, String value) {
+        return new MapEntry<String, List<String>>(key, <String>[value]);
+      }));
+
+      print(response.statusCode);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        await onLoad();
+      } else {
+        onError(<Error>[new StateError(response.statusCode.toString())]);
       }
-
-      try {
-        final ByteStream stream = request.finalize();
-        final HttpClientRequest httpClientRequest = await options.client.openUrl(options.method, Uri.parse(options.uri));
-        headers.forEach(httpClientRequest.headers.set);
-        httpClientRequest
-          ..followRedirects = true
-          ..maxRedirects = 5
-          ..contentLength = request.contentLength == null ? -1 : request.contentLength
-          ..persistentConnection = true;
-
-        final HttpClientResponse rawResponse = await stream.pipe(DelegatingStreamConsumer.typed(httpClientRequest));
-
-        final Map<String, String> h = <String, String>{};
-        rawResponse.headers.forEach((String key, List<String> values) => h[key] = values.join(','));
-
-        response = new StreamedResponse(
-          DelegatingStream.typed<List<int>>(rawResponse),
-          rawResponse.statusCode,
-          contentLength: rawResponse.contentLength == -1 ? null : rawResponse.contentLength,
-          request: request,
-          headers: h,
-          isRedirect: rawResponse.isRedirect,
-          persistentConnection: rawResponse.persistentConnection,
-          reasonPhrase: rawResponse.reasonPhrase,
-        );
-
-        await onResponseHeaders(response.headers.map((String key, String value) {
-          return new MapEntry<String, List<String>>(key, <String>[value]);
-        }));
-
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          await onLoad();
-        } else {
-          onError(<Error>[new StateError(response.statusCode.toString())]);
-        }
-      } on Error catch (e) {
-        onError(<Error>[e]);
-      }
-    });
+    } catch (e) {
+      log.e(e);
+      onError(<dynamic>[e]);
+    }
   }
 
   Future<Null> onSuccess() async {
@@ -98,7 +107,7 @@ class RequestXhr extends Emitter {
     await onSuccess();
   }
 
-  Future<Null> onError(List<Error> error) async {
+  Future<Null> onError(List<dynamic> error) async {
     await emit(XhrEvent.error, error);
   }
 

@@ -39,6 +39,7 @@ analyzer:
     todo: ignore
   exclude:
     - 'bin/cache/**'
+    - '**_impl.dart'
     - '**.g.dart'
     - 'lib/generated/i18n.dart'
     # the following two are relative to the stocks example and the flutter package respectively

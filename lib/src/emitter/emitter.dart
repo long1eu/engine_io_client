@@ -1,6 +1,6 @@
 import 'dart:async';
 
-typedef FutureOr<Null> Listener(List<dynamic> args);
+typedef Future<Null> Listener(List<dynamic> args);
 
 class Emitter {
   final Map<String, Set<Listener>> _callbacks = <String, Set<Listener>>{};

@@ -45,7 +45,7 @@ void main() {
     await socket.close();
   });
 
-  test('receiveBinaryDataAndMultibyteUTF8StringSSL', () async {
+  test('receiveBinaryDataAndMultibyteUTF8String_PollingSSL', () async {
     final List<dynamic> values = <dynamic>[];
     final List<int> binaryData = new List<int>.generate(5, (_) => 0);
     for (int i = 0; i < binaryData.length; i++) binaryData[i] = i;
@@ -101,23 +101,70 @@ void main() {
         ..securityContext = context;
     });
 
-    final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.open, (List<dynamic> args) {
-      log.e('open');
-      socket.on(SocketEvent.upgrade, (List<dynamic> args) async {
-        log.e('upgrade');
-        socket.on(SocketEvent.message, (List<dynamic> args) {
-          log.e('args: $args');
-          if (args[0] == 'hi') return;
-          values.add(args[0]);
+    HttpOverrides.runZoned(() async {
+      final Socket socket = new Socket(opts);
+      socket.on(SocketEvent.open, (List<dynamic> args) {
+        log.e('open');
+        socket.on(SocketEvent.upgrade, (List<dynamic> args) async {
+          log.e('upgrade');
+          socket.on(SocketEvent.message, (List<dynamic> args) {
+            log.e('args: $args');
+            if (args[0] == 'hi') return;
+            values.add(args[0]);
+          });
+          await socket.send(binaryData);
         });
-        await socket.send(binaryData);
       });
-    });
-    await socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+      await socket.open();
+      await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
-    expect(values.first, binaryData);
-    await socket.close();
+      expect(values.first, binaryData);
+      await socket.close();
+    }, createHttpClient: (_) {
+      return new HttpClient(context: context);
+    });
+  });
+
+  test('receiveBinaryDataAndMultibyteUTF8String_WebSocketSSL', () async {
+    final List<dynamic> values = <dynamic>[];
+    final List<int> binaryData = new List<int>.generate(5, (_) => 0);
+    for (int i = 0; i < binaryData.length; i++) binaryData[0] = i;
+
+    final String certFile = '${Directory.current.path.toString()}/test/resources/test.crt';
+    final SecurityContext context = new SecurityContext()..setTrustedCertificates(certFile);
+    final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
+      b
+        ..port = Connection.PORT
+        ..secure = true
+        ..securityContext = context;
+    });
+
+    HttpOverrides.runZoned(() async {
+      final Socket socket = new Socket(opts);
+      socket.on(SocketEvent.open, (List<dynamic> args) {
+        log.e('main: open');
+        socket.on(SocketEvent.upgrade, (List<dynamic> args) async {
+          log.e('main: upgrade');
+          socket.on(SocketEvent.message, (List<dynamic> args) {
+            log.d('args: $args');
+            if (args[0] == 'hi') return;
+            values.add(args[0]);
+          });
+
+          await socket.send(binaryData);
+          await socket.send('cash money €€€');
+          await socket.send('cash money ss €€€');
+        });
+      });
+      await socket.open();
+      await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+      log.d(values.toString());
+      expect(values[0], binaryData);
+      expect(values[1], 'cash money €€€');
+      expect(values[2], 'cash money ss €€€');
+      await socket.close();
+    }, createHttpClient: (_) {
+      return new HttpClient(context: context);
+    });
   });
 }

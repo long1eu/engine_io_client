@@ -105,7 +105,7 @@ void main() {
     socket.on(SocketEvent.transport, (List<dynamic> args) async {
       final Transport transport = args[0];
       transport
-        ..on(TransportEvent.requestHeaders, (List<dynamic> args)  {
+        ..on(TransportEvent.requestHeaders, (List<dynamic> args) {
           log.e('main: requestHeaders');
           final Map<String, List<String>> headers = args[0];
           headers['X-EngineIO'] = <String>['foo'];
@@ -128,7 +128,7 @@ void main() {
     expect(messages[1], 'foo');
 
     await socket.close();
-  }, timeout: new Timeout(const Duration(minutes: 2)));
+  });
 
   /*
   //This will fail because WebSocket doesn't have a way to retrieve the headers

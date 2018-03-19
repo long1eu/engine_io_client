@@ -17,8 +17,8 @@ class ParseQS {
     return str.toString();
   }
 
-  static Map<String, String> decode(String qs) {
-    final Map<String, String> query = <String, String>{};
+  static MapBuilder<String, String> decode(String qs) {
+    final MapBuilder<String, String> query = new MapBuilder<String, String>();
     final List<String> pairs = qs.split('&');
     for (String _pair in pairs) {
       final List<String> pair = _pair.split('=');

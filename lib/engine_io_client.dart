@@ -15,3 +15,6 @@ export 'src/models/packet_type.dart';
 export 'src/models/socket_event.dart';
 export 'src/models/socket_options.dart';
 export 'src/models/socket_state.dart';
+export 'src/models/transport_event.dart';
+export 'src/models/transport_options.dart';
+export 'src/models/transport_state.dart';

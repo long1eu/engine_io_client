@@ -25,15 +25,7 @@ class WebSocket extends Transport {
   Future<Null> doOpen() async {
     final Map<String, List<String>> headers = <String, List<String>>{};
     await emit(TransportEvent.requestHeaders, <Map<String, List<String>>>[headers]);
-
-    await io.HttpOverrides.runZoned<Future<Null>>(
-      () async {
-        socket = await io.WebSocket.connect(uri, headers: headers);
-      },
-      createHttpClient: (io.SecurityContext securityContext) {
-        return new io.HttpClient(context: options.securityContext);
-      },
-    );
+    socket = await io.WebSocket.connect(uri, headers: headers);
     socket.listen(onMessage, onError: onSocketError, onDone: onClose);
     await onOpen();
   }
