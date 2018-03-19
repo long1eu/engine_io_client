@@ -26,7 +26,7 @@ class WebSocket extends Transport {
     final Map<String, List<String>> headers = <String, List<String>>{};
     await emit(TransportEvent.requestHeaders, <Map<String, List<String>>>[headers]);
 
-    socket = await io.HttpOverrides.runZoned<Future<io.WebSocket>>(
+    await io.HttpOverrides.runZoned<Future<Null>>(
       () async {
         socket = await io.WebSocket.connect(uri, headers: headers);
       },

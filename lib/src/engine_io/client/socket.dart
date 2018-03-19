@@ -112,7 +112,8 @@ class Socket extends Emitter {
         ..path = options != null ? options.path : _options.path
         ..timestampRequests = options != null ? options.timestampRequests : _options?.timestampRequests ?? false
         ..timestampParam = options != null ? options.timestampParam : _options.timestampParam
-        ..policyPort = options != null ? options.policyPort : _options.policyPort;
+        ..policyPort = options != null ? options.policyPort : _options.policyPort
+        ..securityContext = options != null ? options.securityContext : _options.securityContext;
     });
 
     Transport transport;

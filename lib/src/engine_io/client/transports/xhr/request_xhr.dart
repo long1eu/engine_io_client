@@ -58,7 +58,6 @@ class RequestXhr extends Emitter {
           ..persistentConnection = true;
 
         final HttpClientResponse rawResponse = await stream.pipe(DelegatingStreamConsumer.typed(httpClientRequest));
-        log.e(rawResponse.runtimeType);
 
         final Map<String, String> h = <String, String>{};
         rawResponse.headers.forEach((String key, List<String> values) => h[key] = values.join(','));

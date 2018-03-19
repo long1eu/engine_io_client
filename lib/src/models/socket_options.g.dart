@@ -78,6 +78,12 @@ class _$SocketOptionsSerializer implements StructuredSerializer<SocketOptions> {
         ..add(serializers.serialize(object.rawQuery,
             specifiedType: const FullType(String)));
     }
+    if (object.securityContext != null) {
+      result
+        ..add('securityContext')
+        ..add(serializers.serialize(object.securityContext,
+            specifiedType: const FullType(SecurityContext)));
+    }
 
     return result;
   }
@@ -157,6 +163,11 @@ class _$SocketOptionsSerializer implements StructuredSerializer<SocketOptions> {
                 const FullType(String)
               ])) as BuiltMap);
           break;
+        case 'securityContext':
+          result.securityContext = serializers.deserialize(value,
+                  specifiedType: const FullType(SecurityContext))
+              as SecurityContext;
+          break;
       }
     }
 
@@ -193,6 +204,8 @@ class _$SocketOptions extends SocketOptions {
   final int policyPort;
   @override
   final BuiltMap<String, String> query;
+  @override
+  final SecurityContext securityContext;
 
   factory _$SocketOptions([void updates(SocketOptionsBuilder b)]) =>
       (new SocketOptionsBuilder()..update(updates)).build();
@@ -211,7 +224,8 @@ class _$SocketOptions extends SocketOptions {
       this.timestampRequests,
       this.port,
       this.policyPort,
-      this.query})
+      this.query,
+      this.securityContext})
       : super._() {
     if (transports == null)
       throw new BuiltValueNullFieldError('SocketOptions', 'transports');
@@ -263,7 +277,8 @@ class _$SocketOptions extends SocketOptions {
         timestampRequests == other.timestampRequests &&
         port == other.port &&
         policyPort == other.policyPort &&
-        query == other.query;
+        query == other.query &&
+        securityContext == other.securityContext;
   }
 
   @override
@@ -282,22 +297,25 @@ class _$SocketOptions extends SocketOptions {
                                                 $jc(
                                                     $jc(
                                                         $jc(
-                                                            0,
-                                                            transports
-                                                                .hashCode),
-                                                        upgrade.hashCode),
-                                                    rememberUpgrade.hashCode),
-                                                host.hashCode),
-                                            rawQuery.hashCode),
-                                        transportOptions.hashCode),
-                                    hostname.hashCode),
-                                path.hashCode),
-                            timestampParam.hashCode),
-                        secure.hashCode),
-                    timestampRequests.hashCode),
-                port.hashCode),
-            policyPort.hashCode),
-        query.hashCode));
+                                                            $jc(
+                                                                0,
+                                                                transports
+                                                                    .hashCode),
+                                                            upgrade.hashCode),
+                                                        rememberUpgrade
+                                                            .hashCode),
+                                                    host.hashCode),
+                                                rawQuery.hashCode),
+                                            transportOptions.hashCode),
+                                        hostname.hashCode),
+                                    path.hashCode),
+                                timestampParam.hashCode),
+                            secure.hashCode),
+                        timestampRequests.hashCode),
+                    port.hashCode),
+                policyPort.hashCode),
+            query.hashCode),
+        securityContext.hashCode));
   }
 
   @override
@@ -316,7 +334,8 @@ class _$SocketOptions extends SocketOptions {
           ..add('timestampRequests', timestampRequests)
           ..add('port', port)
           ..add('policyPort', policyPort)
-          ..add('query', query))
+          ..add('query', query)
+          ..add('securityContext', securityContext))
         .toString();
   }
 }
@@ -389,6 +408,11 @@ class SocketOptionsBuilder
       _$this._query ??= new MapBuilder<String, String>();
   set query(MapBuilder<String, String> query) => _$this._query = query;
 
+  SecurityContext _securityContext;
+  SecurityContext get securityContext => _$this._securityContext;
+  set securityContext(SecurityContext securityContext) =>
+      _$this._securityContext = securityContext;
+
   SocketOptionsBuilder();
 
   SocketOptionsBuilder get _$this {
@@ -407,6 +431,7 @@ class SocketOptionsBuilder
       _port = _$v.port;
       _policyPort = _$v.policyPort;
       _query = _$v.query?.toBuilder();
+      _securityContext = _$v.securityContext;
       _$v = null;
     }
     return this;
@@ -442,7 +467,8 @@ class SocketOptionsBuilder
               timestampRequests: timestampRequests,
               port: port,
               policyPort: policyPort,
-              query: query.build());
+              query: query.build(),
+              securityContext: securityContext);
     } catch (_) {
       String _$failedField;
       try {

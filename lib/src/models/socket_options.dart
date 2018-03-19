@@ -1,5 +1,7 @@
 library socket_options;
 
+import 'dart:io' show SecurityContext;
+
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -70,6 +72,9 @@ abstract class SocketOptions implements Built<SocketOptions, SocketOptionsBuilde
   int get policyPort;
 
   BuiltMap<String, String> get query;
+
+  @nullable
+  SecurityContext get securityContext;
 
   static Serializer<SocketOptions> get serializer => _$socketOptionsSerializer;
 }
