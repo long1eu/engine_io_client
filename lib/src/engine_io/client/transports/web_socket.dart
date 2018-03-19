@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io' as io;
 
 import 'package:built_collection/built_collection.dart';
 import 'package:engine_io_client/src/engine_io/client/engine_io_exception.dart';
@@ -12,6 +11,7 @@ import 'package:engine_io_client/src/models/transport_options.dart';
 import 'package:engine_io_client/src/models/transport_state.dart';
 import 'package:engine_io_client/src/parse_qs/parse_qs.dart';
 import 'package:engine_io_client/src/yeast/yeast.dart';
+import 'package:web_socket_channel/io.dart';
 
 class WebSocket extends Transport {
   static const String NAME = 'websocket';
@@ -19,14 +19,15 @@ class WebSocket extends Transport {
 
   WebSocket(TransportOptions options) : super(options, NAME);
 
-  io.WebSocket socket;
+  IOWebSocketChannel socket;
 
   @override
   Future<Null> doOpen() async {
     final Map<String, List<String>> headers = <String, List<String>>{};
     await emit(TransportEvent.requestHeaders, <Map<String, List<String>>>[headers]);
-    socket = await io.WebSocket.connect(uri, headers: headers);
-    socket.listen(onMessage, onError: onSocketError, onDone: onClose);
+
+    socket = IOWebSocketChannel.connect(uri, headers: headers);
+    socket.stream.listen(onMessage, onError: onSocketError, onDone: onClose);
     await onOpen();
   }
 
@@ -39,7 +40,7 @@ class WebSocket extends Transport {
       throw new EngineIOException(name, '$event is not String nor List<int>.');
   }
 
-  void onSocketError(Exception e) async => await onError('websocket error', e);
+  void onSocketError(dynamic e) async => await onError('websocket error', e);
 
   @override
   Future<Null> write(List<Packet> packets) async {
@@ -54,7 +55,7 @@ class WebSocket extends Transport {
 
       final dynamic encoded = Parser.encodePacket(packet);
       try {
-        socket.add(encoded);
+        socket.sink.add(encoded);
       } catch (e) {
         log.e('WebSocket closed before we could write.');
       }
@@ -68,7 +69,7 @@ class WebSocket extends Transport {
 
   @override
   Future<Null> doClose() async {
-    await socket?.close(1000, '');
+    await socket?.sink?.close(1000, '');
     socket = null;
   }
 
