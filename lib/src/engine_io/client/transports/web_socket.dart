@@ -26,7 +26,7 @@ class WebSocket extends Transport {
     final Map<String, List<String>> headers = <String, List<String>>{};
     await emit(TransportEvent.requestHeaders, <Map<String, List<String>>>[headers]);
 
-    socket = IOWebSocketChannel.connect(uri, headers: headers);
+    socket = new IOWebSocketChannel.connect(uri, headers: headers);
     socket.stream.listen(onMessage, onError: onSocketError, onDone: onClose);
     await onOpen();
   }

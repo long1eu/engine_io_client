@@ -1,5 +1,7 @@
 // ignore_for_file: strong_mode_implicit_dynamic_parameter, avoid_function_literals_in_foreach_calls, always_specify_types, prefer_single_quotes
 class Log {
+  static bool shouldLog = true;
+
   Log(String tag, {bool formatTags: true}) {
     if (formatTags) {
       this.tag = _formatTag(tag);
@@ -10,6 +12,7 @@ class Log {
   String tag;
 
   void i(Object message) {
+    if (!shouldLog) return;
     if (message is List) {
       message.forEach((it) {
         print("I/$tag: $it");
@@ -19,6 +22,7 @@ class Log {
   }
 
   void d(Object message) {
+    if (!shouldLog) return;
     if (message is List) {
       message.forEach((it) {
         print("D/$tag: $it");
@@ -28,6 +32,7 @@ class Log {
   }
 
   void w(Object message) {
+    if (!shouldLog) return;
     print("W/$tag: WARNING-------------------------------------------------------------------");
     if (message is List) {
       message.forEach((it) {
@@ -39,6 +44,7 @@ class Log {
   }
 
   void e(Object message) {
+    if (!shouldLog) return;
     print("E/$tag: +----------------------------------ERROR---------------------------------+");
     if (message is List) {
       message.forEach((it) {
