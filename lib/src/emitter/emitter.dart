@@ -1,77 +1,81 @@
 import 'dart:async';
 
+import 'package:engine_io_client/src/logger.dart';
+import 'package:rxdart/rxdart.dart';
+
 typedef Future<Null> Listener(List<dynamic> args);
 
 class Emitter {
-  final Map<String, Set<Listener>> _callbacks = <String, Set<Listener>>{};
-  final Map<String, Set<Listener>> _onceCallbacks = <String, Set<Listener>>{};
+  static final Log log = new Log('Emitter');
 
-  /// Listens on the event.
-  /// @param event event name.
-  /// @param callback must not be null
-  /// @return a reference to this object.
-  void on(String event, Listener callback) {
-    assert(callback != null);
-    final Set<Listener> callbacks = _callbacks[event] ?? new Set<Listener>();
-    callbacks.add(callback);
-    _callbacks[event] = callbacks;
+  StreamController<Event> _events = new StreamController<Event>.broadcast();
+  Observable<Event> _observable;
+
+  Emitter() {
+    _observable = new Observable<Event>(_events.stream);
   }
 
-  /// Adds a one time listener for the event.
-  ///
-  /// @param event an event name.
-  /// @param callback must not be null
-  /// @return a reference to this object.
-  void once(final String event, final Listener callback) {
-    assert(callback != null);
-    final Set<Listener> callbacks = _onceCallbacks[event] ?? new Set<Listener>();
-    callbacks.add(callback);
-    _onceCallbacks[event] = callbacks;
-  }
+  /// Listens for the event with the [event] name. It will return an [Observable<Event>] that you can listen to.
+  Observable<Event> on(final String event) =>
+      _observable.where((Event e) => e.name == event).takeWhile((Event event) => event is! _CancelEvent);
 
-  /// If event both [event] and [callback] are provided, it will remove the listener.
-  /// If only [event] is provided, it will remove all listeners of the specified [event]
-  /// If neither one are specified, it will remove all registered listeners.
-  /// [event] an event name.
-  /// [callback]
-  void off([String event, Listener callback]) {
-    if (event != null && callback != null) {
-      _callbacks[event]?.removeWhere((Listener it) => it == callback);
-      _onceCallbacks[event]?.removeWhere((Listener it) => it == callback);
-    } else if (event != null) {
-      _callbacks.remove(event);
-      _onceCallbacks.remove(event);
+  /// Listens for the event only once. It returns an [Observable<Event>] that you can listen to.
+  Observable<Event> once(final String event) =>
+      _observable.where((Event e) => e.name == event).take(1).takeWhile((Event event) => event is! _CancelEvent);
+
+  /// Unsubscribe from the [event] or if [event] is null it will unsubscribe for all events.
+  void off([String event]) {
+    if (event != null) {
+      _events.add(new _CancelEvent(event));
     } else {
-      _callbacks.clear();
-      _onceCallbacks.clear();
+      _events.close();
+      _events = new StreamController<Event>.broadcast();
     }
   }
 
-  /// Executes each of listeners with the given args.
-  ///
-  /// @param event an event name.
-  /// @param args
-  /// @return a reference to this object.
-  Future<Null> emit(String event, [List<dynamic> args]) async {
-    final List<Listener> removed = _onceCallbacks?.remove(event)?.toList();
-    if (removed != null) for (Listener listener in removed) await listener(args);
-
-    final List<Listener> listeners = _callbacks[event]?.toList();
-    if (listeners != null) for (Listener listener in listeners) await listener(args);
+  void offAfter({String event, Duration duration = Duration.zero}) {
+    if (event != null) {
+      new Observable<String>.just(event).delay(duration).forEach((String event) => _events.add(new _CancelEvent(event)));
+    } else {
+      new Observable<String>.just('').delay(duration).forEach((String _) {
+        _events.close();
+        _events = new StreamController<Event>.broadcast();
+      });
+    }
   }
 
-  /// Returns a list of listeners for the specified event.
-  ///
-  /// @param event an event name.
-  /// @return a reference to this object.
-  Set<Listener> listeners(String event) => _callbacks[event] ?? new Set<Listener>();
+  /// Emits an [Event] with the [event] name and [args] parameters.
+  void emit(String event, {List<dynamic> args}) => _events.add(new Event(event, args));
 
-  /// Check if this emitter has listeners for the specified event.
-  ///
-  /// @param event an event name.
-  /// @return a reference to this object.
-  bool hasListeners(String event) {
-    final Set<Listener> callbacks = _callbacks[event];
-    return callbacks != null && callbacks.isNotEmpty;
-  }
+  void emitAll(List<Event> events) => new Observable<Event>.fromIterable(events).forEach(_events.add);
+
+  /// Emits an [Event] with the [event] name and [args] parameters after [duration] has passed. If duration is not provided
+  /// this acts exactly as [emit]
+  void emitAfter(String event, {List<dynamic> args, Duration duration = Duration.zero}) =>
+      new Observable<String>.just(event).delay(duration).listen((String event) => _events.add(new Event(event, args)));
+
+  void emitAllAfter(List<Event> events, {Duration duration}) =>
+      new Observable<Event>.fromIterable(events).delay(duration).forEach(_events.add);
+}
+
+class _CancelEvent extends Event {
+  _CancelEvent(String name) : super(name);
+}
+
+class Event {
+  Event(this.name, [this.args]);
+
+  final String name;
+
+  final List<dynamic> args;
+
+  @override
+  String toString() => 'Event{name: $name, args: $args}';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Event && runtimeType == other.runtimeType && name == other.name && args == other.args;
+
+  @override
+  int get hashCode => name.hashCode ^ args.hashCode;
 }
