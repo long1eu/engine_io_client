@@ -1,11 +1,9 @@
-class EngineIOException extends Error {
-  EngineIOException(this.transport, this.code);
+class EngineIOError extends Error {
+  EngineIOError(this.transport, this.code);
 
   final String transport;
   final dynamic code;
 
   @override
-  String toString() {
-    return 'EngineIOException{transport: $transport, code: $code}';
-  }
+  String toString() => 'EngineIOError{transport: $transport, code: $code}';
 }

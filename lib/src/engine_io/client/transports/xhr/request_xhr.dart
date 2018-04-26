@@ -5,7 +5,6 @@ import 'dart:typed_data';
 import 'package:async/async.dart';
 import 'package:engine_io_client/src/emitter/emitter.dart';
 import 'package:engine_io_client/src/logger.dart';
-import 'package:engine_io_client/src/models/xhr_event.dart';
 import 'package:engine_io_client/src/models/xhr_options.dart';
 import 'package:http/http.dart';
 
@@ -14,6 +13,12 @@ const String TEXT_CONTENT_TYPE = 'text/plain; charset=UTF-8';
 
 class RequestXhr extends Emitter {
   static final Log log = new Log('EngineIo.RequestXhr');
+
+  static const String eventSuccess = 'success';
+  static const String eventData = 'data';
+  static const String eventError = 'error';
+  static const String eventRequestHeaders = 'requestHeaders';
+  static const String eventResponseHeaders = 'responseHeaders';
 
   RequestXhr(this.options);
 
@@ -98,25 +103,25 @@ class RequestXhr extends Emitter {
   }
 
   Future<Null> onSuccess() async {
-    await emit(XhrEvent.success);
+    await emit(RequestXhr.eventSuccess);
   }
 
   /// Can be [String] or [List<int>]
   Future<Null> onData(dynamic data) async {
-    await emit(XhrEvent.data, <dynamic>[data]);
+    await emit(RequestXhr.eventData, <dynamic>[data]);
     await onSuccess();
   }
 
   Future<Null> onError(List<dynamic> error) async {
-    await emit(XhrEvent.error, error);
+    await emit(RequestXhr.eventError, error);
   }
 
   Future<Null> onRequestHeaders(Map<String, List<String>> headers) async {
-    return await emit(XhrEvent.requestHeaders, <Map<String, List<String>>>[headers]);
+    return await emit(RequestXhr.eventRequestHeaders, <Map<String, List<String>>>[headers]);
   }
 
   Future<Null> onResponseHeaders(Map<String, List<String>> headers) async {
-    await emit(XhrEvent.responseHeaders, <Map<String, List<String>>>[headers]);
+    await emit(RequestXhr.eventResponseHeaders, <Map<String, List<String>>>[headers]);
   }
 
   Future<Null> onLoad() async {

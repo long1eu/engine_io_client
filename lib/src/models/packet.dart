@@ -1,34 +1,26 @@
-library packet;
+class Packet<T> {
+  Packet(this.type, [this.data]);
 
-import 'package:built_value/built_value.dart';
-import 'package:built_value/serializer.dart';
-import 'package:engine_io_client/src/models/packet_type.dart';
+  factory Packet.fromValues(int type, [T data]) => new Packet<T>(values[type], data);
 
-part 'packet.g.dart';
+  final String type;
 
-abstract class Packet implements Built<Packet, PacketBuilder> {
-  factory Packet([PacketBuilder updates(PacketBuilder b)]) = _$Packet;
+  final T data;
 
-  factory Packet.fromValues(int type, [dynamic data]) => new Packet.values(PacketType.values[type], data);
+  static Packet<String> errorPacket = new Packet<String>(error, 'parser error');
 
-  factory Packet.values(String type, [dynamic data]) {
-    return new Packet((PacketBuilder b) {
-      b
-        ..type = type
-        ..data = data;
-    });
-  }
+  static Packet<List<int>> binaryError = new Packet<List<int>>(error, <int>[]);
 
-  Packet._();
+  static const String open = 'open';
+  static const String close = 'close';
+  static const String ping = 'ping';
+  static const String pong = 'pong';
+  static const String message = 'message';
+  static const String upgrade = 'upgrade';
+  static const String noop = 'noop';
+  static const String error = 'error';
 
-  String get type;
+  static const List<String> values = const <String>[open, close, ping, pong, message, upgrade, noop, error];
 
-  @nullable
-  Object get data;
-
-  static Packet error = new Packet.values(PacketType.error, 'parser error');
-
-  static Packet binaryError = new Packet.values(PacketType.error, <int>[]);
-
-  static Serializer<Packet> get serializer => _$packetSerializer;
+  static int index(String value) => values.indexOf(value);
 }

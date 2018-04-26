@@ -1,21 +1,19 @@
 import 'dart:async';
 
-import 'package:built_collection/built_collection.dart';
 import 'package:engine_io_client/src/engine_io/client/transport.dart';
 import 'package:engine_io_client/src/engine_io/parser/parser.dart';
 import 'package:engine_io_client/src/logger.dart';
 import 'package:engine_io_client/src/models/packet.dart';
-import 'package:engine_io_client/src/models/packet_type.dart';
-import 'package:engine_io_client/src/models/polling_event.dart';
-import 'package:engine_io_client/src/models/transport_event.dart';
 import 'package:engine_io_client/src/models/transport_options.dart';
-import 'package:engine_io_client/src/models/transport_state.dart';
 import 'package:engine_io_client/src/parse_qs/parse_qs.dart';
 import 'package:engine_io_client/src/yeast/yeast.dart';
 
 abstract class Polling extends Transport {
   static const String NAME = 'polling';
   static final Log log = new Log('EngineIo.Polling');
+
+  static const String eventPoll = 'poll';
+  static const String eventPollComplete = 'pollComplete';
 
   Polling(TransportOptions options) : super(options, NAME);
 
@@ -25,11 +23,11 @@ abstract class Polling extends Transport {
   Future<Null> doOpen() async => await poll();
 
   Future<Null> pause(Future<Null> onPause()) async {
-    readyState = TransportState.paused;
+    readyState = Transport.statePaused;
 
     Future<Null> pause() async {
       log.d('paused');
-      readyState = TransportState.paused;
+      readyState = Transport.statePaused;
       await onPause();
     }
 
@@ -39,7 +37,7 @@ abstract class Polling extends Transport {
       if (_polling) {
         log.d('we are currently polling - waiting to pause');
         total++;
-        once(PollingEvent.pollComplete, (List<dynamic> args) async {
+        once(Polling.eventPollComplete, (List<dynamic> args) async {
           log.d('pre-pause polling complete');
           if (--total == 0) await pause();
         });
@@ -48,7 +46,7 @@ abstract class Polling extends Transport {
       if (!writable) {
         log.d('we are currently writing - waiting to pause');
         total++;
-        once(TransportEvent.drain, (List<dynamic> args) async {
+        once(Transport.eventDrain, (List<dynamic> args) async {
           log.d('pre-pause writing complete');
           if (--total == 0) await pause();
         });
@@ -62,7 +60,7 @@ abstract class Polling extends Transport {
     log.d('polling');
     _polling = true;
     await doPoll();
-    await emit(PollingEvent.poll);
+    await emit(Polling.eventPoll);
   }
 
   @override
@@ -71,18 +69,18 @@ abstract class Polling extends Transport {
   Future<Null> _onData(dynamic data) async {
     log.i('polling got data:${data.runtimeType} $data ');
 
-    final List<Packet> packets = data is String ? Parser.decodePayload(data) : Parser.decodeBinaryPayload(data);
-    for (Packet packet in packets) {
-      if (readyState == TransportState.opening) await onOpen();
-      if (packet.type == PacketType.close) await onClose();
+    final List<Packet<dynamic>> packets = data is String ? Parser.decodePayload(data) : Parser.decodeBinaryPayload(data);
+    for (Packet<dynamic> packet in packets) {
+      if (readyState == Transport.stateOpening) await onOpen();
+      if (packet.type == Packet.close) await onClose();
       await onPacket(packet);
     }
 
-    if (readyState != TransportState.closed) {
+    if (readyState != Transport.stateClosed) {
       _polling = false;
-      await emit(PollingEvent.pollComplete);
+      await emit(Polling.eventPollComplete);
 
-      if (readyState == TransportState.open) {
+      if (readyState == Transport.stateOpen) {
         await poll();
       } else {
         log.i('ignoring poll - transport state "$readyState"');
@@ -95,20 +93,20 @@ abstract class Polling extends Transport {
     Future<Null> close() async {
       log.d('writing close packet');
       try {
-        await write(<Packet>[new Packet.values(PacketType.close)]);
+        await write(<Packet<Null>>[new Packet<Null>(Packet.close)]);
       } catch (err) {
         throw new Exception(err);
       }
     }
 
-    if (readyState == TransportState.open) {
+    if (readyState == Transport.stateOpen) {
       log.d('transport open - closing');
       await close();
     } else {
       // in case we're trying to close while
       // handshaking is in progress (engine.io-client GH-164)
       log.d('transport not open - deferring close');
-      once(TransportEvent.open, (List<dynamic> args) async => await close());
+      once(Transport.eventOpen, (List<dynamic> args) async => await close());
     }
   }
 
@@ -117,7 +115,7 @@ abstract class Polling extends Transport {
     writable = false;
     Future<Null> callback() async {
       writable = true;
-      await emit(TransportEvent.drain);
+      await emit(Transport.eventDrain);
     }
 
     final dynamic encoded = Parser.encodePayload(packets);
@@ -130,7 +128,7 @@ abstract class Polling extends Transport {
   }
 
   String get uri {
-    final MapBuilder<String, String> query = options?.query?.toBuilder() ?? new MapBuilder<String, String>();
+    final Map<String, String> query = options?.query ?? <String, String>{};
     final String schema = options.secure ? 'https' : 'http';
 
     String port = '';
@@ -140,7 +138,7 @@ abstract class Polling extends Transport {
 
     if (options.timestampRequests) query[options.timestampParam] = Yeast.yeast();
 
-    String derivedQuery = ParseQS.encode(query.build());
+    String derivedQuery = ParseQS.encode(query);
     if (derivedQuery.isNotEmpty) {
       derivedQuery = '?$derivedQuery';
     }
