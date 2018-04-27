@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io' hide Socket;
 
-import 'package:built_collection/built_collection.dart';
 import 'package:engine_io_client/engine_io_client.dart';
 import 'package:engine_io_client/src/models/socket_options.dart';
 import 'package:test/test.dart';
@@ -20,29 +19,28 @@ void main() {
 
     final String certFile = '${Directory.current.path.toString()}/test/resources/test.crt';
     final SecurityContext context = new SecurityContext()..setTrustedCertificates(certFile);
-    final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-      b
-        ..port = Connection.PORT
-        ..transports = new ListBuilder<String>(<String>[Polling.NAME])
-        ..secure = true
-        ..securityContext = context;
-    });
+    final SocketOptions opts = new SocketOptions(
+      port: Connection.PORT,
+      transports: <String>[Polling.NAME],
+      secure: true,
+      securityContext: context,
+    );
 
     final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.open, (List<dynamic> args) async {
+    socket.on(Socket.eventOpen, (List<dynamic> args) async {
       log.e('open');
-      socket.on(SocketEvent.message, (List<dynamic> args) {
+      socket.on(Socket.eventMessage, (List<dynamic> args) {
         log.e('args: $args');
         if (args[0] == 'hi') return;
         values.add(args[0]);
       });
-      await socket.send(binaryData);
+      await socket.send$(binaryData);
     });
-    await socket.open();
+    await socket.open$();
     await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values[0], binaryData);
-    await socket.close();
+    await socket.close$();
   });
 
   test('receiveBinaryDataAndMultibyteUTF8String_PollingSSL', () async {
@@ -52,29 +50,28 @@ void main() {
 
     final String certFile = '${Directory.current.path.toString()}/test/resources/test.crt';
     final SecurityContext context = new SecurityContext()..setTrustedCertificates(certFile);
-    final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-      b
-        ..port = Connection.PORT
-        ..transports = new ListBuilder<String>(<String>[Polling.NAME])
-        ..secure = true
-        ..securityContext = context;
-    });
+    final SocketOptions opts = new SocketOptions(
+      port: Connection.PORT,
+      transports: <String>[Polling.NAME],
+      secure: true,
+      securityContext: context,
+    );
 
     final Socket socket = new Socket(opts);
-    socket.on(SocketEvent.open, (List<dynamic> args) async {
+    socket.on(Socket.eventOpen, (List<dynamic> args) async {
       log.d('open');
-      socket.on(SocketEvent.message, (List<dynamic> args) {
+      socket.on(Socket.eventMessage, (List<dynamic> args) {
         log.d('args: $args');
         if (args[0] == 'hi') return;
         values.add(args[0]);
       });
 
-      await socket.send(binaryData);
-      await socket.send('cash money €€€');
-      await socket.send('cash money ss €€€');
-      await socket.send('20["getAckBinary",""]');
+      await socket.send$(binaryData);
+      await socket.send$('cash money €€€');
+      await socket.send$('cash money ss €€€');
+      await socket.send$('20["getAckBinary",""]');
     });
-    await socket.open();
+    await socket.open$();
     await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     log.d(values.toString());
@@ -82,7 +79,7 @@ void main() {
     expect(values[1], 'cash money €€€');
     expect(values[2], 'cash money ss €€€');
     expect(values[3], '20["getAckBinary",""]');
-    await socket.close();
+    await socket.close$();
   });
 
   test('receiveBinaryData_WebSocketSSL', () async {
@@ -94,32 +91,27 @@ void main() {
 
     final String certFile = '${Directory.current.path.toString()}/test/resources/test.crt';
     final SecurityContext context = new SecurityContext()..setTrustedCertificates(certFile);
-    final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-      b
-        ..port = Connection.PORT
-        ..secure = true
-        ..securityContext = context;
-    });
+    final SocketOptions opts = new SocketOptions(port: Connection.PORT, secure: true, securityContext: context);
 
     HttpOverrides.runZoned(() async {
       final Socket socket = new Socket(opts);
-      socket.on(SocketEvent.open, (List<dynamic> args) {
+      socket.on(Socket.eventOpen, (List<dynamic> args) {
         log.e('open');
-        socket.on(SocketEvent.upgrade, (List<dynamic> args) async {
+        socket.on(Socket.eventUpgrade, (List<dynamic> args) async {
           log.e('upgrade');
-          socket.on(SocketEvent.message, (List<dynamic> args) {
+          socket.on(Socket.eventMessage, (List<dynamic> args) {
             log.e('args: $args');
             if (args[0] == 'hi') return;
             values.add(args[0]);
           });
-          await socket.send(binaryData);
+          await socket.send$(binaryData);
         });
       });
-      await socket.open();
+      await socket.open$();
       await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
       expect(values.first, binaryData);
-      await socket.close();
+      await socket.close$();
     }, createHttpClient: (_) {
       return new HttpClient(context: context);
     });
@@ -132,37 +124,32 @@ void main() {
 
     final String certFile = '${Directory.current.path.toString()}/test/resources/test.crt';
     final SecurityContext context = new SecurityContext()..setTrustedCertificates(certFile);
-    final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-      b
-        ..port = Connection.PORT
-        ..secure = true
-        ..securityContext = context;
-    });
+    final SocketOptions opts = new SocketOptions(port: Connection.PORT, secure: true, securityContext: context);
 
     HttpOverrides.runZoned(() async {
       final Socket socket = new Socket(opts);
-      socket.on(SocketEvent.open, (List<dynamic> args) {
+      socket.on(Socket.eventOpen, (List<dynamic> args) {
         log.e('main: open');
-        socket.on(SocketEvent.upgrade, (List<dynamic> args) async {
+        socket.on(Socket.eventUpgrade, (List<dynamic> args) async {
           log.e('main: upgrade');
-          socket.on(SocketEvent.message, (List<dynamic> args) {
+          socket.on(Socket.eventMessage, (List<dynamic> args) {
             log.d('args: $args');
             if (args[0] == 'hi') return;
             values.add(args[0]);
           });
 
-          await socket.send(binaryData);
-          await socket.send('cash money €€€');
-          await socket.send('cash money ss €€€');
+          await socket.send$(binaryData);
+          await socket.send$('cash money €€€');
+          await socket.send$('cash money ss €€€');
         });
       });
-      await socket.open();
+      await socket.open$();
       await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
       log.d(values.toString());
       expect(values[0], binaryData);
       expect(values[1], 'cash money €€€');
       expect(values[2], 'cash money ss €€€');
-      await socket.close();
+      await socket.close$();
     }, createHttpClient: (_) {
       return new HttpClient(context: context);
     });

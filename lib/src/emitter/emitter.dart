@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:engine_io_client/src/logger.dart';
 import 'package:rxdart/rxdart.dart';
 
-typedef Future<Null> Listener(List<dynamic> args);
-
 class Emitter {
   static final Log log = new Log('Emitter');
 
@@ -33,6 +31,8 @@ class Emitter {
     }
   }
 
+  void offAll([List<String> events]) => events.forEach(off);
+
   void offAfter({String event, Duration duration = Duration.zero}) {
     if (event != null) {
       new Observable<String>.just(event).delay(duration).forEach((String event) => _events.add(new _CancelEvent(event)));
@@ -45,7 +45,7 @@ class Emitter {
   }
 
   /// Emits an [Event] with the [event] name and [args] parameters.
-  void emit(String event, {List<dynamic> args}) => _events.add(new Event(event, args));
+  void emit(String event, [List<dynamic> args]) => _events.add(new Event(event, args));
 
   void emitAll(List<Event> events) => new Observable<Event>.fromIterable(events).forEach(_events.add);
 

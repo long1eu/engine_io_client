@@ -23,4 +23,14 @@ class Packet<T> {
   static const List<String> values = const <String>[open, close, ping, pong, message, upgrade, noop, error];
 
   static int index(String value) => values.indexOf(value);
+
+  @override
+  String toString() => 'Packet{type: $type, data: $data}';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Packet && runtimeType == other.runtimeType && type == other.type && data == other.data;
+
+  @override
+  int get hashCode => type.hashCode ^ data.hashCode;
 }

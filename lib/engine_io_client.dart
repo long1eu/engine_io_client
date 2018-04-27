@@ -1,7 +1,7 @@
 library socket.io;
 
 export 'src/emitter/emitter.dart';
-export 'src/engine_io/client/engine_io_exception.dart';
+export 'src/engine_io/client/engine_io_error.dart';
 export 'src/engine_io/client/socket.dart';
 export 'src/engine_io/client/transport.dart';
 export 'src/engine_io/client/transports/polling.dart';

@@ -5,7 +5,7 @@ import 'package:utf/utf.dart';
 
 const int MAX_INT_CHAR_LENGTH = 10;
 
-typedef bool DecodePayload(Packet packet, int index, int total);
+typedef bool DecodePayload(Packet<dynamic> packet, int index, int total);
 
 class Parser {
   static const int PROTOCOL = 3;

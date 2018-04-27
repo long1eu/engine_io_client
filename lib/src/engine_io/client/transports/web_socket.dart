@@ -1,6 +1,6 @@
-import 'dart:async';
+import 'dart:io' as io;
 
-import 'package:engine_io_client/src/engine_io/client/engine_io_exception.dart';
+import 'package:engine_io_client/src/emitter/emitter.dart';
 import 'package:engine_io_client/src/engine_io/client/transport.dart';
 import 'package:engine_io_client/src/engine_io/parser/parser.dart';
 import 'package:engine_io_client/src/logger.dart';
@@ -8,7 +8,7 @@ import 'package:engine_io_client/src/models/packet.dart';
 import 'package:engine_io_client/src/models/transport_options.dart';
 import 'package:engine_io_client/src/parse_qs/parse_qs.dart';
 import 'package:engine_io_client/src/yeast/yeast.dart';
-import 'package:web_socket_channel/io.dart';
+import 'package:rxdart/rxdart.dart';
 
 class WebSocket extends Transport {
   static const String NAME = 'websocket';
@@ -16,59 +16,35 @@ class WebSocket extends Transport {
 
   WebSocket(TransportOptions options) : super(options, NAME);
 
-  IOWebSocketChannel socket;
+  io.WebSocket socket;
 
   @override
-  Future<Null> doOpen() async {
-    final Map<String, List<String>> headers = <String, List<String>>{};
-    await emit(Transport.eventRequestHeaders, <Map<String, List<String>>>[headers]);
+  Observable<Event> get doOpen$ => new Observable<Map<String, List<String>>>.just(<String, List<String>>{})
+      .doOnData((Map<String, List<String>> headers) => emit(Transport.eventRequestHeaders, <Map<String, List<String>>>[headers]))
+      .delay(const Duration(milliseconds: 2))
+      .flatMap((Map<String, List<String>> h) => new Observable<io.WebSocket>.fromFuture(io.WebSocket.connect(uri, headers: h)))
+      .doOnData((io.WebSocket socket) => this.socket = socket)
+      .flatMap<Event>((io.WebSocket socket) => new Observable<Event>.merge(<Observable<Event>>[
+            onOpen$,
+            new Observable<dynamic>(socket)
+                .where((dynamic event) => event != null)
+                .doOnData((dynamic event) => log.d('onMessage: $event'))
+                .flatMap((dynamic event) => onData(event))
+                .doOnError((dynamic e) => onError('websocket error', e))
+                .doOnDone(() => onClose$.listen(null)),
+          ]));
 
-    socket = new IOWebSocketChannel.connect(uri, headers: headers);
-    socket.stream.listen(onMessage, onError: onSocketError, onDone: onClose);
-    await onOpen();
-  }
-
-  Future<Null> onMessage(dynamic event) async {
-    log.d('onMessage: $event');
-    if (event == null) return;
-    if (event is String || event is List<int>) {
-      await onData(event);
-    } else
-      throw new EngineIOError(name, '$event is not String nor List<int>.');
-  }
-
-  void onSocketError(dynamic e) async => await onError('websocket error', e);
+  //.where((Event event) => event.name == Transport.eventOpen);
 
   @override
-  Future<Null> write(List<Packet<dynamic>> packets) async {
-    writable = false;
-
-    int total = packets.length;
-    for (Packet<dynamic> packet in packets) {
-      if (readyState != Transport.stateOpening && readyState != Transport.stateOpen) {
-        // Ensure we don't try to send anymore packets if the socket ends up being closed due to an exception
-        break;
-      }
-
-      final dynamic encoded = Parser.encodePacket(packet);
-      try {
-        socket.sink.add(encoded);
-      } catch (e) {
-        log.e('WebSocket closed before we could write.');
-      }
-
-      if (0 == --total) {
-        writable = true;
-        await emit(Transport.eventDrain);
-      }
-    }
-  }
+  Observable<void> get doClose$ => new Observable<Null>.fromFuture(socket?.close(1000, '')).map((Null _) => socket = null);
 
   @override
-  Future<Null> doClose() async {
-    await socket?.sink?.close(1000, '');
-    socket = null;
-  }
+  Observable<Event> write(List<Packet<dynamic>> packets) => new Observable<Packet<dynamic>>.fromIterable(packets)
+      .where((Packet<dynamic> _) => readyState != Transport.stateOpening && readyState != Transport.stateOpen)
+      .map<dynamic>((Packet<dynamic> packet) => Parser.encodePacket(packet))
+      .forEach((dynamic encoded) => socket.add(encoded))
+      .asObservable();
 
   String get uri {
     final Map<String, String> query = options?.query ?? <String, String>{};

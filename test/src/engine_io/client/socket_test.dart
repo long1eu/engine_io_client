@@ -36,11 +36,7 @@ void main() {
   });
 
   test('properlyParseHostWithPort', () {
-    final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-      b
-        ..host = 'localhost'
-        ..port = 8080;
-    });
+    final SocketOptions opts = new SocketOptions(host: 'localhost', port: 8080);
 
     final Socket socket = new Socket(opts);
     expect(socket.options.hostname, 'localhost');
@@ -64,9 +60,7 @@ void main() {
   });
 
   test('properlyParseIPv6HostWithoutPort1', () {
-    final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-      b..host = '[::1]';
-    });
+    final SocketOptions opts = new SocketOptions(host: '[::1]');
     final Socket socket = new Socket(opts);
 
     expect(socket.options.hostname, '::1');
@@ -74,11 +68,7 @@ void main() {
   });
 
   test('properlyParseIPv6HostWithoutPort2', () {
-    final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-      b
-        ..host = '[::1]'
-        ..secure = true;
-    });
+    final SocketOptions opts = new SocketOptions(host: '[::1]', secure: true);
     final Socket socket = new Socket(opts);
 
     expect(socket.options.hostname, '::1');
@@ -86,11 +76,7 @@ void main() {
   });
 
   test('properlyParseIPv6HostWithPort', () {
-    final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-      b
-        ..host = '[::1]'
-        ..port = 8080;
-    });
+    final SocketOptions opts = new SocketOptions(host: '[::1]', port: 8080);
     final Socket socket = new Socket(opts);
 
     expect(socket.options.hostname, '::1');
@@ -98,9 +84,7 @@ void main() {
   });
 
   test('properlyParseIPv6HostWithoutBrace', () {
-    final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-      b..host = '::1';
-    });
+    final SocketOptions opts = new SocketOptions(host: '[::1]');
     final Socket socket = new Socket(opts);
 
     expect(socket.options.hostname, '::1');

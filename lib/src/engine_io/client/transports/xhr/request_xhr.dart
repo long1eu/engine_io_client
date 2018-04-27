@@ -1,14 +1,12 @@
-import 'dart:async';
-import 'dart:io';
-import 'dart:typed_data';
-
-import 'package:async/async.dart';
 import 'package:engine_io_client/src/emitter/emitter.dart';
+import 'package:engine_io_client/src/engine_io/client/engine_io_error.dart';
 import 'package:engine_io_client/src/logger.dart';
 import 'package:engine_io_client/src/models/xhr_options.dart';
+import 'package:engine_io_client/src/transformers/on_error_resume_next_stream_transformer2.dart';
 import 'package:http/http.dart';
+import 'package:rxdart/rxdart.dart';
 
-const String BINARY_CONTENT_TYPE = 'application/octet-stream';
+const String BINARY_TYPE = 'application/octet-stream';
 const String TEXT_CONTENT_TYPE = 'text/plain; charset=UTF-8';
 
 class RequestXhr extends Emitter {
@@ -22,120 +20,59 @@ class RequestXhr extends Emitter {
 
   RequestXhr(this.options);
 
-  StreamedResponse response;
-
   final XhrOptions options;
 
-  Future<Null> create() async {
-    log.d('xhr open ${options.method}: ${options.uri}');
-    final Map<String, List<String>> headers = <String, List<String>>{};
+  Observable<Event> get create$ => new Observable<Map<String, List<String>>>.just(<String, List<String>>{})
+      .doOnData((Map<String, List<String>> _) => log.d('xhr open ${options.method}: ${options.uri}'))
+      .doOnData((Map<String, List<String>> h) => emit(RequestXhr.eventRequestHeaders, <Map<String, List<String>>>[h]))
+      .delay(const Duration(milliseconds: 100))
+      .map((Map<String, List<String>> headers) {
+        if (options.method == 'POST') {
+          if (options.data is List<int>) {
+            headers['content-type'] = <String>[BINARY_TYPE];
+          } else {
+            headers['content-type'] = <String>[TEXT_CONTENT_TYPE];
+          }
+        }
+        headers['Accept'] = <String>['*/*'];
+        return headers;
+      })
+      .doOnData((Map<String, List<String>> headers) => log.d('sending xhr with url ${options.uri} | data ${options.data}'))
+      .map((Map<String, List<String>> h) =>
+          h.map((String key, List<String> value) => new MapEntry<String, String>(key, value.first)))
+      .asyncMap((Map<String, String> headers) => options.method == 'GET'
+          ? new IOClient(options.client).get(options.uri, headers: headers)
+          : new IOClient(options.client).post(options.uri, headers: headers, body: options.data))
+      .doOnData((Response response) {
+        emit(RequestXhr.eventResponseHeaders, <Map<String, List<String>>>[
+          response.headers.map((String key, String value) => new MapEntry<String, List<String>>(key, <String>[value]))
+        ]);
+      })
+      .doOnData((Response response) => log.d('response: $response'))
+      .where((Response response) => response.statusCode >= 200 && response.statusCode < 300)
+      .flatMap((Response res) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          return new Observable<String>.just(res.headers['content-type'])
+              .map((String contentType) => contentType.split(';')[0].toLowerCase())
+              .map((String contentType) => contentType.toLowerCase() == BINARY_TYPE ? res.bodyBytes : res.body)
+              .flatMap((dynamic data) => onData(data));
+          //.map((dynamic data) => new Event(RequestXhr.eventData, <dynamic>[data]));
+        } else
+          throw new EngineIOError(log.tag, res.statusCode);
+      })
+      .transform(new OnErrorResumeNextStreamTransformer2<Event>((dynamic e) => onError(<dynamic>[e])));
 
-    if (options.method == 'POST') {
-      if (options.data is List<int>) {
-        headers['content-type'] = <String>[BINARY_CONTENT_TYPE];
-      } else {
-        headers['content-type'] = <String>[TEXT_CONTENT_TYPE];
-      }
-    }
+  Observable<Event> onData(dynamic data) => new Observable<String>.just('')
+      .doOnData((String _) => emitAll(<Event>[
+            new Event(RequestXhr.eventData, <dynamic>[data]),
+            new Event(RequestXhr.eventSuccess)
+          ]))
+      .flatMap((String _) => new Observable<Event>.fromIterable(<Event>[
+            new Event(RequestXhr.eventData, <dynamic>[data]),
+            new Event(RequestXhr.eventSuccess)
+          ]));
 
-    headers['Accept'] = <String>['*/*'];
-
-    onRequestHeaders(headers);
-    await new Future<Null>.delayed(const Duration(milliseconds: 100));
-
-    log.d('sending xhr with url ${options
-        .uri} | data ${options.data}');
-
-    final Request request = new Request(options.method, Uri.parse(options.uri));
-
-    request.headers.addAll(headers.map((String key, List<String> value) => new MapEntry<String, String>(key, value.first)));
-
-    if (options.data is String) {
-      request.body = options.data;
-    } else if (options.data is List<int>) {
-      request.bodyBytes = options.data;
-    }
-
-    try {
-      final ByteStream stream = request.finalize();
-
-      final HttpClientRequest httpClientRequest = await options.client.openUrl(options.method, Uri.parse(options.uri));
-
-      headers.forEach(httpClientRequest.headers.set);
-
-      httpClientRequest
-        ..followRedirects = true
-        ..maxRedirects = 5
-        ..contentLength = request.contentLength == null ? -1 : request.contentLength
-        ..persistentConnection = true;
-
-      final HttpClientResponse rawResponse = await stream.pipe(DelegatingStreamConsumer.typed(httpClientRequest));
-
-      final Map<String, String> h = <String, String>{};
-      rawResponse.headers.forEach((String key, List<String> values) => h[key] = values.join(','));
-
-      response = new StreamedResponse(
-        DelegatingStream.typed<List<int>>(rawResponse),
-        rawResponse.statusCode,
-        contentLength: rawResponse.contentLength == -1 ? null : rawResponse.contentLength,
-        request: request,
-        headers: h,
-        isRedirect: rawResponse.isRedirect,
-        persistentConnection: rawResponse.persistentConnection,
-        reasonPhrase: rawResponse.reasonPhrase,
-      );
-
-      await onResponseHeaders(response.headers.map((String key, String value) {
-        return new MapEntry<String, List<String>>(key, <String>[value]);
-      }));
-
-      print(response.statusCode);
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        await onLoad();
-      } else {
-        onError(<Error>[new StateError(response.statusCode.toString())]);
-      }
-    } catch (e) {
-      log.e(e);
-      onError(<dynamic>[e]);
-    }
-  }
-
-  Future<Null> onSuccess() async {
-    await emit(RequestXhr.eventSuccess);
-  }
-
-  /// Can be [String] or [List<int>]
-  Future<Null> onData(dynamic data) async {
-    await emit(RequestXhr.eventData, <dynamic>[data]);
-    await onSuccess();
-  }
-
-  Future<Null> onError(List<dynamic> error) async {
-    await emit(RequestXhr.eventError, error);
-  }
-
-  Future<Null> onRequestHeaders(Map<String, List<String>> headers) async {
-    return await emit(RequestXhr.eventRequestHeaders, <Map<String, List<String>>>[headers]);
-  }
-
-  Future<Null> onResponseHeaders(Map<String, List<String>> headers) async {
-    await emit(RequestXhr.eventResponseHeaders, <Map<String, List<String>>>[headers]);
-  }
-
-  Future<Null> onLoad() async {
-    final String contentType = response.headers['content-type'].split(';')[0];
-    try {
-      if (contentType.toLowerCase() == BINARY_CONTENT_TYPE) {
-        final Uint8List bytes = await response.stream.toBytes();
-        await onData(bytes);
-      } else {
-        final String body = await response.stream.bytesToString();
-        await onData(body);
-      }
-    } on Error catch (e) {
-      await onError(<Error>[e]);
-    }
-  }
+  Observable<Event> onError(List<dynamic> error) => new Observable<String>.just('')
+      .doOnData((String _) => emit(RequestXhr.eventError, error))
+      .map((String _) => new Event(RequestXhr.eventError, error));
 }

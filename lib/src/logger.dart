@@ -11,6 +11,8 @@ class Log {
 
   String tag;
 
+  Log addTag(String tag) => new Log('${this.tag}-$tag');
+
   void i(Object message) {
     if (!shouldLog) return;
     if (message is List) {

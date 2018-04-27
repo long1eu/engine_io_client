@@ -1,23 +1,22 @@
 import 'package:engine_io_client/src/engine_io/parser/parser.dart';
 import 'package:engine_io_client/src/models/packet.dart';
-import 'package:engine_io_client/src/models/packet_type.dart';
 import 'package:test/test.dart';
 
 // ignore_for_file: always_specify_types
 const String ERROR_DATA = 'parser error';
 
 void main() {
-  final Packet ping = new Packet.values(PacketType.ping);
-  final Packet pong = new Packet.values(PacketType.pong);
+  final Packet ping = new Packet<dynamic>(Packet.ping);
+  final Packet pong = new Packet<dynamic>(Packet.pong);
 
   test('encodeAsString', () {
-    final Packet packet = new Packet.values(PacketType.message, 'test');
+    final Packet packet = new Packet<dynamic>(Packet.message, 'test');
     final dynamic encode = Parser.encodePacket(packet);
     expect(encode.runtimeType, String);
   });
 
   test('decodeAsPacket', () {
-    final Packet packet = new Packet.values(PacketType.message, 'test');
+    final Packet packet = new Packet<dynamic>(Packet.message, 'test');
     final String encoded = Parser.encodePacket(packet);
     final Packet decoded = Parser.decodePacket(encoded);
 
@@ -25,113 +24,113 @@ void main() {
   });
 
   test('noData', () {
-    final Packet message = new Packet.values(PacketType.message);
+    final Packet message = new Packet<dynamic>(Packet.message);
     final String data = Parser.encodePacket(message);
     final Packet package = Parser.decodePacket(data);
 
-    expect(package.type, PacketType.message);
+    expect(package.type, Packet.message);
     expect(package.data, isNull);
   });
 
   test('encodeOpenPacket', () {
-    final Packet packet = new Packet.values(PacketType.open, '{"some":"json"}');
+    final Packet packet = new Packet<dynamic>(Packet.open, '{"some":"json"}');
     final String data = Parser.encodePacket(packet);
     final Packet package = Parser.decodePacket(data);
 
-    expect(package.type, PacketType.open);
+    expect(package.type, Packet.open);
     expect(package.data, '{"some":"json"}');
   });
 
   test('encodeClosePacket', () {
-    final Packet packet = new Packet.values(PacketType.close);
+    final Packet packet = new Packet<dynamic>(Packet.close);
     final String data = Parser.encodePacket(packet);
     final Packet package = Parser.decodePacket(data);
 
-    expect(package.type, PacketType.close);
+    expect(package.type, Packet.close);
   });
 
   test('encodePingPacket', () {
-    final Packet packet = new Packet.values(PacketType.ping, '1');
+    final Packet packet = new Packet<dynamic>(Packet.ping, '1');
     final String data = Parser.encodePacket(packet);
     final Packet package = Parser.decodePacket(data);
 
-    expect(package.type, PacketType.ping);
+    expect(package.type, Packet.ping);
     expect(package.data, '1');
   });
 
   test('encodePongPacket', () {
-    final Packet packet = new Packet.values(PacketType.pong, '1');
+    final Packet packet = new Packet<dynamic>(Packet.pong, '1');
     final String data = Parser.encodePacket(packet);
     final Packet package = Parser.decodePacket(data);
 
-    expect(package.type, PacketType.pong);
+    expect(package.type, Packet.pong);
     expect(package.data, '1');
   });
 
   test('encodeMessagePacket', () {
-    final Packet packet = new Packet.values(PacketType.message, 'aaa');
+    final Packet packet = new Packet<dynamic>(Packet.message, 'aaa');
     final String data = Parser.encodePacket(packet);
     final Packet package = Parser.decodePacket(data);
 
-    expect(package.type, PacketType.message);
+    expect(package.type, Packet.message);
     expect(package.data, 'aaa');
   });
 
   test('encodeUTF8SpecialCharsMessagePacket', () {
-    final Packet packet = new Packet.values(PacketType.message, 'utf8 — string');
+    final Packet packet = new Packet<dynamic>(Packet.message, 'utf8 — string');
     final String data = Parser.encodePacket(packet);
     final Packet package = Parser.decodePacket(data);
 
-    expect(package.type, PacketType.message);
+    expect(package.type, Packet.message);
     expect(package.data, 'utf8 — string');
   });
 
   test('encodeUpgradePacket', () {
-    final Packet packet = new Packet.values(PacketType.upgrade);
+    final Packet packet = new Packet<dynamic>(Packet.upgrade);
     final String data = Parser.encodePacket(packet);
     final Packet package = Parser.decodePacket(data);
 
-    expect(package.type, PacketType.upgrade);
+    expect(package.type, Packet.upgrade);
   });
 
   test('encodingFormat', () {
-    Packet packet = new Packet.values(PacketType.message, 'test');
+    Packet packet = new Packet<dynamic>(Packet.message, 'test');
     String data = Parser.encodePacket(packet);
     expect(new RegExp('[0-9].*').hasMatch(data), isTrue);
 
-    packet = new Packet.values(PacketType.message);
+    packet = new Packet<dynamic>(Packet.message);
     data = Parser.encodePacket(packet);
     expect(new RegExp('[0-9]').hasMatch(data), isTrue);
   });
 
   test('encodingStringMessageWithLoneSurrogatesReplacedByUFFFD', () {
-    final String data = '\uDC00\uD834\uDF06\uDC00 \uD800\uD835\uDF07\uD800';
-    final Packet packet = new Packet.values(PacketType.message, data);
+    const String data = '\uDC00\uD834\uDF06\uDC00 \uD800\uD835\uDF07\uD800';
+    final Packet packet = new Packet<dynamic>(Packet.message, data);
     final String list = Parser.encodePacket(packet, true);
     final Packet package = Parser.decodePacket(list, true);
 
-    expect(package.type, PacketType.message);
+    expect(package.type, Packet.message);
     expect(package.data, '\uFFFD\uD834\uDF06\uFFFD \uFFFD\uD835\uDF07\uFFFD');
   });
 
   test('decodeEmptyPayload', () {
     final Packet package = Parser.decodePacket(null);
 
-    expect(package.type, PacketType.error);
+    expect(package.type, Packet.error);
     expect(package.data, ERROR_DATA);
   });
 
   test('decodeBadFormat', () {
     final Packet package = Parser.decodePacket(':::');
 
-    expect(package.type, PacketType.error);
+    expect(package.type, Packet.error);
     expect(package.data, ERROR_DATA);
   });
 
   test('decodeWrongTypes', () {
     final Packet package = Parser.decodePacket('94103');
 
-    expect(package.type, PacketType.error);
+    expect(package.type, Packet.error);
     expect(package.data, ERROR_DATA);
   });
 
@@ -143,7 +142,7 @@ void main() {
   });
 
   test('encodeAndDecodePayloads', () {
-    final Packet message = new Packet.values(PacketType.message, 'a');
+    final Packet message = new Packet<dynamic>(Packet.message, 'a');
 
     String data = Parser.encodePayload(<Packet>[message]);
     List<Packet> packets = Parser.decodePayload(data);
@@ -151,8 +150,8 @@ void main() {
 
     data = Parser.encodePayload(<Packet>[message, ping]);
     packets = Parser.decodePayload(data);
-    expect(packets.first.type, PacketType.message);
-    expect(packets.last.type, PacketType.ping);
+    expect(packets.first.type, Packet.message);
+    expect(packets.last.type, Packet.ping);
   });
 
   test('encodeAndDecodeEmptyPayloads', () {
@@ -161,14 +160,11 @@ void main() {
 
     final List<Packet> packets = Parser.decodePayload(data);
     expect(packets.length, 1);
-    expect(packets.first.type, PacketType.open);
+    expect(packets.first.type, Packet.open);
   });
 
   test('notUTF8EncodeWhenDealingWithStringsOnly', () {
-    final List<Packet> packets = <Packet>[
-      new Packet.values(PacketType.message, '€€€'),
-      new Packet.values(PacketType.message, 'α')
-    ];
+    final List<Packet> packets = <Packet>[new Packet<dynamic>(Packet.message, '€€€'), new Packet<dynamic>(Packet.message, 'α')];
 
     final String encoded = Parser.encodePayload(packets);
     expect(encoded, '4:4€€€2:4α');
@@ -177,19 +173,19 @@ void main() {
   test('decodePayloadBadFormat', () {
     List<Packet> packets = Parser.decodePayload('!1');
 
-    expect(packets.first.type, PacketType.error);
+    expect(packets.first.type, Packet.error);
     expect(packets.first.data, equals(ERROR_DATA));
     expect(packets.length, 1);
 
     packets = Parser.decodePayload('');
 
-    expect(packets.first.type, PacketType.error);
+    expect(packets.first.type, Packet.error);
     expect(packets.first.data, equals(ERROR_DATA));
     expect(packets.length, 1);
 
     packets = Parser.decodePayload('))');
 
-    expect(packets.first.type, PacketType.error);
+    expect(packets.first.type, Packet.error);
     expect(packets.first.data, equals(ERROR_DATA));
     expect(packets.length, 1);
   });
@@ -197,7 +193,7 @@ void main() {
   test('decodePayloadBadLength', () {
     final List<Packet> packets = Parser.decodePayload('1:');
 
-    expect(packets.first.type, PacketType.error);
+    expect(packets.first.type, Packet.error);
     expect(packets.first.data, equals(ERROR_DATA));
     expect(packets.length, 1);
   });
@@ -205,19 +201,19 @@ void main() {
   test('decodePayloadBadPacketFormat', () {
     List<Packet> packets = Parser.decodePayload('3:99:');
 
-    expect(packets.first.type, PacketType.error);
+    expect(packets.first.type, Packet.error);
     expect(packets.first.data, equals(ERROR_DATA));
     expect(packets.length, 1);
 
     packets = Parser.decodePayload('1:aa');
 
-    expect(packets.first.type, PacketType.error);
+    expect(packets.first.type, Packet.error);
     expect(packets.first.data, equals(ERROR_DATA));
     expect(packets.length, 1);
 
     packets = Parser.decodePayload('1:a2:b');
 
-    expect(packets.first.type, PacketType.error);
+    expect(packets.first.type, Packet.error);
     expect(packets.first.data, equals(ERROR_DATA));
     expect(packets.length, 1);
   });
@@ -228,11 +224,11 @@ void main() {
       data[0] = i;
     }
 
-    final Packet message = new Packet.values(PacketType.message, data);
+    final Packet message = new Packet<dynamic>(Packet.message, data);
     final List<int> encoded = Parser.encodePacket(message);
 
     final Packet packet = Parser.decodeBytePacket(encoded);
-    expect(packet.type, PacketType.message);
+    expect(packet.type, Packet.message);
     expect(packet.data, equals(data));
   });
 
@@ -247,16 +243,16 @@ void main() {
     }
 
     final List<Packet> list = <Packet>[
-      new Packet.values(PacketType.message, firstBuffer),
-      new Packet.values(PacketType.message, secondBuffer)
+      new Packet<dynamic>(Packet.message, firstBuffer),
+      new Packet<dynamic>(Packet.message, secondBuffer)
     ];
 
     final List<int> encoded = Parser.encodePayload(list);
 
     final List<Packet> packets = Parser.decodeBinaryPayload(encoded);
-    expect(packets.first.type, PacketType.message);
+    expect(packets.first.type, Packet.message);
     expect(packets.first.data, firstBuffer);
-    expect(packets.last.type, PacketType.message);
+    expect(packets.last.type, Packet.message);
     expect(packets.last.data, secondBuffer);
   });
 
@@ -267,20 +263,20 @@ void main() {
     }
 
     final List<Packet> list = <Packet>[
-      new Packet.values(PacketType.message, firstBuffer),
-      new Packet.values(PacketType.message, 'hello'),
-      new Packet.values(PacketType.close),
+      new Packet<dynamic>(Packet.message, firstBuffer),
+      new Packet<dynamic>(Packet.message, 'hello'),
+      new Packet<dynamic>(Packet.close),
     ];
     final dynamic data = Parser.encodePayload(list);
 
     final List<Packet> packets = Parser.decodeBinaryPayload(data);
 
-    expect(packets[0].type, PacketType.message);
+    expect(packets[0].type, Packet.message);
     expect(packets[0].data, equals(firstBuffer));
 
-    expect(packets[1].type, PacketType.message);
+    expect(packets[1].type, Packet.message);
     expect(packets[1].data, 'hello');
 
-    expect(packets[2].type, PacketType.close);
+    expect(packets[2].type, Packet.close);
   });
 }
