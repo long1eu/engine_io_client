@@ -11,7 +11,7 @@ class Log {
 
   String tag;
 
-  Log addTag(String tag) => new Log('${this.tag}-$tag');
+  Log addTag(String tag) => new Log('${this.tag}-$tag', formatTags: false);
 
   void i(Object message) {
     if (!shouldLog) return;

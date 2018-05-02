@@ -92,4 +92,17 @@ class SocketOptions extends TransportOptions {
         socket: socket ?? this.socket,
         securityContext: securityContext ?? this.securityContext);
   }
+
+  @override
+  String toString() {
+    return 'SocketOptions{\n'
+        '\ttransport: \t${super.toString()}'
+        '\ttransports: $transports, \n'
+        '\tupgrade: $upgrade, \n'
+        '\trememberUpgrade: $rememberUpgrade, \n'
+        '\thost: $host, \n'
+        '\trawQuery: $rawQuery, \n'
+        '\ttransportOptions: $transportOptions\n'
+        '}\n';
+  }
 }

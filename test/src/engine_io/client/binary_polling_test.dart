@@ -1,9 +1,9 @@
-import 'dart:async';
-
+import 'package:engine_io_client/src/emitter/emitter.dart';
 import 'package:engine_io_client/src/engine_io/client/socket.dart';
 import 'package:engine_io_client/src/engine_io/client/transports/polling.dart';
 import 'package:engine_io_client/src/logger.dart';
 import 'package:engine_io_client/src/models/socket_options.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:test/test.dart';
 
 import 'connection.dart';
@@ -12,64 +12,49 @@ void main() async {
   final Log log = new Log('EngineIo.binary_connection');
 
   test('receiveBinaryData', () async {
-    final List<dynamic> values = <dynamic>[];
-    final List<int> binaryData = <int>[]..length = 5;
-    for (int i = 0; i < binaryData.length; i++) {
-      binaryData[i] = i;
-    }
+    final List<int> binaryData = new List<int>.generate(5, (int i) => i);
 
     final SocketOptions opts = new SocketOptions(port: Connection.PORT, transports: <String>[Polling.NAME]);
-
     final Socket socket = new Socket(opts);
-    socket.on(Socket.eventOpen, (List<dynamic> args) async {
-      log.e('open');
-      socket.on(Socket.eventMessage, (List<dynamic> args) {
-        log.e('args: $args');
-        if (args[0] == 'hi') return;
-        values.add(args[0]);
-      });
-      await socket.send$(binaryData);
-    });
 
-    log.e('check values $values');
-    socket.open$();
-    log.e('check values $values');
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
-    log.e('check values $values');
+    final Observable<Event> onMessage$ =
+        socket.on(Socket.eventMessage).doOnData(log.e).map<Event>((Event event) => event.args[0]).take(2);
 
-    expect(values[0], binaryData);
-    await socket.close$();
-  }, timeout: const Timeout(const Duration(seconds: 2)));
+    socket.open$.flatMap((Event event) => socket.send$(binaryData)).listen(null);
+
+    expect(onMessage$, emitsInOrder(<dynamic>['hi', binaryData, emitsDone]));
+  });
 
   test('receiveBinaryDataAndMultibyteUTF8String', () async {
-    final List<dynamic> values = <dynamic>[];
-    final List<int> binaryData = new List<int>.generate(5, (_) => 0);
-    for (int i = 0; i < binaryData.length; i++) binaryData[i] = i;
+    final List<int> binaryData = new List<int>.generate(5, (int i) => i);
 
     final SocketOptions opts = new SocketOptions(port: Connection.PORT, transports: <String>[Polling.NAME]);
-
     final Socket socket = new Socket(opts);
-    socket.on(Socket.eventOpen, (List<dynamic> args) async {
-      log.d('open');
-      socket.on(Socket.eventMessage, (List<dynamic> args) {
-        log.d('args: $args');
-        if (args[0] == 'hi') return;
-        values.add(args[0]);
-      });
 
-      await socket.send$(binaryData);
-      await socket.send$('cash money €€€');
-      await socket.send$('cash money ss €€€');
-      await socket.send$('20["getAckBinary",""]');
-    });
-    socket.open$();
-    await new Future<Null>.delayed(const Duration(seconds: 1), () {});
+    final Observable<Event> onMessage$ = socket
+        .on(Socket.eventMessage)
+        .doOnData(log.e)
+        .where((Event event) => event.args[0] != 'hi')
+        .map<dynamic>((Event event) => event.args[0])
+        .take(4);
 
-    log.e(values.toString());
-    expect(values[0], binaryData);
-    expect(values[1], 'cash money €€€');
-    expect(values[2], 'cash money ss €€€');
-    expect(values[3], '20["getAckBinary",""]');
-    await socket.close$();
-  }, timeout: const Timeout(const Duration(seconds: 2)));
+    socket.open$
+        .flatMap((Event event) => new Observable<Event>.concatEager(<Observable<Event>>[
+              socket.send$(binaryData),
+              socket.send$('cash money €€€'),
+              socket.send$('cash money ss €€€'),
+              socket.send$('20["getAckBinary",""]'),
+            ]))
+        .listen(null);
+
+    expect(
+        onMessage$,
+        emitsInOrder(<dynamic>[
+          binaryData,
+          'cash money €€€',
+          'cash money ss €€€',
+          '20["getAckBinary",""]',
+          emitsDone,
+        ]));
+  });
 }

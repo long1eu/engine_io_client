@@ -70,29 +70,28 @@ abstract class Polling extends Transport {
 
   @override
   Observable<Event> onData(dynamic data) {
-    final Observable<Event> data$ = new Observable<String>.just('')
-        .doOnData((String _) => log.i('polling got data:${data.runtimeType} $data '))
-        .map((String _) => data is String ? Parser.decodePayload(data) : Parser.decodeBinaryPayload(data))
-        .expand((List<Packet<dynamic>> packets) => packets)
-        .flatMap((Packet<dynamic> packet) => new Observable<Event>.merge(<Observable<Event>>[
-              new Observable<String>.just(readyState)
-                  .where((String readyState) => readyState == Transport.stateOpening)
-                  .flatMap<Event>((String _) => onOpen$),
-              new Observable<String>.just(packet.type)
-                  .where((String type) => type == Packet.close)
-                  .flatMap<Event>((String _) => onClose$),
-              onPacket(packet),
-            ]));
+    return new Observable<dynamic>.just(data)
+        .map((dynamic data) => data is String ? Parser.decodePayload(data) : Parser.decodeBinaryPayload(data))
+        .flatMap<Event>((List<Packet<dynamic>> packets) {
+      final Observable<Event> connection$ = new Observable<String>.just('')
+          .where((String _) => readyState != Transport.stateClosed)
+          .doOnData((String _) => polling = false)
+          .doOnData((String _) => emit(Polling.eventPollComplete))
+          .where((String _) => readyState == Transport.stateOpen)
+          .flatMap((String _) => poll$);
 
-    final Observable<Event> connection$ = new Observable<String>.just(readyState)
-        .where((String readyState) => readyState != Transport.stateClosed)
-        .doOnData((String _) => polling = false)
-        .doOnData((String _) => emit(Polling.eventPollComplete))
-        .where((String readyState) => readyState == Transport.stateOpen)
-        .doOnDone(() => log.i('ignoring poll - transport state "$readyState"'))
-        .flatMap((String _) => poll$);
+      final Observable<Event> onOpening$ = new Observable<String>.just('').flatMap(
+          (String _) => readyState == Transport.stateOpening ? onOpen$.flatMap((Event event) => connection$) : connection$);
 
-    return new Observable<Event>.merge(<Observable<Event>>[data$, connection$]);
+      final Observable<Event> onClosePacket$ = new Observable<Packet<dynamic>>.fromIterable(packets)
+          .where((Packet<dynamic> packet) => packet.type == Packet.close)
+          .flatMap((Packet<dynamic> packet) => close$);
+
+      final Observable<Event> onPacketReceived$ =
+          new Observable<Packet<dynamic>>.fromIterable(packets).flatMap((Packet<dynamic> packet) => onPacket$(packet));
+
+      return new Observable<Event>.merge(<Observable<Event>>[onOpening$, onClosePacket$, onPacketReceived$]);
+    });
   }
 
   @override
@@ -121,28 +120,3 @@ abstract class Polling extends Transport {
     return '$schema://$hostname$port${options.path}$derivedQuery';
   }
 }
-
-/*
-  Observable<Event> get pause$ {
-    readyState = Transport.statePaused;
-
-    final Observable<Event> pause$ = new Observable<String>.just('')
-        .doOnData((String _) => log.d('paused'))
-        .doOnData((String _) => readyState = Transport.statePaused)
-        .map((String _) => new Event(Transport.statePaused));
-
-    final Observable<Event> ifPolling$ = new Observable<String>.just('')
-        .where((String _) => polling)
-        .doOnData((String _) => log.d('we are currently polling - waiting to pause'))
-        .flatMap((String _) => once(Polling.eventPollComplete))
-        .flatMap((Event event) => pause$);
-
-    final Observable<Event> ifNotWritable$ = new Observable<String>.just('')
-        .where((String _) => !writable)
-        .doOnData((String _) => log.d('we are currently writing - waiting to pause'))
-        .flatMap((String _) => once(Transport.eventDrain))
-        .flatMap((Event event) => pause$);
-
-    return polling || !writable ? new Observable<Event>.concatEager(<Observable<Event>>[ifPolling$, ifNotWritable$]) : pause$;
-  }
-*/

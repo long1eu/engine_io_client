@@ -24,9 +24,11 @@ http.listen(port, function () {
 });
 
 server.on('connection', function (socket) {
+    console.log('connection');
     socket.send('hi');
 
     socket.on('message', function (message) {
+        console.log(message.valueOf());
         socket.send(message);
     });
 

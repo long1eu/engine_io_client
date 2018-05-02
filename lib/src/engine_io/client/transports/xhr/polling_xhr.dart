@@ -15,21 +15,20 @@ class PollingXhr extends Polling {
   PollingXhr(TransportOptions options) : super(options);
 
   Observable<RequestXhr> request([XhrOptions options]) => new Observable<XhrOptions>.just(
-          options ?? new XhrOptions(uri: uri, client: new HttpClient(context: this.options.securityContext)))
-      .map((XhrOptions options) => new RequestXhr(options))
-      .flatMap<dynamic>((RequestXhr request) => new Observable<dynamic>.merge(<Observable<dynamic>>[
-            request
-                .on(RequestXhr.eventRequestHeaders)
-                .forEach((Event event) => emit(Transport.eventRequestHeaders, event.args))
-                .asObservable(),
-            request
-                .on(RequestXhr.eventResponseHeaders)
-                .forEach((Event event) => emit(Transport.eventResponseHeaders, event.args))
-                .asObservable(),
-            new Observable<RequestXhr>.just(request),
-          ]))
-      .where((dynamic event) => event is RequestXhr)
-      .cast<RequestXhr>();
+        options ?? new XhrOptions(uri: uri, client: new HttpClient(context: this.options.securityContext)),
+      )
+          .map((XhrOptions options) => new RequestXhr(options))
+          .flatMap<dynamic>((RequestXhr request) => new Observable<dynamic>.merge(<Observable<dynamic>>[
+                request
+                    .on(RequestXhr.eventRequestHeaders)
+                    .doOnData((Event event) => emit(Transport.eventRequestHeaders, event.args)),
+                request
+                    .on(RequestXhr.eventResponseHeaders)
+                    .doOnData((Event event) => emit(Transport.eventResponseHeaders, event.args)),
+                new Observable<RequestXhr>.just(request),
+              ]))
+          .where((dynamic event) => event is RequestXhr)
+          .cast<RequestXhr>();
 
   @override
   Observable<Event> doWrite$(dynamic data) => new Observable<XhrOptions>.just(new XhrOptions(
@@ -40,10 +39,10 @@ class PollingXhr extends Polling {
       ))
           .flatMap((XhrOptions options) => request(options))
           .flatMap((RequestXhr request) => new Observable<Event>.merge(<Observable<Event>>[
-                request.on(RequestXhr.eventSuccess),
                 request.on(RequestXhr.eventError).flatMap((Event event) => onError('xhr post error', event.args)),
                 request.create$,
-              ]));
+              ]))
+          .where((Event event) => event.name == RequestXhr.eventSuccess);
 
   //.where((Event event) => event.name == RequestXhr.eventSuccess);
 
@@ -54,12 +53,8 @@ class PollingXhr extends Polling {
       .flatMap((RequestXhr request) => new Observable<Event>.merge(<Observable<Event>>[
             request
                 .on(RequestXhr.eventData)
-                .doOnData((Event event) => onData(event.args.isNotEmpty ? event.args[0] : null))
                 .flatMap((Event event) => onData(event.args.isNotEmpty ? event.args[0] : null)),
-            request
-                .on(RequestXhr.eventError)
-                .doOnData((Event event) => onError('xhr poll error', event.args))
-                .flatMap((Event event) => onError('xhr poll error', event.args)),
+            request.on(RequestXhr.eventError).flatMap((Event event) => onError('xhr poll error', event.args)),
             request.create$.map<Event>((Event _) => new Event(Polling.eventPoll))
           ]));
 

@@ -23,10 +23,12 @@ class WebSocket extends Transport {
       .doOnData((Map<String, List<String>> headers) => emit(Transport.eventRequestHeaders, <Map<String, List<String>>>[headers]))
       .delay(const Duration(milliseconds: 2))
       .flatMap((Map<String, List<String>> h) => new Observable<io.WebSocket>.fromFuture(io.WebSocket.connect(uri, headers: h)))
+      .doOnData((dynamic a) => log.e('websocket $a'))
       .doOnData((io.WebSocket socket) => this.socket = socket)
       .flatMap<Event>((io.WebSocket socket) => new Observable<Event>.merge(<Observable<Event>>[
             onOpen$,
             new Observable<dynamic>(socket)
+                .doOnData((dynamic a) => log.e('websocket $a'))
                 .where((dynamic event) => event != null)
                 .doOnData((dynamic event) => log.d('onMessage: $event'))
                 .flatMap((dynamic event) => onData(event))
@@ -37,11 +39,14 @@ class WebSocket extends Transport {
   //.where((Event event) => event.name == Transport.eventOpen);
 
   @override
-  Observable<void> get doClose$ => new Observable<Null>.fromFuture(socket?.close(1000, '')).map((Null _) => socket = null);
+  Observable<Event> get doClose$ => new Observable<void>.fromFuture(socket?.close(1000, ''))
+      .doOnData((dynamic _) => socket = null)
+      .map((dynamic _) => new Event(Transport.eventClose));
 
   @override
   Observable<Event> write(List<Packet<dynamic>> packets) => new Observable<Packet<dynamic>>.fromIterable(packets)
-      .where((Packet<dynamic> _) => readyState != Transport.stateOpening && readyState != Transport.stateOpen)
+      .takeWhile((Packet<dynamic> _) => readyState == Transport.stateOpening || readyState == Transport.stateOpen)
+      .doOnData(log.e)
       .map<dynamic>((Packet<dynamic> packet) => Parser.encodePacket(packet))
       .forEach((dynamic encoded) => socket.add(encoded))
       .asObservable();

@@ -55,11 +55,8 @@ class Socket extends Emitter {
   int _pingInterval;
   int _pingTimeout;
 
-  StreamSubscription<Event> pingTimeoutTimer;
-  StreamSubscription<Event> pingIntervalTimer;
-
   int _prevBufferLen;
-  StreamController<List<Packet<dynamic>>> writeBuffer = new StreamController<List<Packet<dynamic>>>.broadcast();
+  StreamController<List<Packet<dynamic>>> writeBuffer = new StreamController<List<Packet<dynamic>>>();
   StreamSubscription<Event> flushSubscription;
 
   Socket(this.options) {
@@ -82,13 +79,12 @@ class Socket extends Emitter {
       policyPort: options.policyPort != 0 ? options.policyPort : 843,
     );
 
-    flushSubscription = flush$.listen(print);
+    // flushSubscription = flush$.listen(print);
   }
 
   Observable<Event> get flush$ => new Observable<List<Packet<dynamic>>>(writeBuffer.stream)
-      .where((List<Packet<dynamic>> _) => readyState != stateClosed && transport.writable && !_upgrading)
-      .doOnData((List<Packet<dynamic>> _) => log.d('flushing packets in socket'))
-      .bufferWhen(transport.on(Transport.eventDrain))
+      .doOnData((List<Packet<dynamic>> _) => log.d('flushing packets in socket $_'))
+      .bufferTest((_) => transport.writable && transport.readyState != Transport.stateClosed && !_upgrading)
       .expand((List<List<Packet<dynamic>>> items) => items)
       .flatMap((List<Packet<dynamic>> packets) => packets.isEmpty
           ? new Observable<Event>.just(new Event(Socket.eventDrain)).doOnData((Event event) => emit(Socket.eventDrain))
@@ -110,9 +106,11 @@ class Socket extends Emitter {
     return new Observable<String>.just(transportName)
         .doOnData((String _) => readyState = stateOpening)
         .flatMap((String name) => _createTransport$(name))
+        .doOnData((Transport transport) => log.e(transport.name))
         .doOnData((Transport transport) => _setTransport(transport))
         .flatMap((Transport transport) => transport.open$)
-        .where((Event event) => event.name == Transport.eventOpen);
+        .where((Event event) => event.name == Transport.eventPacket)
+        .where((Event event) => event.args[0].type == Transport.stateOpen);
   }
 
   Observable<Transport> _createTransport$(String name) => new Observable<String>.just(name)
@@ -120,7 +118,6 @@ class Socket extends Emitter {
       .doOnData((String name) => log.d('creating transport "$name"'))
       .flatMap((String _) => new Observable<Map<String, String>>.just(options.query))
       .map((Map<String, String> query) {
-        final Map<String, String> query = options.query;
         query['EIO'] = Parser.PROTOCOL.toString();
         query['transport'] = name;
         if (id != null) query['sid'] = id;
@@ -131,13 +128,13 @@ class Socket extends Emitter {
                 query: query,
                 socket: this,
                 hostname: transportOptions?.hostname,
-                port: transportOptions.port,
-                secure: transportOptions.secure,
-                path: transportOptions.path,
-                timestampRequests: transportOptions.timestampRequests,
-                timestampParam: transportOptions.timestampParam,
-                policyPort: transportOptions.policyPort,
-                securityContext: transportOptions.securityContext,
+                port: transportOptions?.port,
+                secure: transportOptions?.secure,
+                path: transportOptions?.path,
+                timestampRequests: transportOptions?.timestampRequests,
+                timestampParam: transportOptions?.timestampParam,
+                policyPort: transportOptions?.policyPort,
+                securityContext: transportOptions?.securityContext,
               )))
       .map((TransportOptions options) => name == WebSocket.NAME ? new WebSocket(options) : new PollingXhr(options))
       .doOnData((Transport transport) => emit(eventTransport, <Transport>[transport]));
@@ -154,18 +151,20 @@ class Socket extends Emitter {
     this.transport = transport;
 
     transport
-      ..on(Transport.eventPacket)
-          .flatMap((Event e) => _onPacket(e.args.isNotEmpty ? e.args[0] : null))
-          .listen(log.addTag(Transport.eventPacket).d)
-      ..on(Transport.eventError)
-          .flatMap((Event e) => _onError$(e.args.isNotEmpty ? e.args[0] : null))
-          .listen(log.addTag(Transport.eventError).d)
-      ..on(Transport.eventClose)
-          .flatMap((Event e) => _onClose$('transport close because of $e'))
-          .listen(log.addTag(Transport.eventClose).d);
+        .on(Transport.eventPacket)
+        .flatMap((Event e) => _onPacket(e.args.isNotEmpty ? e.args[0] : null))
+        .listen(log.addTag('Transport.eventPacket').d);
+    transport
+        .on(Transport.eventError)
+        .flatMap((Event e) => _onError$(e.args.isNotEmpty ? e.args[0] : null))
+        .listen(log.addTag('Transport.eventError').d);
+    transport
+        .on(Transport.eventClose)
+        .flatMap((Event e) => _onClose$('transport close because of $e'))
+        .listen(log.addTag('Transport.eventClose').d);
   }
 
-  Observable<Event> _probe(String name) => new Observable<String>.just(name)
+  Observable<Event> _probe$(String name) => new Observable<String>.just(name)
           .doOnData((String name) => log.d('probing transport $name'))
           .flatMap((String name) => _createTransport$(name))
           .doOnData((Transport transport) => _priorWebSocketSuccess = false)
@@ -185,6 +184,7 @@ class Socket extends Emitter {
             .where((String _) => !failed)
             .doOnData((String _) => log.d('probe transport "$name" opened'))
             .flatMap((String _) => transport.once(Transport.eventPacket))
+            .doOnData((Event _) => log.d('probe transport $_'))
             .where((Event _) => !failed)
             .map<Packet<dynamic>>((Event event) => event.args[0])
             .flatMap((Packet<dynamic> packet) => packet.type != Packet.pong || packet.data != 'probe'
@@ -200,18 +200,16 @@ class Socket extends Emitter {
                     .doOnData((String _) => _priorWebSocketSuccess = transport.name == WebSocket.NAME)
                     .doOnData((String _) => log.d('pausing current transport "${this.transport.name}"'))
                     .map((String _) => transport)
-                    .where((Transport transport) => transport is Polling)
-                    .cast<Polling>()
-                    .flatMap((Polling polling) => polling.pause$)
+                    .flatMap((Transport _) => (this.transport as Polling).pause$)
                     .where((Event _) => !failed)
                     .where((Event _) => readyState != Socket.stateClosed)
                     .doOnData((Event _) => log.d('changing transport and sending upgrade packet'))
                     .map((Event _) => cleanup())
                     .map((dynamic _) => _setTransport(transport))
                     .flatMap((dynamic _) => transport.send(<Packet<Null>>[new Packet<Null>(Packet.upgrade)]))
-                    .doOnData((Event _) => emit(eventUpgrade, <Transport>[transport]))
                     .doOnData((Event _) => _upgrading = false)
-                    //todo flush
+
+                    .doOnData((Event _) => emit(eventUpgrade, <Transport>[transport]))
                     .map((Event _) => new Event(eventUpgrade, <Transport>[transport])));
 
         final Observable<Event> freezeTransport$ = new Observable<String>.just('')
@@ -223,6 +221,7 @@ class Socket extends Emitter {
 
         // Handle any error that happens while probing
         Observable<Event> onError$(List<Error> err) {
+          log.w('probe err: $err');
           EngineIOError error;
           if (err is Exception) {
             error = new EngineIOError(transport?.name ?? 'unknown transport', PROBE_ERROR + err.toString());
@@ -244,36 +243,45 @@ class Socket extends Emitter {
             .doOnData((String _) => log.d('"${to.name}" works - aborting "${transport.name}"'))
             .flatMap((String _) => freezeTransport$);
 
-        return new Observable<Event>.concat(<Observable<Event>>[
-          new Observable<Event>.merge(<Observable<Event>>[
-            transport
-                .once(Transport.eventOpen)
-                .flatMap((Event _) => transport.send(<Packet<String>>[new Packet<String>(Packet.ping, 'probe')]))
-                .flatMap((Event _) => onTransportOpen$),
-            transport.once(Transport.eventError).flatMap((Event event) => onError$(event.args)),
-            transport.once(Transport.eventClose).flatMap((Event _) => onError$(<Error>[new StateError('transport closed')])),
-            // When the socket is closed while we're probing
-            once(eventClose).flatMap((Event _) => onError$(<Error>[new StateError('transport closed')])),
-            once(eventUpgrading).flatMap((Event event) => onUpgrade$(event.args[0])),
-          ]),
+        final Observable<Event> status$ = new Observable<Event>.merge(<Observable<Event>>[
+          transport.once(Transport.eventError).flatMap((Event event) => onError$(event.args)),
+          transport.once(Transport.eventClose).flatMap((Event _) => onError$(<Error>[new StateError('transport closed')])),
+          // When the socket is closed while we're probing
+          once(Socket.eventClose).flatMap((Event _) => onError$(<Error>[new StateError('transport closed')])),
+          once(Socket.eventUpgrading).flatMap((Event event) => onUpgrade$(event.args[0])),
+        ]).doOnData((Event event) => log.e('status\$ event $event'));
+
+        return new Observable<Event>.merge(<Observable<Event>>[
+          status$.doOnData((Event e)=> log.w(e)),
           transport.open$
-        ]);
+              .doOnData((Event t) => log.e('event probe $t'))
+              .where((Event event) => event.name == Transport.eventOpen)
+              .flatMap((Event _) => transport.send(<Packet<String>>[new Packet<String>(Packet.ping, 'probe')]))
+              .flatMap((Event _) => onTransportOpen$)
+        ]).doOnData((Event event) => log.e('probe event $event lll'));
       });
 
-  Observable<Event> get _onOpen$ => new Observable<String>.just('')
-      .doOnData((String _) => log.d('socket open'))
-      .doOnData((String _) => readyState = stateOpen)
-      .doOnData((String _) => _priorWebSocketSuccess = transport.name == WebSocket.NAME)
-      .doOnData((String _) => emit(Socket.eventOpen))
-      //todo flush
-      .flatMap((String _) => new Observable<Event>.merge(<Observable<Event>>[
-            new Observable<Event>.just(new Event(Socket.eventOpen)),
-            new Observable<String>.just('')
-                .where((String _) => readyState == stateOpen && options.upgrade && transport is Polling)
-                .doOnData((String _) => log.d('starting upgrade probes: $upgrades'))
-                .expand((String _) => upgrades)
-                .flatMap((String upgrade) => _probe(upgrade)),
-          ]));
+  Observable<Event> get _onOpen$ {
+    final Observable<String> flush = new Observable<String>.just('')
+        .where((String _) => flushSubscription == null)
+        .doOnData((String _) => flushSubscription = flush$.listen(null));
+
+    return new Observable<String>.just('')
+        .doOnData((String _) => log.d('socket open'))
+        .doOnData((String _) => readyState = stateOpen)
+        .doOnData((String _) => _priorWebSocketSuccess = transport.name == WebSocket.NAME)
+        .doOnData((String _) => emit(Socket.eventOpen))
+        .flatMap((String _) => new Observable<Event>.concat(<Observable<Event>>[
+              new Observable<Event>.just(new Event(Socket.eventOpen)),
+              (readyState == stateOpen && options.upgrade && transport is Polling)
+                  ? new Observable<String>.just('')
+                      .doOnData((String _) => log.d('starting upgrade probes: $upgrades'))
+                      .expand((String _) => upgrades)
+                      .flatMap((String upgrade) => _probe$(upgrade))
+                      .flatMap((Event event) => flush.map((String _) => event))
+                  : flush.map((_) => new Event(Socket.eventOpen)),
+            ]));
+  }
 
   Observable<Event> _onPacket(Packet<dynamic> packet) => new Observable<String>.just(readyState)
       .doOnData((String readyState) => log.d('packet received with socket readyState "$readyState"'))
@@ -313,40 +321,29 @@ class Socket extends Emitter {
       .doOnData((HandshakeData data) => _pingInterval = data.pingInterval)
       .doOnData((HandshakeData data) => _pingTimeout = data.pingTimeout)
       .flatMap((HandshakeData data) => _onOpen$)
-      .where((Event event) => readyState != stateClosed)
+      .where((Event _) => readyState != stateClosed)
       .flatMap((Event _) => _setPing$)
       .flatMap((Event data) => on(Socket.eventHeartbeat))
-      .flatMap((Event event) => _onHeartbeat$(event.args ?? -1));
+      .flatMap(
+          (Event event) => _onHeartbeat$(event.args ?? -1)); //.doOnData((Event event) => transport.emit(Transport.stateOpen));
 
-  Observable<Event> _onHeartbeat$(int timeout) {
-    pingTimeoutTimer?.cancel();
-    if (timeout <= 0) timeout = _pingInterval + _pingTimeout;
+  Observable<Event> _onHeartbeat$(int timeout) =>
+      new Observable<int>.timer(timeout, new Duration(milliseconds: timeout <= 0 ? _pingInterval + _pingTimeout : timeout))
+          .flatMap((int timeout) => new Observable<Event>.race(<Observable<Event>>[
+                on(Socket.eventPong),
+                readyState != Socket.stateClosed
+                    ? _onClose$('ping timeout')
+                    : new Observable<Event>.just(new Event(Socket.stateClosed))
+              ]));
 
-    final Observable<Event> pingTimeoutInterval$ = new Observable<int>.timer(timeout, new Duration(milliseconds: timeout))
-        .flatMap((int timeout) => readyState != Socket.stateClosed
-            ? _onClose$('ping timeout')
-            : new Observable<Event>.just(new Event(Socket.stateClosed)));
+  Observable<Event> get _setPing$ => new Observable<int>.timer(_pingTimeout, new Duration(milliseconds: _pingInterval))
+      .doOnData((int pingTimeout) => log.d('writing ping packet - expecting pong within $pingTimeout'))
+      .flatMap((int timeout) => _ping$)
+      .flatMap((Event event) => _onHeartbeat$(_pingTimeout));
 
-    pingTimeoutTimer = pingTimeoutInterval$.listen(log.addTag('pingTimeoutTimer').d);
-
-    return pingTimeoutInterval$;
-  }
-
-  Observable<Event> get _setPing$ {
-    pingIntervalTimer?.cancel();
-
-    final Observable<Event> pingIntervalTimer$ =
-        new Observable<int>.timer(_pingInterval, new Duration(milliseconds: _pingInterval))
-            .doOnData((int pingTimeout) => log.d('writing ping packet - expecting pong within $pingTimeout'))
-            .flatMap((int timeout) => _ping$)
-            .flatMap((Event event) => _onHeartbeat$(_pingTimeout));
-
-    pingIntervalTimer = pingIntervalTimer$.listen(log.addTag('pingIntervalTimer').d);
-
-    return pingIntervalTimer$;
-  }
-
-  Observable<Event> get _ping$ => _sendPacket$(new Packet<dynamic>(Packet.ping)).doOnData((Event event) => emit(eventPing));
+  Observable<Event> get _ping$ => _sendPacket$(new Packet<dynamic>(Packet.ping))
+      .doOnData((Event event) => emit(Socket.eventPing))
+      .map((Event event) => new Event(Socket.eventPing));
 
   Observable<Event> write$(dynamic message) => send$(message);
 
@@ -356,6 +353,7 @@ class Socket extends Emitter {
       .doOnData((Packet<dynamic> _) => log.d('sendPacket: $packet'))
       .where((Packet<dynamic> _) => readyState != stateClosing && readyState != stateClosed)
       .doOnData((Packet<dynamic> _) => emit(eventPacketCreate, <Packet<dynamic>>[packet]))
+      .where((Packet<dynamic> _) => readyState != stateClosing && readyState != stateClosed)
       .doOnData((Packet<dynamic> packet) => writeBuffer.add(<Packet<dynamic>>[packet]))
       .flatMap((Packet<dynamic> _) => once(Socket.eventFlush));
 
@@ -363,6 +361,7 @@ class Socket extends Emitter {
       .where((String readyState) => readyState == stateOpening || readyState == stateOpen)
       .doOnData((String _) => readyState = stateClosing)
       .flatMap((String _) => transport.canClose$)
+      .doOnData((Event _) => log.e('we can close $_upgrading'))
       .flatMap((Event event) => _upgrading
           ? new Observable<Event>.race(<Observable<Event>>[once(Socket.eventUpgrade), once(Socket.eventUpgradeError)])
               .doOnData((Event _) => offAll(<String>[Socket.eventUpgrade, Socket.eventUpgradeError]))
@@ -381,33 +380,25 @@ class Socket extends Emitter {
   Observable<Event> _onClose$(String reason, [dynamic desc]) => new Observable<String>.just(readyState)
       .where((String readyState) => readyState == stateOpening || readyState == stateOpen || readyState == stateClosing)
       .doOnData((String _) => log.d('socket close with reason: $reason'))
-      .doOnData((String _) => pingIntervalTimer?.cancel())
-      .doOnData((String _) => pingTimeoutTimer?.cancel())
       .doOnData((String _) => transport.off(eventClose))
       .flatMap((String _) => transport.close$)
       .doOnData((Event _) => transport.off())
       .doOnData((Event _) => readyState = Socket.stateClosed)
       .doOnData((Event _) => id = null)
       .doOnData((Event _) => emit(eventClose, <dynamic>[reason, desc]))
-      .doOnData((Event _) => flushSubscription.cancel())
+      .doOnData((Event _) => flushSubscription?.cancel())
       .doOnData((Event _) => flushSubscription = null)
       .doOnData((Event _) => _prevBufferLen = 0);
 
   @override
-  String toString() => 'Socket{'
-      'options: $options, '
-      'id: $id, '
-      '_priorWebSocketSuccess: $_priorWebSocketSuccess, '
-      '_upgrading: $_upgrading, '
-      'readyState: $readyState, '
-      'transport: $transport, '
-      'upgrades: $upgrades, '
-      '_pingInterval: $_pingInterval, '
-      '_pingTimeout: $_pingTimeout, '
-      'pingTimeoutTimer: $pingTimeoutTimer, '
-      'pingIntervalTimer: $pingIntervalTimer, '
-      '_prevBufferLen: $_prevBufferLen, '
-      'writeBuffer: $writeBuffer, '
-      'flushSubscription: $flushSubscription'
-      '}';
+  String toString() => 'Socket{\n'
+      '\toptions: $options, \n'
+      '\tid: $id, \n'
+      '\t_priorWebSocketSuccess: $_priorWebSocketSuccess, \n'
+      '\t_upgrading: $_upgrading, \n'
+      '\treadyState: $readyState, \n'
+      '\t_pingInterval: $_pingInterval, \n'
+      '\t_pingTimeout: $_pingTimeout, \n'
+      '\t_prevBufferLen: $_prevBufferLen\n'
+      '\t}';
 }

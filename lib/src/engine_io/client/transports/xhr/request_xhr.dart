@@ -48,7 +48,7 @@ class RequestXhr extends Emitter {
           response.headers.map((String key, String value) => new MapEntry<String, List<String>>(key, <String>[value]))
         ]);
       })
-      .doOnData((Response response) => log.d('response: $response'))
+      .doOnData((Response response) => log.e('response: ${response.body}'))
       .where((Response response) => response.statusCode >= 200 && response.statusCode < 300)
       .flatMap((Response res) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
@@ -56,7 +56,6 @@ class RequestXhr extends Emitter {
               .map((String contentType) => contentType.split(';')[0].toLowerCase())
               .map((String contentType) => contentType.toLowerCase() == BINARY_TYPE ? res.bodyBytes : res.body)
               .flatMap((dynamic data) => onData(data));
-          //.map((dynamic data) => new Event(RequestXhr.eventData, <dynamic>[data]));
         } else
           throw new EngineIOError(log.tag, res.statusCode);
       })

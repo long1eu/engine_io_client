@@ -7,7 +7,7 @@ class TransportOptions {
     this.hostname,
     this.path,
     this.timestampParam,
-    this.secure,
+    this.secure = false,
     this.timestampRequests,
     this.port = -1,
     this.policyPort = -1,
@@ -58,5 +58,21 @@ class TransportOptions {
         query: query ?? this.query,
         socket: socket ?? this.socket,
         securityContext: securityContext ?? this.securityContext);
+  }
+
+  @override
+  String toString() {
+    return 'TransportOptions{\n'
+        '\thostname: $hostname, \n'
+        '\tpath: $path, \n'
+        '\ttimestampParam: $timestampParam, \n'
+        '\tsecure: $secure, \n'
+        '\ttimestampRequests: $timestampRequests, \n'
+        '\tport: $port, \n'
+        '\tpolicyPort: $policyPort, \n'
+        '\tquery: $query, \n'
+        '\tsocket: $socket, \n'
+        '\tsecurityContext: $securityContext\n'
+        '\t}\n';
   }
 }

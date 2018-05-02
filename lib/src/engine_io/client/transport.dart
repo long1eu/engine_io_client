@@ -54,16 +54,23 @@ abstract class Transport extends Emitter {
   Observable<Event> get close$ => new Observable<String>.just('')
       .where((String _) => readyState == Transport.stateOpening || readyState == Transport.stateOpen)
       .flatMap((String _) => doClose$)
-      .flatMap((dynamic _) => onClose$);
+      .doOnData((Event _) => log.d('onClosessss $_'))
+      .flatMap((dynamic _) => onClose$.doOnData((Event _) => log.d('onClose $_')))
+      .map((Event event) => event)
+      .doOnData(log.e);
 
   Observable<Event> get onClose$ => new Observable<String>.just('')
       .doOnData((String _) => log.d('onClose'))
       .doOnData((String _) => readyState = Transport.stateClosed)
+      .doOnData((String _) => log.d('onClose'))
       .doOnData((String _) => emit(Transport.eventClose))
-      .map((String _) => new Event(Transport.eventClose));
+      .doOnData((String _) => log.d('onClose'))
+      .map((String _) => new Event(Transport.eventClose))
+      .doOnData((Event _) => log.d('onClose $_'));
 
   Observable<Event> onError(String message, dynamic desc) => new Observable<String>.just('')
       .doOnData((String _) => emit(Transport.eventError, <Error>[new EngineIOError(message, desc)]))
+      .doOnData((String _) => log.e('error emited'))
       .map((String _) => new Event(Transport.eventError, <Error>[new EngineIOError(message, desc)]));
 
   Observable<Event> send(List<Packet<dynamic>> packets) => new Observable<String>.just('').flatMap((String _) {
@@ -80,10 +87,11 @@ abstract class Transport extends Emitter {
       });
 
   Observable<Event> onData(dynamic data) => new Observable<dynamic>.just(data)
+      .doOnData((dynamic event) => log.e('transport opened $event'))
       .map((dynamic data) => data is String ? Parser.decodePacket(data) : Parser.decodeBytePacket(data))
-      .flatMap((Packet<dynamic> packet) => onPacket(packet));
+      .flatMap((Packet<dynamic> packet) => onPacket$(packet));
 
-  Observable<Event> onPacket(Packet<dynamic> packet) => new Observable<String>.just('')
+  Observable<Event> onPacket$(Packet<dynamic> packet) => new Observable<String>.just('')
       .doOnData((String _) => emit(Transport.eventPacket, <Packet<dynamic>>[packet]))
       .map((String _) => new Event(Transport.eventPacket, <Packet<dynamic>>[packet]));
 
@@ -91,5 +99,5 @@ abstract class Transport extends Emitter {
 
   Observable<Event> get doOpen$;
 
-  Observable<void> get doClose$;
+  Observable<Event> get doClose$;
 }
