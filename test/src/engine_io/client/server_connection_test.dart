@@ -2,11 +2,9 @@ import 'dart:async';
 
 import 'package:engine_io_client/engine_io_client.dart';
 import 'package:engine_io_client/src/engine_io/client/socket.dart';
-import 'package:engine_io_client/src/engine_io/client/transport.dart';
-import 'package:engine_io_client/src/engine_io/client/transports/polling.dart';
-import 'package:engine_io_client/src/engine_io/client/transports/web_socket.dart';
 import 'package:engine_io_client/src/models/handshake_data.dart';
 import 'package:engine_io_client/src/models/socket_options.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:test/test.dart';
 
 import 'connection.dart';
@@ -17,200 +15,128 @@ void main() {
   final SocketOptions opts = new SocketOptions(port: Connection.PORT);
 
   test('openAndClose', () async {
-    final List<dynamic> values = <dynamic>[];
-
     final Socket socket = new Socket(opts);
-    socket
-      ..on(Socket.eventOpen, (List<dynamic> args) async => values.add('onOpen'))
-      ..on(Socket.eventClose, (List<dynamic> args) async => values.add('onClose'));
 
-    await socket.open$();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
-    expect(values.first, 'onOpen');
-    await socket.close$();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
-    expect(values.length, 2);
-    expect(values.last, 'onClose');
+    final Observable<Event> events$ = new Observable<Event>.merge(<Observable<Event>>[
+      socket.on(Socket.eventOpen),
+      socket.on(Socket.eventClose).map((Event event) => new Event(Socket.eventClose)),
+    ]);
+
+    socket.open();
+    socket.close();
+    expect(events$, emitsInOrder(<Event>[new Event(Socket.eventOpen), new Event(Socket.eventClose)]));
   });
 
   test('messages', () async {
-    final List<dynamic> values = <dynamic>[];
-
     final Socket socket = new Socket(opts);
-    socket
-      ..on(Socket.eventOpen, (List<dynamic> args) => socket.send$('hello'))
-      ..on(Socket.eventMessage, (List<dynamic> args) async => values.add(args[0]));
 
-    await socket.open$();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    final Observable<Event> events$ = new Observable<Event>.merge(<Observable<Event>>[
+      socket.on(Socket.eventOpen).flatMap((Event event) => socket.write$('hello')).ignoreElements(),
+      socket.on(Socket.eventMessage).map((Event event) => event.args[0]),
+    ]);
 
-    expect(values[0], 'hi');
-    expect(values[1], 'hello');
-    await socket.close$();
+    socket.open();
+
+    expect(events$, emitsInOrder(<String>['hi', 'hello']));
   });
 
   test('handshake', () async {
-    final List<dynamic> values = <dynamic>[];
-
     final Socket socket = new Socket(opts);
-    socket.on(Socket.eventHandshake, (List<dynamic> args) async => values.add(args));
-    await socket.open$();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
-    final List<dynamic> args = values[0];
-    final HandshakeData handshakeData = args[0];
-    expect(values.length, 1);
+    socket.open();
+    final HandshakeData handshakeData = (await socket.on(Socket.eventHandshake).first).args[0];
+
     expect(handshakeData.sessionId, isNotNull);
     expect(handshakeData.upgrades, isNotEmpty);
     expect(handshakeData.pingTimeout > 0, isTrue);
     expect(handshakeData.pingInterval > 0, isTrue);
-
-    await socket.close$();
   });
 
   test('upgrade', () async {
-    final List<dynamic> values = <dynamic>[];
-
     final Socket socket = new Socket(opts);
-    socket
-      ..on(Socket.eventUpgrading, (List<dynamic> args) async => values.add(args[0]))
-      ..on(Socket.eventUpgrade, (List<dynamic> args) async => values.add(args[0]));
-    await socket.open$();
 
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    final Observable<Event> events$ = new Observable<Event>.merge(<Observable<Event>>[
+      socket.on(Socket.eventUpgrading),
+      socket.on(Socket.eventUpgrade),
+    ]).map((Event event) => event.args[0].options.socket.transport.name);
 
-    expect(values[0] is Transport, isTrue);
-    expect(values[0], isNotNull);
-    expect(values[1] is Transport, isTrue);
-    expect(values[1], isNotNull);
+    socket.open();
 
-    await socket.close$();
+    expect(events$, emitsInOrder(<String>['polling', 'websocket']));
   });
 
   test('pollingHeaders', () async {
-    final List<dynamic> messages = <dynamic>[];
-
-    final SocketOptions opts = new SocketOptions(port: Connection.PORT, transports: <String>[Polling.NAME]);
-
+    final SocketOptions opts = new SocketOptions(port: Connection.PORT, transports: <String>[
+      Polling.NAME
+    ], headers: <String, List<String>>{
+      'X-EngineIO': <String>['foo']
+    });
     final Socket socket = new Socket(opts);
-    socket.on(Socket.eventTransport, (List<dynamic> args) async {
-      final Transport transport = args[0];
-      transport
-        ..on(Transport.eventRequestHeaders, (List<dynamic> args) {
-          log.e('main: requestHeaders');
-          final Map<String, List<String>> headers = args[0];
-          headers['X-EngineIO'] = <String>['foo'];
-        })
-        ..on(Transport.eventResponseHeaders, (List<dynamic> args) {
-          log.e('main: responseHeaders');
-          final Map<String, List<String>> headers = args[0];
-          print(headers);
 
-          final List<String> values = headers['X-EngineIO'.toLowerCase()][0].split(',');
-          messages.add(values[0]);
-          messages.add(values[1]);
-        });
-    });
-    await socket.open$();
+    final Observable<Event> events$ = socket
+        .on(Socket.eventTransport)
+        .doOnData((Event event) => log.e(event.args[0]))
+        .flatMap<Event>((Event event) => event.args[0].on(Transport.eventResponseHeaders))
+        .map<dynamic>((Event event) => event.args[0]['x-engineio'])
+        .take(1);
 
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    new Future<void>.delayed(const Duration(seconds: 1), () => socket.open());
 
-    expect(messages[0], 'hi');
-    expect(messages[1], 'foo');
-
-    await socket.close$();
+    expect(events$, emits(<String>['hi,foo']));
   });
-
-  /*
-  //This will fail because WebSocket doesn't have a way to retrieve the headers
-  test('websocketHandshakeHeaders', () async {
-    final List<dynamic> messages = <dynamic>[];
-
-    final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-      b
-        ..port = Connection.PORT
-        ..transports = new ListBuilder<String>(<String>[WebSocket.NAME]);
-    });
-
-    final Socket socket = new Socket(opts);
-    socket.on(Socket.transport.name, (dynamic args) {
-      final Transport transport = args;
-      transport.on(Transport.requestHeaders.name, (dynamic args) {
-        final Map<String, List<String>> headers = args;
-        headers['X-EngineIO'] = <String>['foo'];
-      }).on(Transport.responseHeaders.name, (dynamic args) {
-        final Map<String, List<String>> headers = args;
-        print(headers);
-
-        final List<String> values = headers['X-EngineIO'.toLowerCase()][0].split(',');
-        messages.add(values[0]);
-        messages.add(values[1]);
-      });
-    });
-    await socket.open();
-
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
-
-    expect(messages[0], 'hi');
-    expect(messages[1], 'foo');
-
-    socket.close();
-  });
-  */
 
   test('rememberWebsocket', () async {
     final List<dynamic> values = <dynamic>[];
 
     final Socket socket = new Socket(opts);
-    socket.on(Socket.eventUpgrade, (List<dynamic> args) async {
-      final Transport transport = args[0];
-      await socket.close$();
+
+    socket.on(Socket.eventUpgrade).listen((Event event) {
+      final Transport transport = event.args[0];
+      socket.close();
 
       if (transport.name == WebSocket.NAME) {
         final SocketOptions opts = new SocketOptions(port: Connection.PORT, rememberUpgrade: true);
 
         final Socket socket2 = new Socket(opts);
-        await socket2.open$();
+        socket2.open();
         values.add(socket2.transport.name);
-        await socket2.close$();
+        socket2.close();
       }
     });
-    await socket.open$();
+
+    socket.open();
     values.add(socket.transport.name);
 
     await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values[0], Polling.NAME);
     expect(values[1], WebSocket.NAME);
-
-    await socket.close$();
   });
 
   test('notRememberWebsocket', () async {
     final List<dynamic> values = <dynamic>[];
 
     final Socket socket = new Socket(opts);
-    socket.on(Socket.eventUpgrade, (List<dynamic> args) async {
-      final Transport transport = args[0];
-      await socket.close$();
+    socket.on(Socket.eventUpgrade).listen((Event event) {
+      final Transport transport = event.args[0];
+      socket.close();
 
       if (transport.name == WebSocket.NAME) {
         final SocketOptions opts = new SocketOptions(port: Connection.PORT, rememberUpgrade: false);
 
         final Socket socket2 = new Socket(opts);
-        await socket2.open$();
+        socket2.open();
         values.add(socket2.transport.name);
-        await socket2.close$();
+        socket2.close();
       }
     });
-    await socket.open$();
+
+    socket.open();
     values.add(socket.transport.name);
 
     await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values[0], Polling.NAME);
     expect(values[1], Polling.NAME);
-
-    await socket.close$();
   });
 }

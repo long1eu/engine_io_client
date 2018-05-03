@@ -1,6 +1,7 @@
 import 'dart:io' show SecurityContext;
 
 import 'package:engine_io_client/src/engine_io/client/socket.dart';
+import 'package:engine_io_client/src/logger.dart';
 
 class TransportOptions {
   TransportOptions({
@@ -8,10 +9,11 @@ class TransportOptions {
     this.path,
     this.timestampParam,
     this.secure = false,
-    this.timestampRequests,
+    this.timestampRequests = false,
     this.port = -1,
     this.policyPort = -1,
     this.query,
+    this.headers,
     this.socket,
     this.securityContext,
   });
@@ -32,6 +34,8 @@ class TransportOptions {
 
   final Map<String, String> query;
 
+  final Map<String, List<String>> headers;
+
   final Socket socket;
 
   final SecurityContext securityContext;
@@ -45,6 +49,7 @@ class TransportOptions {
       int port,
       int policyPort,
       Map<String, String> query,
+      Map<String, List<String>> headers,
       Socket socket,
       SecurityContext securityContext}) {
     return new TransportOptions(
@@ -56,23 +61,24 @@ class TransportOptions {
         port: port ?? this.port,
         policyPort: policyPort ?? this.policyPort,
         query: query ?? this.query,
+        headers: headers ?? this.headers,
         socket: socket ?? this.socket,
         securityContext: securityContext ?? this.securityContext);
   }
 
   @override
   String toString() {
-    return 'TransportOptions{\n'
-        '\thostname: $hostname, \n'
-        '\tpath: $path, \n'
-        '\ttimestampParam: $timestampParam, \n'
-        '\tsecure: $secure, \n'
-        '\ttimestampRequests: $timestampRequests, \n'
-        '\tport: $port, \n'
-        '\tpolicyPort: $policyPort, \n'
-        '\tquery: $query, \n'
-        '\tsocket: $socket, \n'
-        '\tsecurityContext: $securityContext\n'
-        '\t}\n';
+    return (new ToStringHelper('TransportOptions')
+          ..add('hostname', '$hostname')
+          ..add('path', '$path')
+          ..add('timestampParam', '$timestampParam')
+          ..add('secure', '$secure')
+          ..add('timestampRequests', '$timestampRequests')
+          ..add('port', '$port')
+          ..add('policyPort', '$policyPort')
+          ..add('query', '$query')
+          ..add('headers', '$headers')
+          ..add('securityContext', '$securityContext'))
+        .toString();
   }
 }

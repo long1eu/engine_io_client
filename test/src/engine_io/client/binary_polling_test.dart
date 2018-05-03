@@ -1,6 +1,6 @@
 import 'package:engine_io_client/src/emitter/emitter.dart';
 import 'package:engine_io_client/src/engine_io/client/socket.dart';
-import 'package:engine_io_client/src/engine_io/client/transports/polling.dart';
+import 'package:engine_io_client/src/engine_io/client/transport.dart';
 import 'package:engine_io_client/src/logger.dart';
 import 'package:engine_io_client/src/models/socket_options.dart';
 import 'package:rxdart/rxdart.dart';
@@ -17,10 +17,9 @@ void main() async {
     final SocketOptions opts = new SocketOptions(port: Connection.PORT, transports: <String>[Polling.NAME]);
     final Socket socket = new Socket(opts);
 
-    final Observable<Event> onMessage$ =
-        socket.on(Socket.eventMessage).doOnData(log.e).map<Event>((Event event) => event.args[0]).take(2);
-
-    socket.open$.flatMap((Event event) => socket.send$(binaryData)).listen(null);
+    final Observable<Event> onMessage$ = socket.on(Socket.eventMessage).map<Event>((Event event) => event.args[0]).take(2);
+    socket.on(Socket.eventOpen).listen((Event event) => socket.send(binaryData));
+    socket.open();
 
     expect(onMessage$, emitsInOrder(<dynamic>['hi', binaryData, emitsDone]));
   });
@@ -33,28 +32,19 @@ void main() async {
 
     final Observable<Event> onMessage$ = socket
         .on(Socket.eventMessage)
-        .doOnData(log.e)
         .where((Event event) => event.args[0] != 'hi')
         .map<dynamic>((Event event) => event.args[0])
         .take(4);
 
-    socket.open$
-        .flatMap((Event event) => new Observable<Event>.concatEager(<Observable<Event>>[
-              socket.send$(binaryData),
-              socket.send$('cash money €€€'),
-              socket.send$('cash money ss €€€'),
-              socket.send$('20["getAckBinary",""]'),
-            ]))
-        .listen(null);
+    socket.on(Socket.eventOpen).listen((Event event) {
+      socket.send(binaryData);
+      socket.send('cash money €€€');
+      socket.send('cash money ss €€€');
+      socket.send('20["getAckBinary",""]');
+    });
 
-    expect(
-        onMessage$,
-        emitsInOrder(<dynamic>[
-          binaryData,
-          'cash money €€€',
-          'cash money ss €€€',
-          '20["getAckBinary",""]',
-          emitsDone,
-        ]));
+    socket.open();
+
+    expect(onMessage$, emitsInAnyOrder(<dynamic>[binaryData, 'cash money €€€', 'cash money ss €€€', '20["getAckBinary",""]', emitsDone]));
   });
 }

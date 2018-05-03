@@ -1,3 +1,5 @@
+import 'package:engine_io_client/src/logger.dart';
+
 class Packet<T> {
   Packet(this.type, [this.data]);
 
@@ -25,7 +27,9 @@ class Packet<T> {
   static int index(String value) => values.indexOf(value);
 
   @override
-  String toString() => 'Packet{type: $type, data: $data}';
+  String toString() {
+    return (new ToStringHelper('Packet')..add('type', '$type')..add('data', '$data')).toString();
+  }
 
   @override
   bool operator ==(Object other) =>

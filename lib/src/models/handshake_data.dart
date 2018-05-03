@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:engine_io_client/engine_io_client.dart';
 import 'package:meta/meta.dart';
 
 class HandshakeData {
@@ -40,4 +41,27 @@ class HandshakeData {
       pingTimeout: pingTimeout ?? this.pingTimeout,
     );
   }
+
+  @override
+  String toString() {
+    return (new ToStringHelper('HandshakeData')
+          ..add('sessionId', '$sessionId')
+          ..add('upgrades', '$upgrades')
+          ..add('pingInterval', '$pingInterval')
+          ..add('pingTimeout', '$pingTimeout'))
+        .toString();
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is HandshakeData &&
+          runtimeType == other.runtimeType &&
+          sessionId == other.sessionId &&
+          upgrades == other.upgrades &&
+          pingInterval == other.pingInterval &&
+          pingTimeout == other.pingTimeout;
+
+  @override
+  int get hashCode => sessionId.hashCode ^ upgrades.hashCode ^ pingInterval.hashCode ^ pingTimeout.hashCode;
 }

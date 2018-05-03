@@ -1,10 +1,30 @@
+library transport;
+
+import 'dart:async';
+import 'dart:io' as io;
+import 'dart:io';
+
 import 'package:engine_io_client/src/emitter/emitter.dart';
 import 'package:engine_io_client/src/engine_io/client/engine_io_error.dart';
 import 'package:engine_io_client/src/engine_io/parser/parser.dart';
 import 'package:engine_io_client/src/logger.dart';
 import 'package:engine_io_client/src/models/packet.dart';
 import 'package:engine_io_client/src/models/transport_options.dart';
+import 'package:engine_io_client/src/models/xhr_options.dart';
+import 'package:engine_io_client/src/parse_qs/parse_qs.dart';
+import 'package:engine_io_client/src/yeast/yeast.dart';
+import 'package:http/http.dart';
+import 'package:meta/meta.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:engine_io_client/src/engine_io/custom/websocket_impl.dart';
+
+part 'transports/polling.dart';
+
+part 'transports/web_socket.dart';
+
+part 'transports/xhr/polling_xhr.dart';
+
+part 'transports/xhr/request_xhr.dart';
 
 abstract class Transport extends Emitter {
   static final Log log = new Log('EngineIo.Transport');
@@ -14,9 +34,9 @@ abstract class Transport extends Emitter {
   static const String eventPacket = 'packet';
   static const String eventDrain = 'drain';
   static const String eventError = 'error';
-  static const String eventRequestHeaders = 'requestHeaders';
   static const String eventResponseHeaders = 'responseHeaders';
   static const String eventCanClose = 'canClose';
+  static const String eventPaused = 'paused';
 
   static const String stateOpening = 'opening';
   static const String stateOpen = 'open';
@@ -31,73 +51,74 @@ abstract class Transport extends Emitter {
   String readyState;
   bool writable = false;
 
-  Observable<Event> get canClose$ => !writable
-      ? new Observable<String>.just('')
-          .doOnData((String _) => log.d('we are currently writing - waiting to pause'))
-          .flatMap((String _) => once(Transport.eventDrain))
-          .where((Event event) => event.name == Transport.eventDrain)
-          .map((Event event) => new Event(Transport.eventCanClose))
-      : new Observable<Event>.just(new Event(Transport.eventCanClose));
+  void _doOpen();
 
-  Observable<Event> get open$ => new Observable<String>.just('')
-      .where((String _) => readyState == Transport.stateClosed || readyState == null)
-      .doOnData((String _) => readyState = Transport.stateOpening)
-      .flatMap((String _) => doOpen$);
+  Observable<Event> _doClose();
 
-  Observable<Event> get onOpen$ => new Observable<String>.just('')
-      .doOnData((String _) => log.d('onOpen'))
-      .doOnData((String _) => readyState = Transport.stateOpen)
-      .doOnData((String _) => writable = true)
-      .doOnData((String _) => emit(Transport.eventOpen))
-      .map((String _) => new Event(Transport.eventOpen));
+  Observable<Event> _write(List<Packet<dynamic>> packets);
 
-  Observable<Event> get close$ => new Observable<String>.just('')
-      .where((String _) => readyState == Transport.stateOpening || readyState == Transport.stateOpen)
-      .flatMap((String _) => doClose$)
-      .doOnData((Event _) => log.d('onClosessss $_'))
-      .flatMap((dynamic _) => onClose$.doOnData((Event _) => log.d('onClose $_')))
-      .map((Event event) => event)
-      .doOnData(log.e);
+  void open() {
+    if (readyState == Transport.stateClosed || readyState == null) {
+      readyState = Transport.stateOpening;
+      _doOpen();
+    }
+  }
 
-  Observable<Event> get onClose$ => new Observable<String>.just('')
-      .doOnData((String _) => log.d('onClose'))
-      .doOnData((String _) => readyState = Transport.stateClosed)
-      .doOnData((String _) => log.d('onClose'))
-      .doOnData((String _) => emit(Transport.eventClose))
-      .doOnData((String _) => log.d('onClose'))
-      .map((String _) => new Event(Transport.eventClose))
-      .doOnData((Event _) => log.d('onClose $_'));
+  void close(String caller) {
+    log.d('caller: $caller');
+    if (readyState == Transport.stateOpening || readyState == Transport.stateOpen) {
+      _doClose().listen((Event event) => _onClose());
+    }
+  }
 
-  Observable<Event> onError(String message, dynamic desc) => new Observable<String>.just('')
-      .doOnData((String _) => emit(Transport.eventError, <Error>[new EngineIOError(message, desc)]))
-      .doOnData((String _) => log.e('error emited'))
-      .map((String _) => new Event(Transport.eventError, <Error>[new EngineIOError(message, desc)]));
+  Observable<Event> send(List<Packet<dynamic>> packets) {
+    if (readyState == Transport.stateOpen) {
+      writable = false;
+      return _write(packets).doOnData((Event event) => writable = true).doOnData((Event event) => emit(Transport.eventDrain));
+    } else {
+      throw new StateError('Transport not open');
+    }
+  }
 
-  Observable<Event> send(List<Packet<dynamic>> packets) => new Observable<String>.just('').flatMap((String _) {
-        if (readyState == Transport.stateOpen) {
-          return new Observable<String>.just('')
-              .doOnData((String _) => writable = false)
-              .flatMap((String _) => write(packets))
-              .doOnData((Event event) => writable = true)
-              .doOnData((Event _) => emit(Transport.eventDrain))
-              .map((Event _) => new Event(Transport.eventDrain));
-        } else {
-          throw new StateError('Transport not open');
-        }
-      });
+  void canClose() {
+    if (!writable) {
+      log.d('we are currently writing - waiting to pause');
+      once(Transport.eventDrain).listen((Event event) => emit(Transport.eventCanClose));
+    } else {
+      emit(Transport.eventCanClose);
+    }
+  }
 
-  Observable<Event> onData(dynamic data) => new Observable<dynamic>.just(data)
-      .doOnData((dynamic event) => log.e('transport opened $event'))
-      .map((dynamic data) => data is String ? Parser.decodePacket(data) : Parser.decodeBytePacket(data))
-      .flatMap((Packet<dynamic> packet) => onPacket$(packet));
+  void _onOpen() {
+    log.d('onOpen');
+    readyState = Transport.stateOpen;
+    writable = true;
+    emit(Transport.eventOpen);
+  }
 
-  Observable<Event> onPacket$(Packet<dynamic> packet) => new Observable<String>.just('')
-      .doOnData((String _) => emit(Transport.eventPacket, <Packet<dynamic>>[packet]))
-      .map((String _) => new Event(Transport.eventPacket, <Packet<dynamic>>[packet]));
+  void _onClose() {
+    readyState = Transport.stateClosed;
+    emit(Transport.eventClose);
+  }
 
-  Observable<Event> write(List<Packet<dynamic>> packets);
+  @visibleForTesting
+  void onError(String message, dynamic desc) {
+    emit(Transport.eventError, <Error>[new EngineIOError(message, desc)]);
+  }
 
-  Observable<Event> get doOpen$;
+  void _onData(dynamic data) {
+    log.e('transport opened $data');
+    final Packet<dynamic> packet = data is String ? Parser.decodePacket(data) : Parser.decodeBytePacket(data);
+    _onPacket(packet);
+  }
 
-  Observable<Event> get doClose$;
+  void _onPacket(Packet<dynamic> packet) {
+    emit(Transport.eventPacket, <Packet<dynamic>>[packet]);
+  }
+
+  @override
+  String toString() {
+    return (new ToStringHelper(name)..add('options', '$options')..add('readyState', '$readyState')..add('writable', '$writable'))
+        .toString();
+  }
 }

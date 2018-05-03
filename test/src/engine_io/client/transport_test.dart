@@ -1,5 +1,4 @@
-import 'package:engine_io_client/src/engine_io/client/transports/web_socket.dart';
-import 'package:engine_io_client/src/engine_io/client/transports/xhr/polling_xhr.dart';
+import 'package:engine_io_client/src/engine_io/client/transport.dart';
 import 'package:engine_io_client/src/models/transport_options.dart';
 import 'package:test/test.dart';
 
