@@ -56,8 +56,8 @@ void main() {
 
     socket.on(Socket.eventOpen).listen((Event event) {
       log.d(event);
-      socket.send('dddd');
       socket.close();
+      socket.send('dddd');
     });
 
     socket.open();
