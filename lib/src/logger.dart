@@ -1,4 +1,6 @@
-// ignore_for_file: strong_mode_implicit_dynamic_parameter, avoid_function_literals_in_foreach_calls, always_specify_types, prefer_single_quotes
+// ignore_for_file: strong_mode_implicit_dynamic_parameter,
+// ignore_for_file: avoid_function_literals_in_foreach_calls,
+// ignore_for_file: always_specify_types, prefer_single_quotes
 class Log {
   static bool shouldLog = true;
 
@@ -63,4 +65,30 @@ String _formatTag(String tag) {
     return tag.substring(0, 31);
   else
     return tag + "                                ".substring(tag.length);
+}
+
+class ToStringHelper {
+  int _toStringHelperIndent = 0;
+
+  StringBuffer _result = new StringBuffer();
+
+  ToStringHelper(String className) {
+    _result..write(className)..write(' {\n');
+    _toStringHelperIndent += 2;
+  }
+
+  void add(String field, Object value) {
+    if (value != null) {
+      _result..write(' ' * _toStringHelperIndent)..write(field)..write('=')..write(value)..write(',\n');
+    }
+  }
+
+  @override
+  String toString() {
+    _toStringHelperIndent -= 2;
+    _result..write(' ' * _toStringHelperIndent)..write('}');
+    final stringResult = _result.toString();
+    _result = null;
+    return stringResult;
+  }
 }

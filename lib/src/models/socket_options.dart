@@ -1,8 +1,8 @@
 import 'dart:io' show SecurityContext;
 
 import 'package:engine_io_client/src/engine_io/client/socket.dart';
-import 'package:engine_io_client/src/engine_io/client/transports/polling.dart';
-import 'package:engine_io_client/src/engine_io/client/transports/web_socket.dart';
+import 'package:engine_io_client/src/engine_io/client/transport.dart';
+import 'package:engine_io_client/src/logger.dart';
 import 'package:engine_io_client/src/models/transport_options.dart';
 
 class SocketOptions extends TransportOptions {
@@ -21,6 +21,7 @@ class SocketOptions extends TransportOptions {
       int port = -1,
       int policyPort = -1,
       Map<String, String> query,
+      Map<String, List<String>> headers,
       Socket socket,
       SecurityContext securityContext})
       : super(
@@ -32,6 +33,7 @@ class SocketOptions extends TransportOptions {
             port: port,
             policyPort: policyPort,
             query: query,
+            headers: headers,
             socket: socket,
             securityContext: securityContext);
 
@@ -72,6 +74,7 @@ class SocketOptions extends TransportOptions {
       int port,
       int policyPort,
       Map<String, String> query,
+      Map<String, List<String>> headers,
       Socket socket,
       SecurityContext securityContext}) {
     return new SocketOptions(
@@ -89,20 +92,21 @@ class SocketOptions extends TransportOptions {
         port: port ?? this.port,
         policyPort: policyPort ?? this.policyPort,
         query: query ?? this.query,
+        headers: headers ?? this.headers,
         socket: socket ?? this.socket,
         securityContext: securityContext ?? this.securityContext);
   }
 
   @override
   String toString() {
-    return 'SocketOptions{\n'
-        '\ttransport: \t${super.toString()}'
-        '\ttransports: $transports, \n'
-        '\tupgrade: $upgrade, \n'
-        '\trememberUpgrade: $rememberUpgrade, \n'
-        '\thost: $host, \n'
-        '\trawQuery: $rawQuery, \n'
-        '\ttransportOptions: $transportOptions\n'
-        '}\n';
+    return (new ToStringHelper('SocketOptions')
+          ..add('transport', '${super.toString()}')
+          ..add('transports', '$transports')
+          ..add('upgrade', '$upgrade')
+          ..add('rememberUpgrade', '$rememberUpgrade')
+          ..add('host', '$host')
+          ..add('rawQuery', '$rawQuery')
+          ..add('transportOptions', '$transportOptions'))
+        .toString();
   }
 }

@@ -6,4 +6,12 @@ class EngineIOError extends Error {
 
   @override
   String toString() => 'EngineIOError{transport: $transport, code: $code}';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EngineIOError && runtimeType == other.runtimeType && transport == other.transport && code == other.code;
+
+  @override
+  int get hashCode => transport.hashCode ^ code.hashCode;
 }
