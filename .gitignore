@@ -4,4 +4,6 @@
 .idea
 .packages
 .pub/
+test/resources/node_modules/
+test/resources/yarn.lock
 packages

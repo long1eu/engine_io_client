@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// ignore_for_file: slash_for_doc_comments
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -65,15 +63,13 @@ class _CompressionMaxWindowBits {
   String toString() => headerValue;
 }
 
-/**
- * The web socket protocol transformer handles the protocol byte stream
- * which is supplied through the `handleData`. As the protocol is processed,
- * it'll output frame data as either a List<int> or String.
- *
- * Important information about usage: Be sure you use cancelOnError, so the
- * socket will be closed when the processor encounter an error. Not using it
- * will lead to undefined behaviour.
- */
+/// The web socket protocol transformer handles the protocol byte stream
+/// which is supplied through the `handleData`. As the protocol is processed,
+/// it'll output frame data as either a List<int> or String.
+///
+/// Important information about usage: Be sure you use cancelOnError, so the
+/// socket will be closed when the processor encounter an error. Not using it
+/// will lead to undefined behaviour.
 class _WebSocketProtocolTransformer extends StreamTransformerBase<List<int>, dynamic /*List<int>|_WebSocketPing|_WebSocketPong*/ >
     implements EventSink<List<int>> {
   static const int START = 0;
@@ -134,9 +130,7 @@ class _WebSocketProtocolTransformer extends StreamTransformerBase<List<int>, dyn
     _eventSink.close();
   }
 
-  /**
-   * Process data received from the underlying communication channel.
-   */
+  /// Process data received from the underlying communication channel.
   @override
   void add(List<int> bytes) {
     final Uint8List buffer = bytes is Uint8List ? bytes : new Uint8List.fromList(bytes);
@@ -411,157 +405,6 @@ class _WebSocketPong {
   final List<int> payload;
 
   _WebSocketPong([this.payload]);
-}
-
-typedef /*String|Future<String>*/ dynamic _ProtocolSelector(List<String> protocols);
-
-class _WebSocketTransformerImpl extends StreamTransformerBase<HttpRequest, WebSocket> implements WebSocketTransformer {
-  final StreamController<WebSocket> _controller = new StreamController<WebSocket>(sync: true);
-  final _ProtocolSelector _protocolSelector;
-  final CompressionOptions _compression;
-
-  _WebSocketTransformerImpl(this._protocolSelector, this._compression);
-
-  @override
-  Stream<WebSocket> bind(Stream<HttpRequest> stream) {
-    stream.listen((HttpRequest request) {
-      _upgrade(request, _protocolSelector, _compression)
-          .then((WebSocket webSocket) => _controller.add(webSocket))
-          .catchError(_controller.addError);
-    }, onDone: () {
-      _controller.close();
-    });
-
-    return _controller.stream;
-  }
-
-  static List<String> _tokenizeFieldValue(String headerValue) {
-    final List<String> tokens = <String>[];
-    int start = 0;
-    int index = 0;
-    while (index < headerValue.length) {
-      if (headerValue[index] == ',') {
-        tokens.add(headerValue.substring(start, index));
-        start = index + 1;
-      } else if (headerValue[index] == ' ' || headerValue[index] == '\t') {
-        start++;
-      }
-      index++;
-    }
-    tokens.add(headerValue.substring(start, index));
-    return tokens;
-  }
-
-  static Future<WebSocket> _upgrade(HttpRequest request, _ProtocolSelector _protocolSelector, CompressionOptions compression) {
-    final HttpResponse response = request.response;
-    if (!_isUpgradeRequest(request)) {
-      // Send error response.
-      response
-        ..statusCode = HttpStatus.BAD_REQUEST
-        ..close();
-      return new Future<WebSocket>.error(const WebSocketException('Invalid WebSocket upgrade request'));
-    }
-
-    Future<WebSocket> upgrade(String protocol) {
-      // Send the upgrade response.
-      response
-        ..statusCode = HttpStatus.SWITCHING_PROTOCOLS
-        ..headers.add(HttpHeaders.CONNECTION, 'Upgrade')
-        ..headers.add(HttpHeaders.UPGRADE, 'websocket');
-      final String key = request.headers.value('Sec-WebSocket-Key');
-      final _SHA1 sha1 = new _SHA1();
-      sha1.add('$key$_webSocketGUID'.codeUnits);
-      final String accept = _CryptoUtils.bytesToBase64(sha1.close());
-      response.headers.add('Sec-WebSocket-Accept', accept);
-      if (protocol != null) {
-        response.headers.add('Sec-WebSocket-Protocol', protocol);
-      }
-
-      final _WebSocketPerMessageDeflate deflate = _negotiateCompression(request, response, compression);
-
-      response.headers.contentLength = 0;
-      return response
-          .detachSocket()
-          .then<WebSocket>((Socket socket) => new WebSocketImpl._fromSocket(socket, protocol, compression, true, deflate));
-    }
-
-    List<String> protocols = request.headers['Sec-WebSocket-Protocol'];
-    if (protocols != null && _protocolSelector != null) {
-      // The suggested protocols can be spread over multiple lines, each
-      // consisting of multiple protocols. To unify all of them, first join
-      // the lists with ', ' and then tokenize.
-      protocols = _tokenizeFieldValue(protocols.join(', '));
-      return new Future<String>(() => _protocolSelector(protocols)).then<String>((String protocol) {
-        if (!protocols.contains(protocol)) {
-          throw const WebSocketException('Selected protocol is not in the list of available protocols');
-        }
-        return protocol;
-      }).catchError((dynamic error) {
-        response
-          ..statusCode = HttpStatus.INTERNAL_SERVER_ERROR
-          ..close();
-        throw error;
-      }).then<WebSocket>(upgrade);
-    } else {
-      return upgrade(null);
-    }
-  }
-
-  static _WebSocketPerMessageDeflate _negotiateCompression(
-      HttpRequest request, HttpResponse response, CompressionOptions compression) {
-    String extensionHeader = request.headers.value('Sec-WebSocket-Extensions');
-
-    extensionHeader ??= '';
-
-    final HeaderValue hv = HeaderValue.parse(extensionHeader, valueSeparator: ',');
-    if (compression.enabled && hv.value == WebSocketImpl.PER_MESSAGE_DEFLATE) {
-      final _CompressionMaxWindowBits info = compression._createHeader(hv);
-
-      response.headers.add('Sec-WebSocket-Extensions', info.headerValue);
-      final bool serverNoContextTakeover =
-          (hv.parameters.containsKey(_serverNoContextTakeover) && compression.serverNoContextTakeover);
-      final bool clientNoContextTakeover =
-          (hv.parameters.containsKey(_clientNoContextTakeover) && compression.clientNoContextTakeover);
-      final _WebSocketPerMessageDeflate deflate = new _WebSocketPerMessageDeflate(
-          serverNoContextTakeover: serverNoContextTakeover,
-          clientNoContextTakeover: clientNoContextTakeover,
-          serverMaxWindowBits: info.maxWindowBits,
-          clientMaxWindowBits: info.maxWindowBits,
-          serverSide: true);
-
-      return deflate;
-    }
-
-    return null;
-  }
-
-  static bool _isUpgradeRequest(HttpRequest request) {
-    if (request.method != 'GET') {
-      return false;
-    }
-    if (request.headers[HttpHeaders.CONNECTION] == null) {
-      return false;
-    }
-    bool isUpgrade = false;
-    // ignore: avoid_function_literals_in_foreach_calls
-    request.headers[HttpHeaders.CONNECTION].forEach((String value) {
-      if (value.toLowerCase() == 'upgrade') isUpgrade = true;
-    });
-    if (!isUpgrade) return false;
-    final String upgrade = request.headers.value(HttpHeaders.UPGRADE);
-    if (upgrade == null || upgrade.toLowerCase() != 'websocket') {
-      return false;
-    }
-    final String version = request.headers.value('Sec-WebSocket-Version');
-    if (version == null || version != '13') {
-      return false;
-    }
-    final String key = request.headers.value('Sec-WebSocket-Key');
-    if (key == null) {
-      return false;
-    }
-    return true;
-  }
 }
 
 class _WebSocketPerMessageDeflate {
@@ -1082,7 +925,7 @@ class WebSocketImpl extends Stream<dynamic> with _ServiceObject implements WebSo
           return DEFAULT_WINDOW_BITS;
         }
 
-        return int.parse(o, onError: (String s) => DEFAULT_WINDOW_BITS);
+        return int.tryParse(o) ?? DEFAULT_WINDOW_BITS;
       }
 
       return new _WebSocketPerMessageDeflate(

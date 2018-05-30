@@ -1,4 +1,4 @@
-library socket.io;
+library engine_io_client;
 
 export 'src/emitter/emitter.dart';
 export 'src/engine_io/client/engine_io_error.dart';
