@@ -55,10 +55,10 @@ abstract class Polling extends Transport {
   Observable<Event> _doClose() {
     if (readyState == Transport.stateOpen) {
       log.d('writing close packet');
-      return _write(<Packet>[new Packet(Packet.close)]);
+      return _write(<Packet>[const Packet(Packet.close)]);
     } else {
       log.d('transport not open - deferring close');
-      return once(Transport.eventOpen).flatMap((Event event) => _write(<Packet>[new Packet(Packet.close)]));
+      return once(Transport.eventOpen).flatMap((Event event) => _write(<Packet>[const Packet(Packet.close)]));
     }
   }
 

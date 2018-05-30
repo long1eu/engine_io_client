@@ -97,6 +97,7 @@ class Parser {
       results.add(encodeOneBinaryPacket(packet));
     }
 
+    // ignore: always_specify_types
     return results.fold<Int8List>(new Int8List(0), (l1, l2) => l1 + l2);
   }
 

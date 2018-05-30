@@ -12,7 +12,7 @@ import 'connection.dart';
 void main() {
   final Log log = new Log('server_connection_test');
 
-  final SocketOptions opts = new SocketOptions(port: Connection.PORT);
+  const SocketOptions opts = const SocketOptions(port: Connection.PORT);
 
   test('openAndClose', () async {
     final Socket socket = new Socket(opts);
@@ -66,10 +66,10 @@ void main() {
   });
 
   test('pollingHeaders', () async {
-    final SocketOptions opts = new SocketOptions(port: Connection.PORT, transports: <String>[
+    const SocketOptions opts = const SocketOptions(port: Connection.PORT, transports: const <String>[
       Polling.NAME
-    ], headers: <String, List<String>>{
-      'X-EngineIO': <String>['foo']
+    ], headers: const <String, List<String>>{
+      'X-EngineIO': const <String>['foo']
     });
     final Socket socket = new Socket(opts);
 
@@ -95,7 +95,7 @@ void main() {
       socket.close();
 
       if (transport.name == WebSocket.NAME) {
-        final SocketOptions opts = new SocketOptions(port: Connection.PORT, rememberUpgrade: true);
+        const SocketOptions opts = const SocketOptions(port: Connection.PORT, rememberUpgrade: true);
 
         final Socket socket2 = new Socket(opts);
         socket2.open();
@@ -122,7 +122,7 @@ void main() {
       socket.close();
 
       if (transport.name == WebSocket.NAME) {
-        final SocketOptions opts = new SocketOptions(port: Connection.PORT, rememberUpgrade: false);
+        const SocketOptions opts = const SocketOptions(port: Connection.PORT, rememberUpgrade: false);
 
         final Socket socket2 = new Socket(opts);
         socket2.open();

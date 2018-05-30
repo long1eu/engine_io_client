@@ -18,7 +18,10 @@ class RequestXhr extends Emitter {
 
   void create() {
     log.d('xhr open ${options.method}: ${options.uri}');
-    final Map<String, List<String>> headers = options.headers ?? <String, List<String>>{};
+    final Map<String, List<String>> headers = <String, List<String>>{};
+    if (options.headers != null) {
+      headers.addAll(options.headers);
+    }
 
     if (options.method == 'POST') {
       if (options.data is List<int>) {

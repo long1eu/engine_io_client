@@ -179,7 +179,7 @@ class Socket extends Emitter {
             log.d('changing transport and sending upgrade packet');
             cleanup();
             _setTransport(transport);
-            transport.send(<Packet>[new Packet(Packet.upgrade)]).listen((Event event) {
+            transport.send(<Packet>[const Packet(Packet.upgrade)]).listen((Event event) {
               _upgrading = false;
               emit(eventUpgrade, <Transport>[transport]);
             });
@@ -238,7 +238,7 @@ class Socket extends Emitter {
     transport.on(Transport.eventOpen).flatMap((Event event) {
       log.e('event probe $event');
       onTransportOpen();
-      return transport.send(<Packet>[new Packet(Packet.ping, 'probe')]);
+      return transport.send(<Packet>[const Packet(Packet.ping, 'probe')]);
     }).listen(null);
 
     transport.open();
@@ -312,7 +312,7 @@ class Socket extends Emitter {
   }
 
   void _ping() {
-    _sendPacket$(new Packet(Packet.ping)).listen((Event event) => emit(Socket.eventPing));
+    _sendPacket$(const Packet(Packet.ping)).listen((Event event) => emit(Socket.eventPing));
   }
 
   void send(dynamic message) => _sendPacket$(new Packet(Packet.message, message)).listen(null);

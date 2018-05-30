@@ -2,16 +2,18 @@ var fs = require('fs');
 var engine = require('engine.io');
 
 var http;
-if (process.argv[2] === 'SSL') {
+//if (process.argv[2] === 'SSL') {
     console.log('ssl');
     http = require('https').createServer({
         key: fs.readFileSync(__dirname + '/test.key'),
         cert: fs.readFileSync(__dirname + '/test.crt')
     });
+/*
 } else {
     console.log('no-ssl');
     http = require('http').createServer();
 }
+*/
 
 var server = engine.attach(http, {
     pingInterval: 500,

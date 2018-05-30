@@ -5,7 +5,7 @@ import 'package:rxdart/rxdart.dart';
 import 'package:test/test.dart';
 
 void main() {
-  final Log log = new Log('ssl_connection');
+  //final Log log = new Log('ssl_connection');
 
   test('receiveBinaryData_PollingSSL', () async {
     final List<int> binaryData = new List<int>.generate(5, (int i) => i);

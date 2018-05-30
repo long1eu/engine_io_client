@@ -11,7 +11,7 @@ class Packet {
 
   static const Packet errorPacket = const Packet(error, 'parser error');
 
-  static const Packet binaryError = const Packet(error, <int>[]);
+  static const Packet binaryError = const Packet(error, const <int>[]);
 
   static const String open = 'open';
   static const String close = 'close';

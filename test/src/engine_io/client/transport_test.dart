@@ -4,11 +4,11 @@ import 'package:test/test.dart';
 
 void main() {
   test('uri', () {
-    final TransportOptions options = new TransportOptions(
+    const TransportOptions options = const TransportOptions(
       path: '/engine.io',
       hostname: 'localhost',
       secure: false,
-      query: <String, String>{'sid': 'test'},
+      query: const <String, String>{'sid': 'test'},
       timestampRequests: false,
     );
 
@@ -18,11 +18,11 @@ void main() {
   });
 
   test('uriWithDefaultPort', () {
-    final TransportOptions options = new TransportOptions(
+    const TransportOptions options = const TransportOptions(
       path: '/engine.io',
       hostname: 'localhost',
       secure: false,
-      query: <String, String>{'sid': 'test'},
+      query: const <String, String>{'sid': 'test'},
       port: 80,
       timestampRequests: false,
     );
@@ -33,11 +33,11 @@ void main() {
   });
 
   test('uriWithPort', () {
-    final TransportOptions options = new TransportOptions(
+    const TransportOptions options = const TransportOptions(
       path: '/engine.io',
       hostname: 'localhost',
       secure: false,
-      query: <String, String>{'sid': 'test'},
+      query: const <String, String>{'sid': 'test'},
       port: 3000,
       timestampRequests: false,
     );
@@ -48,11 +48,11 @@ void main() {
   });
 
   test('httpsUriWithDefaultPort', () {
-    final TransportOptions options = new TransportOptions(
+    const TransportOptions options = const TransportOptions(
       path: '/engine.io',
       hostname: 'localhost',
       secure: true,
-      query: <String, String>{'sid': 'test'},
+      query: const <String, String>{'sid': 'test'},
       port: 443,
       timestampRequests: false,
     );
@@ -63,7 +63,7 @@ void main() {
   });
 
   test('timestampedUri', () {
-    final TransportOptions options = new TransportOptions(
+    const TransportOptions options = const TransportOptions(
       path: '/engine.io',
       hostname: 'localhost',
       timestampParam: 't',
@@ -75,7 +75,7 @@ void main() {
   });
 
   test('ipv6Uri', () {
-    final TransportOptions options = new TransportOptions(
+    const TransportOptions options = const TransportOptions(
       path: '/engine.io',
       hostname: '::1',
       secure: false,
@@ -88,7 +88,7 @@ void main() {
   });
 
   test('ipv6UriWithPort', () {
-    final TransportOptions options = new TransportOptions(
+    const TransportOptions options = const TransportOptions(
       path: '/engine.io',
       hostname: '::1',
       secure: false,
@@ -101,11 +101,11 @@ void main() {
   });
 
   test('wsUri', () {
-    final TransportOptions options = new TransportOptions(
+    const TransportOptions options = const TransportOptions(
       path: '/engine.io',
       hostname: 'test',
       secure: false,
-      query: <String, String>{'transport': 'WebSocket'},
+      query: const <String, String>{'transport': 'WebSocket'},
       timestampRequests: false,
     );
 
@@ -114,7 +114,7 @@ void main() {
   });
 
   test('wssUri', () {
-    final TransportOptions options = new TransportOptions(
+    const TransportOptions options = const TransportOptions(
       path: '/engine.io',
       hostname: 'test',
       secure: true,
@@ -126,7 +126,7 @@ void main() {
   });
 
   test('wsTimestampedUri', () {
-    final TransportOptions options = new TransportOptions(
+    const TransportOptions options = const TransportOptions(
       path: '/engine.io',
       hostname: 'localhost',
       timestampParam: 'woot',
@@ -138,7 +138,7 @@ void main() {
   });
 
   test('wsIPv6Uri', () {
-    final TransportOptions options = new TransportOptions(
+    const TransportOptions options = const TransportOptions(
       path: '/engine.io',
       hostname: '::1',
       secure: false,
@@ -151,7 +151,7 @@ void main() {
   });
 
   test('ipv6UriWithPort', () {
-    final TransportOptions options = new TransportOptions(
+    const TransportOptions options = const TransportOptions(
       path: '/engine.io',
       hostname: '::1',
       secure: false,

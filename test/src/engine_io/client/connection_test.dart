@@ -11,7 +11,7 @@ import 'connection.dart';
 void main() {
   final Log log = new Log('EngineIo.connection_test');
 
-  final SocketOptions opts = new SocketOptions(port: Connection.PORT);
+  const SocketOptions opts = const SocketOptions(port: Connection.PORT);
 
   test('connectToLocalhost', () {
     final Socket socket = new Socket(opts);
