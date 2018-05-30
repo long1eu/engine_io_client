@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:engine_io_client/src/logger.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -14,8 +15,9 @@ class Emitter {
   }
 
   /// Listens for the event with the [event] name. It will return an [Observable<Event>] that you can listen to.
-  Observable<Event> on(final String event) =>
-      _observable.where((Event e) => e.name == event).takeWhile((Event event) => event is! _CancelEvent);
+  Observable<Event> on(final String event) {
+    return _observable.doOnData(log.d).where((Event e) => e.name == event).takeWhile((Event event) => event is! _CancelEvent);
+  }
 
   /// Listens for the event only once. It returns an [Observable<Event>] that you can listen to.
   Observable<Event> once(final String event) =>
@@ -74,7 +76,11 @@ class Event {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is Event && runtimeType == other.runtimeType && name == other.name && args == other.args;
+      identical(this, other) ||
+      other is Event &&
+          runtimeType == other.runtimeType &&
+          name == other.name &&
+          const DeepCollectionEquality().equals(args, other.args);
 
   @override
   int get hashCode => name.hashCode ^ args.hashCode;

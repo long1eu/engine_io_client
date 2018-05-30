@@ -46,14 +46,14 @@ class Socket extends Emitter {
   String id;
   Transport transport;
 
-  String _readyState;
+  String readyState;
   List<String> _upgrades;
   bool _priorWebSocketSuccess = false;
   bool _upgrading = false;
   int _pingInterval;
   int _pingTimeout;
 
-  final StreamController<List<Packet<dynamic>>> _writeBuffer = new StreamController<List<Packet<dynamic>>>();
+  final StreamController<List<Packet>> _writeBuffer = new StreamController<List<Packet>>();
   StreamSubscription<Event> _flushSubscription;
 
   Socket(this.options) {
@@ -77,11 +77,11 @@ class Socket extends Emitter {
     );
   }
 
-  Observable<Event> get _flush$ => new Observable<List<Packet<dynamic>>>(_writeBuffer.stream)
-      .doOnData((List<Packet<dynamic>> _) => log.d('flushing packets in socket $_'))
+  Observable<Event> get _flush$ => new Observable<List<Packet>>(_writeBuffer.stream)
+      .doOnData((List<Packet> _) => log.d('flushing packets in socket ${transport.name} $_'))
       .bufferTest((_) => transport.writable && transport.readyState != Transport.stateClosed && !_upgrading)
-      .expand((List<List<Packet<dynamic>>> items) => items)
-      .flatMap((List<Packet<dynamic>> packets) => transport.send(packets))
+      .expand((List<List<Packet>> items) => items)
+      .flatMap((List<Packet> packets) => transport.send(packets))
       .doOnData((Event _) => emit(Socket.eventDrain))
       .doOnData((Event _) => emit(Socket.eventFlush));
 
@@ -95,7 +95,7 @@ class Socket extends Emitter {
       transportName = options.transports[0];
     }
 
-    _readyState = Socket.stateOpening;
+    readyState = Socket.stateOpening;
     final Transport transport = _createTransport(transportName);
     _setTransport(transport);
     transport.open();
@@ -155,9 +155,6 @@ class Socket extends Emitter {
       transport.off(Transport.eventOpen);
       transport.off(Transport.eventError);
       transport.off(Transport.eventClose);
-
-      off(eventClose);
-      off(eventDrain);
     }
 
     void onTransportOpen() {
@@ -167,10 +164,10 @@ class Socket extends Emitter {
       transport.once(Transport.eventPacket).listen((Event event) {
         log.d('probe transport $event');
         if (failed) return;
-        final Packet<dynamic> packet = event.args[0];
+        final Packet packet = event.args[0];
 
         if (packet.type == Packet.pong || packet.data == 'probe') {
-          log.d('probe transport \'$name\' pong');
+          log.d('probe transport "$name" pong');
           _upgrading = true;
           emit(eventUpgrading, <Transport>[transport]);
           if (transport == null) return;
@@ -178,11 +175,11 @@ class Socket extends Emitter {
           log.d('pausing current transport "${this.transport.name}"');
 
           this.transport.once(Transport.eventPaused).listen((Event event) {
-            if (failed || _readyState == Socket.stateClosed) return;
+            if (failed || readyState == Socket.stateClosed) return;
             log.d('changing transport and sending upgrade packet');
             cleanup();
             _setTransport(transport);
-            transport.send(<Packet<Null>>[new Packet<Null>(Packet.upgrade)]).listen((Event event) {
+            transport.send(<Packet>[new Packet(Packet.upgrade)]).listen((Event event) {
               _upgrading = false;
               emit(eventUpgrade, <Transport>[transport]);
             });
@@ -241,7 +238,7 @@ class Socket extends Emitter {
     transport.on(Transport.eventOpen).flatMap((Event event) {
       log.e('event probe $event');
       onTransportOpen();
-      return transport.send(<Packet<String>>[new Packet<String>(Packet.ping, 'probe')]);
+      return transport.send(<Packet>[new Packet(Packet.ping, 'probe')]);
     }).listen(null);
 
     transport.open();
@@ -249,19 +246,19 @@ class Socket extends Emitter {
 
   void _onOpen() {
     log.d('socket open');
-    _readyState = stateOpen;
+    readyState = stateOpen;
     _priorWebSocketSuccess = transport.name == WebSocket.NAME;
     _flushSubscription ??= _flush$.listen(null);
     emit(Socket.eventOpen);
 
-    if (_readyState == stateOpen && options.upgrade && transport is Polling) {
+    if (readyState == stateOpen && options.upgrade && transport is Polling) {
       log.d('starting upgrade probes: $_upgrades');
       _upgrades.forEach(_probe$);
     }
   }
 
-  void _onPacket(Packet<dynamic> packet) {
-    if (_readyState == stateOpening || _readyState == stateOpen || _readyState == stateClosing) {
+  void _onPacket(Packet packet) {
+    if (readyState == stateOpening || readyState == stateOpen || readyState == stateClosing) {
       emit(Socket.eventPacket);
       emit(Socket.eventHeartbeat);
 
@@ -278,7 +275,7 @@ class Socket extends Emitter {
         emit(eventData, <dynamic>[packet.data]);
       }
     } else {
-      log.w('packet received with socket readyState "$_readyState"');
+      log.w('packet received with socket readyState "$readyState"');
     }
   }
 
@@ -291,7 +288,7 @@ class Socket extends Emitter {
     _pingTimeout = data.pingTimeout;
 
     _onOpen();
-    if (_readyState != Socket.stateClosed) {
+    if (readyState != Socket.stateClosed) {
       _setPing();
       on(Socket.eventHeartbeat).listen((Event event) => _onHeartbeat(event.args ?? -1));
     }
@@ -315,18 +312,18 @@ class Socket extends Emitter {
   }
 
   void _ping() {
-    _sendPacket$(new Packet<dynamic>(Packet.ping)).listen((Event event) => emit(Socket.eventPing));
+    _sendPacket$(new Packet(Packet.ping)).listen((Event event) => emit(Socket.eventPing));
   }
 
-  void send(dynamic message) => _sendPacket$(new Packet<dynamic>(Packet.message, message)).listen(null);
+  void send(dynamic message) => _sendPacket$(new Packet(Packet.message, message)).listen(null);
 
-  Observable<Event> write$(dynamic message) => _sendPacket$(new Packet<dynamic>(Packet.message, message));
+  Observable<Event> write$(dynamic message) => _sendPacket$(new Packet(Packet.message, message));
 
-  Observable<Event> _sendPacket$(Packet<dynamic> packet) {
+  Observable<Event> _sendPacket$(Packet packet) {
     log.d('sendPacket: $packet');
-    if (_readyState != stateClosing && _readyState != stateClosed) {
-      emit(eventPacketCreate, <Packet<dynamic>>[packet]);
-      _writeBuffer.add(<Packet<dynamic>>[packet]);
+    if (readyState != stateClosing && readyState != stateClosed) {
+      emit(eventPacketCreate, <Packet>[packet]);
+      _writeBuffer.add(<Packet>[packet]);
 
       return once(Socket.eventFlush);
     }
@@ -334,8 +331,8 @@ class Socket extends Emitter {
   }
 
   void close() {
-    if (_readyState == Socket.stateOpening || _readyState == Socket.stateOpen) {
-      _readyState = Socket.stateClosing;
+    if (readyState == Socket.stateOpening || readyState == Socket.stateOpen) {
+      readyState = Socket.stateClosing;
 
       transport.on(Transport.eventCanClose).listen((Event event) {
         log.d('We can close. Check upgrading: $_upgrading');
@@ -369,16 +366,19 @@ class Socket extends Emitter {
   }
 
   void _onClose(String reason, [dynamic desc]) {
-    if (_readyState == stateOpening || _readyState == stateOpen || _readyState == stateClosing) {
+    if (readyState == stateOpening || readyState == stateOpen || readyState == stateClosing) {
       log.d('socket close with reason: $reason');
-      transport.off(eventClose);
+      transport.off(Socket.eventClose);
       transport.close('_onClose');
       transport.off();
-      _readyState = Socket.stateClosed;
+      readyState = Socket.stateClosed;
       id = null;
       _flushSubscription?.cancel();
       _flushSubscription = null;
-      emit(eventClose, <dynamic>[reason, desc]);
+      log.w('emitting event close');
+      emit(Socket.eventClose, <dynamic>[reason, desc]);
+      emit('cacamaca', <dynamic>[reason, desc]);
+      log.w('emitting event close');
     }
   }
 
@@ -389,7 +389,7 @@ class Socket extends Emitter {
           ..add('id', '$id')
           ..add('_priorWebSocketSuccess', '$_priorWebSocketSuccess')
           ..add('_upgrading', '$_upgrading')
-          ..add('readyState', '$_readyState')
+          ..add('readyState', '$readyState')
           ..add('transport', '$transport')
           ..add('upgrades', '$_upgrades')
           ..add('_pingInterval', '$_pingInterval')

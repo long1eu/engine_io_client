@@ -6,17 +6,17 @@ import 'package:test/test.dart';
 const String ERROR_DATA = 'parser error';
 
 void main() {
-  final Packet ping = new Packet<dynamic>(Packet.ping);
-  final Packet pong = new Packet<dynamic>(Packet.pong);
+  final Packet ping = new Packet(Packet.ping);
+  final Packet pong = new Packet(Packet.pong);
 
   test('encodeAsString', () {
-    final Packet packet = new Packet<dynamic>(Packet.message, 'test');
+    final Packet packet = new Packet(Packet.message, 'test');
     final dynamic encode = Parser.encodePacket(packet);
     expect(encode.runtimeType, String);
   });
 
   test('decodeAsPacket', () {
-    final Packet packet = new Packet<dynamic>(Packet.message, 'test');
+    final Packet packet = new Packet(Packet.message, 'test');
     final String encoded = Parser.encodePacket(packet);
     final Packet decoded = Parser.decodePacket(encoded);
 
@@ -24,7 +24,7 @@ void main() {
   });
 
   test('noData', () {
-    final Packet message = new Packet<dynamic>(Packet.message);
+    final Packet message = new Packet(Packet.message);
     final String data = Parser.encodePacket(message);
     final Packet package = Parser.decodePacket(data);
 
@@ -33,7 +33,7 @@ void main() {
   });
 
   test('encodeOpenPacket', () {
-    final Packet packet = new Packet<dynamic>(Packet.open, '{"some":"json"}');
+    final Packet packet = new Packet(Packet.open, '{"some":"json"}');
     final String data = Parser.encodePacket(packet);
     final Packet package = Parser.decodePacket(data);
 
@@ -42,7 +42,7 @@ void main() {
   });
 
   test('encodeClosePacket', () {
-    final Packet packet = new Packet<dynamic>(Packet.close);
+    final Packet packet = new Packet(Packet.close);
     final String data = Parser.encodePacket(packet);
     final Packet package = Parser.decodePacket(data);
 
@@ -50,7 +50,7 @@ void main() {
   });
 
   test('encodePingPacket', () {
-    final Packet packet = new Packet<dynamic>(Packet.ping, '1');
+    final Packet packet = new Packet(Packet.ping, '1');
     final String data = Parser.encodePacket(packet);
     final Packet package = Parser.decodePacket(data);
 
@@ -59,7 +59,7 @@ void main() {
   });
 
   test('encodePongPacket', () {
-    final Packet packet = new Packet<dynamic>(Packet.pong, '1');
+    final Packet packet = new Packet(Packet.pong, '1');
     final String data = Parser.encodePacket(packet);
     final Packet package = Parser.decodePacket(data);
 
@@ -68,7 +68,7 @@ void main() {
   });
 
   test('encodeMessagePacket', () {
-    final Packet packet = new Packet<dynamic>(Packet.message, 'aaa');
+    final Packet packet = new Packet(Packet.message, 'aaa');
     final String data = Parser.encodePacket(packet);
     final Packet package = Parser.decodePacket(data);
 
@@ -77,7 +77,7 @@ void main() {
   });
 
   test('encodeUTF8SpecialCharsMessagePacket', () {
-    final Packet packet = new Packet<dynamic>(Packet.message, 'utf8 — string');
+    final Packet packet = new Packet(Packet.message, 'utf8 — string');
     final String data = Parser.encodePacket(packet);
     final Packet package = Parser.decodePacket(data);
 
@@ -86,7 +86,7 @@ void main() {
   });
 
   test('encodeUpgradePacket', () {
-    final Packet packet = new Packet<dynamic>(Packet.upgrade);
+    final Packet packet = new Packet(Packet.upgrade);
     final String data = Parser.encodePacket(packet);
     final Packet package = Parser.decodePacket(data);
 
@@ -94,18 +94,18 @@ void main() {
   });
 
   test('encodingFormat', () {
-    Packet packet = new Packet<dynamic>(Packet.message, 'test');
+    Packet packet = new Packet(Packet.message, 'test');
     String data = Parser.encodePacket(packet);
     expect(new RegExp('[0-9].*').hasMatch(data), isTrue);
 
-    packet = new Packet<dynamic>(Packet.message);
+    packet = new Packet(Packet.message);
     data = Parser.encodePacket(packet);
     expect(new RegExp('[0-9]').hasMatch(data), isTrue);
   });
 
   test('encodingStringMessageWithLoneSurrogatesReplacedByUFFFD', () {
     const String data = '\uDC00\uD834\uDF06\uDC00 \uD800\uD835\uDF07\uD800';
-    final Packet packet = new Packet<dynamic>(Packet.message, data);
+    final Packet packet = new Packet(Packet.message, data);
     final String list = Parser.encodePacket(packet, true);
     final Packet package = Parser.decodePacket(list, true);
 
@@ -142,7 +142,7 @@ void main() {
   });
 
   test('encodeAndDecodePayloads', () {
-    final Packet message = new Packet<dynamic>(Packet.message, 'a');
+    final Packet message = new Packet(Packet.message, 'a');
 
     String data = Parser.encodePayload(<Packet>[message]);
     List<Packet> packets = Parser.decodePayload(data);
@@ -164,7 +164,7 @@ void main() {
   });
 
   test('notUTF8EncodeWhenDealingWithStringsOnly', () {
-    final List<Packet> packets = <Packet>[new Packet<dynamic>(Packet.message, '€€€'), new Packet<dynamic>(Packet.message, 'α')];
+    final List<Packet> packets = <Packet>[new Packet(Packet.message, '€€€'), new Packet(Packet.message, 'α')];
 
     final String encoded = Parser.encodePayload(packets);
     expect(encoded, '4:4€€€2:4α');
@@ -224,7 +224,7 @@ void main() {
       data[0] = i;
     }
 
-    final Packet message = new Packet<dynamic>(Packet.message, data);
+    final Packet message = new Packet(Packet.message, data);
     final List<int> encoded = Parser.encodePacket(message);
 
     final Packet packet = Parser.decodeBytePacket(encoded);
@@ -243,8 +243,8 @@ void main() {
     }
 
     final List<Packet> list = <Packet>[
-      new Packet<dynamic>(Packet.message, firstBuffer),
-      new Packet<dynamic>(Packet.message, secondBuffer)
+      new Packet(Packet.message, firstBuffer),
+      new Packet(Packet.message, secondBuffer)
     ];
 
     final List<int> encoded = Parser.encodePayload(list);
@@ -263,9 +263,9 @@ void main() {
     }
 
     final List<Packet> list = <Packet>[
-      new Packet<dynamic>(Packet.message, firstBuffer),
-      new Packet<dynamic>(Packet.message, 'hello'),
-      new Packet<dynamic>(Packet.close),
+      new Packet(Packet.message, firstBuffer),
+      new Packet(Packet.message, 'hello'),
+      new Packet(Packet.close),
     ];
     final dynamic data = Parser.encodePayload(list);
 

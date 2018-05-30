@@ -35,9 +35,9 @@ class WebSocket extends Transport {
       : new Observable<Event>.just(new Event(Transport.eventClose));
 
   @override
-  Observable<Event> _write(List<Packet<dynamic>> packets) => new Observable<Packet<dynamic>>.fromIterable(packets)
-      .takeWhile((Packet<dynamic> _) => readyState == Transport.stateOpening || readyState == Transport.stateOpen)
-      .map<dynamic>((Packet<dynamic> packet) => Parser.encodePacket(packet))
+  Observable<Event> _write(List<Packet> packets) => new Observable<Packet>.fromIterable(packets)
+      .takeWhile((Packet _) => readyState == Transport.stateOpening || readyState == Transport.stateOpen)
+      .map<dynamic>((Packet packet) => Parser.encodePacket(packet))
       .forEach((dynamic encoded) => socket.add(encoded))
       .asObservable();
 

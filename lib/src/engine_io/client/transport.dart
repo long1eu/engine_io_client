@@ -6,6 +6,7 @@ import 'dart:io';
 
 import 'package:engine_io_client/src/emitter/emitter.dart';
 import 'package:engine_io_client/src/engine_io/client/engine_io_error.dart';
+import 'package:engine_io_client/src/engine_io/custom/websocket_impl.dart';
 import 'package:engine_io_client/src/engine_io/parser/parser.dart';
 import 'package:engine_io_client/src/logger.dart';
 import 'package:engine_io_client/src/models/packet.dart';
@@ -16,7 +17,6 @@ import 'package:engine_io_client/src/yeast/yeast.dart';
 import 'package:http/http.dart';
 import 'package:meta/meta.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:engine_io_client/src/engine_io/custom/websocket_impl.dart';
 
 part 'transports/polling.dart';
 
@@ -55,7 +55,7 @@ abstract class Transport extends Emitter {
 
   Observable<Event> _doClose();
 
-  Observable<Event> _write(List<Packet<dynamic>> packets);
+  Observable<Event> _write(List<Packet> packets);
 
   void open() {
     if (readyState == Transport.stateClosed || readyState == null) {
@@ -71,7 +71,7 @@ abstract class Transport extends Emitter {
     }
   }
 
-  Observable<Event> send(List<Packet<dynamic>> packets) {
+  Observable<Event> send(List<Packet> packets) {
     if (readyState == Transport.stateOpen) {
       writable = false;
       return _write(packets).doOnData((Event event) => writable = true).doOnData((Event event) => emit(Transport.eventDrain));
@@ -94,6 +94,7 @@ abstract class Transport extends Emitter {
     readyState = Transport.stateOpen;
     writable = true;
     emit(Transport.eventOpen);
+    log.d('emit open');
   }
 
   void _onClose() {
@@ -108,12 +109,12 @@ abstract class Transport extends Emitter {
 
   void _onData(dynamic data) {
     log.e('transport opened $data');
-    final Packet<dynamic> packet = data is String ? Parser.decodePacket(data) : Parser.decodeBytePacket(data);
+    final Packet packet = data is String ? Parser.decodePacket(data) : Parser.decodeBytePacket(data);
     _onPacket(packet);
   }
 
-  void _onPacket(Packet<dynamic> packet) {
-    emit(Transport.eventPacket, <Packet<dynamic>>[packet]);
+  void _onPacket(Packet packet) {
+    emit(Transport.eventPacket, <Packet>[packet]);
   }
 
   @override
