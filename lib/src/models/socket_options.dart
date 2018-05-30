@@ -6,39 +6,43 @@ import 'package:engine_io_client/src/logger.dart';
 import 'package:engine_io_client/src/models/transport_options.dart';
 
 class SocketOptions extends TransportOptions {
-  SocketOptions(
-      {this.transports = const <String>[Polling.NAME, WebSocket.NAME],
-      this.upgrade = true,
-      this.rememberUpgrade = false,
+  const SocketOptions(
+      {List<String> transports,
+      bool upgrade,
+      bool rememberUpgrade,
       this.host,
       this.rawQuery,
-      this.transportOptions = const <String, TransportOptions>{},
-      String hostname = 'localhost',
-      String path = '/engine.io',
-      String timestampParam = 't',
-      bool secure = false,
-      bool timestampRequests = false,
-      int port = -1,
-      int policyPort = -1,
+      Map<String, TransportOptions> transportOptions,
+      String hostname,
+      String path,
+      String timestampParam,
+      bool secure,
+      bool timestampRequests,
+      int port,
+      int policyPort,
       Map<String, String> query,
       Map<String, List<String>> headers,
       Socket socket,
       SecurityContext securityContext})
-      : super(
-            hostname: hostname,
-            path: path,
-            timestampParam: timestampParam,
-            secure: secure,
-            timestampRequests: timestampRequests,
-            port: port,
-            policyPort: policyPort,
+      : transports = transports ?? const <String>[Polling.NAME, WebSocket.NAME],
+        upgrade = upgrade ?? true,
+        rememberUpgrade = rememberUpgrade ?? false,
+        transportOptions = transportOptions ?? const <String, TransportOptions>{},
+        super(
+            hostname: hostname ?? 'localhost',
+            path: path ?? '/engine.io',
+            timestampParam: timestampParam ?? 't',
+            secure: secure ?? false,
+            timestampRequests: timestampRequests ?? false,
+            port: port ?? -1,
+            policyPort: policyPort ?? -1,
             query: query,
             headers: headers,
             socket: socket,
             securityContext: securityContext);
 
   factory SocketOptions.fromUri(Uri uri, [SocketOptions options]) {
-    return (options ?? new SocketOptions()).copyWith(
+    return (options ?? const SocketOptions()).copyWith(
       host: uri.host ?? 'localhost',
       secure: uri.scheme == 'https' || uri.scheme == 'wss',
       port: uri.port == null || uri.port == 0 ? -1 : uri.port,
@@ -100,13 +104,13 @@ class SocketOptions extends TransportOptions {
   @override
   String toString() {
     return (new ToStringHelper('SocketOptions')
-          ..add('transport', '${super.toString()}')
           ..add('transports', '$transports')
           ..add('upgrade', '$upgrade')
           ..add('rememberUpgrade', '$rememberUpgrade')
           ..add('host', '$host')
           ..add('rawQuery', '$rawQuery')
-          ..add('transportOptions', '$transportOptions'))
+          ..add('transportOptions', '$transportOptions')
+          ..add('TransportOptions', '${super.toString()}'))
         .toString();
   }
 }

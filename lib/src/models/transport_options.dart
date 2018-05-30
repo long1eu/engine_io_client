@@ -4,7 +4,7 @@ import 'package:engine_io_client/src/engine_io/client/socket.dart';
 import 'package:engine_io_client/src/logger.dart';
 
 class TransportOptions {
-  TransportOptions({
+  const TransportOptions({
     this.hostname,
     this.path,
     this.timestampParam,

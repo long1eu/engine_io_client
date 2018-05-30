@@ -13,15 +13,16 @@ abstract class Polling extends Transport {
             ? 'transport is open, polling'
             : 'ignoring poll - transport state $readyState'))
         .bufferTest((Event event) => readyState == Transport.stateOpen && options.socket.id != null)
-        .listen((_) => _poll());
+        .where((List<Event> _) => readyState == Transport.stateOpen)
+        .listen((_) => _poll('constructor $readyState'));
   }
 
   bool polling;
 
   @override
-  void _doOpen() => _poll();
+  void _doOpen() => _poll('_doOpen');
 
-  void _poll();
+  void _poll(String caller);
 
   Observable<Event> _doWrite$(dynamic data);
 
@@ -54,10 +55,10 @@ abstract class Polling extends Transport {
   Observable<Event> _doClose() {
     if (readyState == Transport.stateOpen) {
       log.d('writing close packet');
-      return _write(<Packet<dynamic>>[new Packet<dynamic>(Packet.close)]);
+      return _write(<Packet>[new Packet(Packet.close)]);
     } else {
       log.d('transport not open - deferring close');
-      return once(Transport.eventOpen).flatMap((Event event) => _write(<Packet<dynamic>>[new Packet<dynamic>(Packet.close)]));
+      return once(Transport.eventOpen).flatMap((Event event) => _write(<Packet>[new Packet(Packet.close)]));
     }
   }
 
@@ -67,9 +68,9 @@ abstract class Polling extends Transport {
       _onOpen();
     }
 
-    final List<Packet<dynamic>> packets = data is String ? Parser.decodePayload(data) : Parser.decodeBinaryPayload(data);
+    final List<Packet> packets = data is String ? Parser.decodePayload(data) : Parser.decodeBinaryPayload(data);
 
-    for (Packet<dynamic> packet in packets) {
+    for (Packet packet in packets) {
       if (packet.type == Packet.close) {
         _onClose();
       } else {
@@ -90,8 +91,8 @@ abstract class Polling extends Transport {
   }
 
   @override
-  Observable<Event> _write(List<Packet<dynamic>> packets) => new Observable<List<Packet<dynamic>>>.just(packets)
-      .map<dynamic>((List<Packet<dynamic>> packets) => Parser.encodePayload(packets))
+  Observable<Event> _write(List<Packet> packets) => new Observable<List<Packet>>.just(packets)
+      .map<dynamic>((List<Packet> packets) => Parser.encodePayload(packets))
       .flatMap((dynamic encoded) => _doWrite$(encoded));
 
   String get uri {

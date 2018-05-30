@@ -34,7 +34,7 @@ void main() {
   });
 
   test('doesNotCollide', () {
-    final int length = 30000;
+    const int length = 30000;
     final List<String> ids = new List<String>(length);
 
     for (int i = 0; i < length; i++) ids[i] = Yeast.yeast();

@@ -1,17 +1,17 @@
 import 'package:engine_io_client/src/logger.dart';
 
-class Packet<T> {
-  Packet(this.type, [this.data]);
+class Packet {
+  const Packet(this.type, [this.data]);
 
-  factory Packet.fromValues(int type, [T data]) => new Packet<T>(values[type], data);
+  factory Packet.fromValues(int type, [dynamic data]) => new Packet(values[type], data);
 
   final String type;
 
-  final T data;
+  final dynamic data;
 
-  static Packet<String> errorPacket = new Packet<String>(error, 'parser error');
+  static const Packet errorPacket = const Packet(error, 'parser error');
 
-  static Packet<List<int>> binaryError = new Packet<List<int>>(error, <int>[]);
+  static const Packet binaryError = const Packet(error, <int>[]);
 
   static const String open = 'open';
   static const String close = 'close';

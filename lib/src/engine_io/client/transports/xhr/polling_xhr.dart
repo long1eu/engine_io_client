@@ -33,9 +33,9 @@ class PollingXhr extends Polling {
   }
 
   @override
-  void _poll() {
+  void _poll(String caller) {
     final RequestXhr requestXhr = request();
-    log.d('xhr poll');
+    log.d('xhr poll $caller');
     polling = true;
 
     requestXhr.on(RequestXhr.eventData).listen((Event event) => _onData(event.args.isNotEmpty ? event.args[0] : null));
