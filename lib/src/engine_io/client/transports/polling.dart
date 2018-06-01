@@ -81,19 +81,14 @@ abstract class Polling extends Transport {
     if (readyState != Transport.stateClosed) {
       polling = false;
       emit(Polling.eventPollComplete);
-
-      /*if (readyState == Transport.stateOpen && options.socket.id != null) {
-        _poll();
-      } else {
-        log.w('ignoring poll - transport state $readyState');
-      }*/
     }
   }
 
   @override
-  Observable<Event> _write(List<Packet> packets) => new Observable<List<Packet>>.just(packets)
-      .map<dynamic>((List<Packet> packets) => Parser.encodePayload(packets))
-      .flatMap((dynamic encoded) => _doWrite$(encoded));
+  Observable<Event> _write(List<Packet> packets) {
+    final dynamic encoded = Parser.encodePayload(packets);
+    return _doWrite$(encoded);
+  }
 
   String get uri {
     final Map<String, String> query = options?.query ?? <String, String>{};

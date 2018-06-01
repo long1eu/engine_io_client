@@ -55,6 +55,8 @@ class Socket extends Emitter {
 
   final StreamController<List<Packet>> _writeBuffer = new StreamController<List<Packet>>();
   StreamSubscription<Event> _flushSubscription;
+  StreamSubscription<int> _pingIntervalSubscription;
+  StreamSubscription<dynamic> _pingTimeoutSubscription;
 
   Socket(this.options) {
     String hostname = options.host;
@@ -245,8 +247,11 @@ class Socket extends Emitter {
   }
 
   void _onOpen() {
-    log.d('socket open');
-    readyState = stateOpen;
+    log.d('socket _onOpen');
+    if (readyState == Socket.stateOpening) {
+      readyState = Socket.stateOpen;
+    }
+
     _priorWebSocketSuccess = transport.name == WebSocket.NAME;
     _flushSubscription ??= _flush$.listen(null);
     emit(Socket.eventOpen);
@@ -294,16 +299,19 @@ class Socket extends Emitter {
     }
   }
 
+
   void _onHeartbeat(int timeout) {
-    new Observable<dynamic>.race(<Observable<dynamic>>[
+    timeout = timeout <= 0 ? _pingInterval + _pingTimeout : timeout;
+    _pingTimeoutSubscription?.cancel();
+    _pingTimeoutSubscription = new Observable<dynamic>.race(<Observable<dynamic>>[
+      new Observable<int>.timer(timeout, new Duration(milliseconds: timeout)).doOnData((int _) => _onClose('ping timeout')),
       once(Socket.eventPong),
-      new Observable<int>.timer(timeout, new Duration(milliseconds: timeout <= 0 ? _pingInterval + _pingTimeout : timeout))
-          .doOnData((int _) => _onClose('ping timeout')),
     ]).listen(null);
   }
 
   void _setPing() {
-    new Observable<int>.timer(_pingTimeout, new Duration(milliseconds: _pingInterval))
+    _pingIntervalSubscription?.cancel();
+    _pingIntervalSubscription = new Observable<int>.timer(_pingTimeout, new Duration(milliseconds: _pingInterval))
         .doOnData((int pingTimeout) => log.d('writing ping packet - expecting pong within $pingTimeout'))
         .listen((int _) {
       _ping();
@@ -331,6 +339,7 @@ class Socket extends Emitter {
   }
 
   void close() {
+    log.d('close');
     if (readyState == Socket.stateOpening || readyState == Socket.stateOpen) {
       readyState = Socket.stateClosing;
 
@@ -350,7 +359,7 @@ class Socket extends Emitter {
           log.d('Transport is not upgrading. We can really close.');
           _onClose('forced close');
           log.d('socket closing - telling transport to close');
-          transport.close('close, !_upgrading');
+          //transport.close('close, !_upgrading');
         }
       });
 
@@ -373,12 +382,16 @@ class Socket extends Emitter {
       transport.off();
       readyState = Socket.stateClosed;
       id = null;
+
       _flushSubscription?.cancel();
       _flushSubscription = null;
+      _pingIntervalSubscription?.cancel();
+      _pingIntervalSubscription = null;
+      _pingTimeoutSubscription?.cancel();
+      _pingTimeoutSubscription = null;
+
       log.w('emitting event close');
       emit(Socket.eventClose, <dynamic>[reason, desc]);
-      emit('cacamaca', <dynamic>[reason, desc]);
-      log.w('emitting event close');
     }
   }
 

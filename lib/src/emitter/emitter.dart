@@ -1,11 +1,9 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
-import 'package:engine_io_client/src/logger.dart';
 import 'package:rxdart/rxdart.dart';
 
 class Emitter {
-  static final Log log = new Log('Emitter');
 
   StreamController<Event> _events = new StreamController<Event>.broadcast();
   Observable<Event> _observable;
@@ -16,7 +14,7 @@ class Emitter {
 
   /// Listens for the event with the [event] name. It will return an [Observable<Event>] that you can listen to.
   Observable<Event> on(final String event) {
-    return _observable.doOnData(log.d).where((Event e) => e.name == event).takeWhile((Event event) => event is! _CancelEvent);
+    return _observable.where((Event e) => e.name == event).takeWhile((Event event) => event is! _CancelEvent);
   }
 
   /// Listens for the event only once. It returns an [Observable<Event>] that you can listen to.
