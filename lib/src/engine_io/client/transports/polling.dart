@@ -11,7 +11,7 @@ abstract class Polling extends Transport {
     on(Polling.eventPollComplete)
         .doOnData((Event e) => log.d(readyState == Transport.stateOpen && options.socket.id != null
             ? 'transport is open, polling'
-            : 'ignoring poll - transport state $readyState'))
+            : 'ignoring poll - transport state $readyState event: $e'))
         .bufferTest((Event event) => readyState == Transport.stateOpen && options.socket.id != null)
         .where((List<Event> _) => readyState == Transport.stateOpen)
         .listen((_) => _poll('constructor $readyState'));

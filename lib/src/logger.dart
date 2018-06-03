@@ -6,12 +6,14 @@ class Log {
 
   Log(String tag, {bool formatTags: true}) {
     if (formatTags) {
-      this.tag = _formatTag(tag);
+      _tag = tag.padRight(30);
     } else
-      this.tag = tag;
+      _tag = tag;
   }
 
-  String tag;
+  String _tag;
+
+  String get tag => '${new DateTime.now().toIso8601String()}||$_tag';
 
   Log addTag(String tag) => new Log('${this.tag}-$tag', formatTags: false);
 

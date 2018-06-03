@@ -299,7 +299,6 @@ class Socket extends Emitter {
     }
   }
 
-
   void _onHeartbeat(int timeout) {
     timeout = timeout <= 0 ? _pingInterval + _pingTimeout : timeout;
     _pingTimeoutSubscription?.cancel();
@@ -353,12 +352,12 @@ class Socket extends Emitter {
             offAll(<String>[Socket.eventUpgrade, Socket.eventUpgradeError]);
             _onClose('forced close');
             log.d('socket closing - telling transport to close');
-            transport.close('close, _upgrading');
+            //transport.close('close, _upgrading');
           });
         } else {
           log.d('Transport is not upgrading. We can really close.');
-          _onClose('forced close');
           log.d('socket closing - telling transport to close');
+          _onClose('forced close');
           //transport.close('close, !_upgrading');
         }
       });
