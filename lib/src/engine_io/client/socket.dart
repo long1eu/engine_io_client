@@ -107,7 +107,7 @@ class Socket extends Emitter {
     assert(name == WebSocket.NAME || name == Polling.NAME);
     log.d('creating transport "$name"');
 
-    final Map<String, String> query = new Map<String, dynamic>.from(options.query);
+    final Map<String, String> query = new Map<String, String>.from(options.query);
     query['EIO'] = Parser.PROTOCOL.toString();
     query['transport'] = name;
     if (id != null) query['sid'] = id;
