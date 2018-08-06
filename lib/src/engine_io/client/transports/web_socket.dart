@@ -12,8 +12,17 @@ class WebSocket extends Transport {
   void _doOpen() {
     final Map<String, List<String>> headers = options.headers ?? <String, List<String>>{};
 
+    log.e(uri);
     new Observable<io.WebSocket>.fromFuture(
-            WebSocketImpl.connect(uri, headers: headers, httpClient: new HttpClient(context: options.securityContext)))
+      WebSocketImpl.connect(
+        uri,
+        headers: headers,
+        httpClient: new HttpClient(
+          context: options.securityContext,
+        )..badCertificateCallback = badCertificateCallback,
+        cookieJar: options.cookieJar,
+      ),
+    )
         .doOnData((io.WebSocket socket) => log.w('response $socket'))
         .doOnData((io.WebSocket socket) => this.socket = socket)
         .doOnData((io.WebSocket _) => _onOpen())
@@ -38,8 +47,8 @@ class WebSocket extends Transport {
   Observable<Event> _write(List<Packet> packets) => new Observable<Packet>.fromIterable(packets)
       .takeWhile((Packet _) => readyState == Transport.stateOpening || readyState == Transport.stateOpen)
       .map<dynamic>((Packet packet) => Parser.encodePacket(packet))
-      .forEach((dynamic encoded) => socket.add(encoded))
-      .asObservable();
+      .doOnData((dynamic encoded) => socket.add(encoded))
+      .map((dynamic _) => null);
 
   String get uri {
     final Map<String, String> query = options?.query ?? <String, String>{};
@@ -60,5 +69,10 @@ class WebSocket extends Transport {
 
     final String hostname = options.hostname.contains(':') ? '[${options.hostname}]' : options.hostname;
     return '$schema://$hostname$port${options.path}$derivedQuery';
+  }
+
+  bool badCertificateCallback(io.X509Certificate cert, String host, int port) {
+    log.e('bad cert: ${base64Encode(cert.der)}');
+    return true;
   }
 }

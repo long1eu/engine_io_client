@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:engine_io_client/engine_io_client.dart';
 import 'package:engine_io_client/src/engine_io/client/socket.dart';
+import 'package:engine_io_client/src/logger.dart';
 import 'package:engine_io_client/src/models/handshake_data.dart';
 import 'package:engine_io_client/src/models/socket_options.dart';
 import 'package:rxdart/rxdart.dart';

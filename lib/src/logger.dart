@@ -1,9 +1,9 @@
 // ignore_for_file: strong_mode_implicit_dynamic_parameter,
 // ignore_for_file: avoid_function_literals_in_foreach_calls,
 // ignore_for_file: always_specify_types, prefer_single_quotes
-class Log {
-  static bool shouldLog = true;
+import 'package:engine_io_client/engine_io_client.dart';
 
+class Log {
   Log(String tag, {bool formatTags: true}) {
     if (formatTags) {
       _tag = tag.padRight(30);
@@ -18,7 +18,7 @@ class Log {
   Log addTag(String tag) => new Log('${this.tag}-$tag', formatTags: false);
 
   void i(Object message) {
-    if (!shouldLog) return;
+    if (!LoggerOptions.shouldLog) return;
     if (message is List) {
       message.forEach((it) {
         print("I/$tag: $it");
@@ -28,7 +28,7 @@ class Log {
   }
 
   void d(Object message) {
-    if (!shouldLog) return;
+    if (!LoggerOptions.shouldLog) return;
     if (message is List) {
       message.forEach((it) {
         print("D/$tag: $it");
@@ -38,7 +38,7 @@ class Log {
   }
 
   void w(Object message) {
-    if (!shouldLog) return;
+    if (!LoggerOptions.shouldLog) return;
     print("W/$tag: WARNING-------------------------------------------------------------------");
     if (message is List) {
       message.forEach((it) {
@@ -50,7 +50,7 @@ class Log {
   }
 
   void e(Object message) {
-    if (!shouldLog) return;
+    if (!LoggerOptions.shouldLog) return;
     print("E/$tag: +----------------------------------ERROR---------------------------------+");
     if (message is List) {
       message.forEach((it) {
@@ -60,13 +60,6 @@ class Log {
       print("E/$tag: $message");
     print("E/$tag: ==========================================================================");
   }
-}
-
-String _formatTag(String tag) {
-  if (tag.length > 30)
-    return tag.substring(0, 31);
-  else
-    return tag + "                                ".substring(tag.length);
 }
 
 class ToStringHelper {

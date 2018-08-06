@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:engine_io_client/engine_io_client.dart';
+import 'package:engine_io_client/src/logger.dart';
 import 'package:meta/meta.dart';
 
 class HandshakeData {
@@ -14,12 +14,16 @@ class HandshakeData {
     Map<String, dynamic> map;
     if (data is String) {
       map = json.decode(data);
-    } else
+    } else {
       map = data;
+    }
+    print('HandshakeData: $data');
+
+    final List upgrades = map['upgrades'];
 
     return new HandshakeData(
       sessionId: map['sid'],
-      upgrades: map['upgrades'],
+      upgrades: upgrades.isEmpty ? <String>[] : upgrades.cast<String>(),
       pingInterval: map['pingInterval'],
       pingTimeout: map['pingTimeout'],
     );

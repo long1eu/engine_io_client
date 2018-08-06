@@ -1,5 +1,6 @@
 import 'dart:io' show SecurityContext;
 
+import 'package:cookie_jar/cookie_jar.dart';
 import 'package:engine_io_client/src/engine_io/client/socket.dart';
 import 'package:engine_io_client/src/logger.dart';
 
@@ -16,6 +17,7 @@ class TransportOptions {
     this.headers,
     this.socket,
     this.securityContext,
+    this.cookieJar,
   });
 
   final String hostname;
@@ -40,30 +42,36 @@ class TransportOptions {
 
   final SecurityContext securityContext;
 
-  TransportOptions copyWith(
-      {String hostname,
-      String path,
-      String timestampParam,
-      bool secure,
-      bool timestampRequests,
-      int port,
-      int policyPort,
-      Map<String, String> query,
-      Map<String, List<String>> headers,
-      Socket socket,
-      SecurityContext securityContext}) {
+  final PersistCookieJar cookieJar;
+
+  TransportOptions copyWith({
+    String hostname,
+    String path,
+    String timestampParam,
+    bool secure,
+    bool timestampRequests,
+    int port,
+    int policyPort,
+    Map<String, String> query,
+    Map<String, List<String>> headers,
+    Socket socket,
+    SecurityContext securityContext,
+    PersistCookieJar cookieJar,
+  }) {
     return new TransportOptions(
-        hostname: hostname ?? this.hostname,
-        path: path ?? this.path,
-        timestampParam: timestampParam ?? this.timestampParam,
-        secure: secure ?? this.secure,
-        timestampRequests: timestampRequests ?? this.timestampRequests,
-        port: port ?? this.port,
-        policyPort: policyPort ?? this.policyPort,
-        query: query ?? this.query,
-        headers: headers ?? this.headers,
-        socket: socket ?? this.socket,
-        securityContext: securityContext ?? this.securityContext);
+      hostname: hostname ?? this.hostname,
+      path: path ?? this.path,
+      timestampParam: timestampParam ?? this.timestampParam,
+      secure: secure ?? this.secure,
+      timestampRequests: timestampRequests ?? this.timestampRequests,
+      port: port ?? this.port,
+      policyPort: policyPort ?? this.policyPort,
+      query: query ?? this.query,
+      headers: headers ?? this.headers,
+      socket: socket ?? this.socket,
+      securityContext: securityContext ?? this.securityContext,
+      cookieJar: cookieJar ?? this.cookieJar,
+    );
   }
 
   @override
@@ -78,7 +86,8 @@ class TransportOptions {
           ..add('policyPort', '$policyPort')
           ..add('query', '$query')
           ..add('headers', '$headers')
-          ..add('securityContext', '$securityContext'))
+          ..add('securityContext', '$securityContext')
+          ..add('cookieJar', '$cookieJar'))
         .toString();
   }
 }

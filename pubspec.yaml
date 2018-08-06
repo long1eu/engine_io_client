@@ -11,6 +11,8 @@ dependencies:
   utf: ^0.9.0+4
   web_socket_channel: ^1.0.7
   rxdart: any
+  cookie_jar:
+    git: https://github.com/flutterchina/cookie_jar.git
 
 dev_dependencies:
   test: any

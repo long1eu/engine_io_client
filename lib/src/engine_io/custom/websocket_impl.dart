@@ -8,6 +8,8 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:cookie_jar/cookie_jar.dart';
+
 part 'crypto.dart';
 
 part 'helpers.dart';
@@ -570,11 +572,12 @@ class _WebSocketOutgoingTransformer extends StreamTransformerBase<dynamic, List<
 
   void addFrame(int opcode, List<int> data) {
     createFrame(
-        opcode,
-        data,
-        webSocket._serverSide,
-        // ignore: avoid_function_literals_in_foreach_calls
-        _deflateHelper != null && (opcode == _WebSocketOpcode.TEXT || opcode == _WebSocketOpcode.BINARY)).forEach((List<int> e) {
+            opcode,
+            data,
+            webSocket._serverSide,
+            // ignore: avoid_function_literals_in_foreach_calls
+            _deflateHelper != null && (opcode == _WebSocketOpcode.TEXT || opcode == _WebSocketOpcode.BINARY))
+        .forEach((List<int> e) {
       _eventSink.add(e);
     });
   }
@@ -811,11 +814,14 @@ class WebSocketImpl extends Stream<dynamic> with _ServiceObject implements WebSo
   Timer _closeTimer;
   _WebSocketPerMessageDeflate _deflate;
 
-  static Future<WebSocket> connect(String url,
-      {Iterable<String> protocols,
-      Map<String, dynamic> headers,
-      CompressionOptions compression: CompressionOptions.DEFAULT,
-      HttpClient httpClient}) {
+  static Future<WebSocket> connect(
+    String url, {
+    Iterable<String> protocols,
+    Map<String, dynamic> headers,
+    CompressionOptions compression: CompressionOptions.DEFAULT,
+    HttpClient httpClient,
+    PersistCookieJar cookieJar,
+  }) {
     Uri uri = Uri.parse(url);
     if (uri.scheme != 'ws' && uri.scheme != 'wss') {
       throw new WebSocketException("Unsupported URL scheme '${uri.scheme}'");
@@ -863,6 +869,8 @@ class WebSocketImpl extends Stream<dynamic> with _ServiceObject implements WebSo
       if (compression.enabled) {
         request.headers.add('Sec-WebSocket-Extensions', compression._createHeader());
       }
+      
+      request.cookies.addAll(cookieJar.loadForRequest(uri));
 
       return request.close();
     }).then((HttpClientResponse response) {
@@ -874,10 +882,17 @@ class WebSocketImpl extends Stream<dynamic> with _ServiceObject implements WebSo
         throw new WebSocketException(message);
       }
 
+      cookieJar.saveFromResponse(uri, response.cookies);
+
       if (response.statusCode != HttpStatus.SWITCHING_PROTOCOLS ||
           response.headers[HttpHeaders.CONNECTION] == null ||
           !response.headers[HttpHeaders.CONNECTION].any((String value) => value.toLowerCase() == 'upgrade') ||
           response.headers.value(HttpHeaders.UPGRADE).toLowerCase() != 'websocket') {
+        response
+            .asBroadcastStream()
+            .transform(utf8.decoder)
+            .listen((String data) => print('\nWebsocket response: ${response.statusCode}/$data\n'));
+
         error("Connection to '$uri' was not upgraded to websocket");
       }
       final String accept = response.headers.value('Sec-WebSocket-Accept');

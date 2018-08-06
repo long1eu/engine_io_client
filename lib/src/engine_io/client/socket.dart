@@ -61,7 +61,9 @@ class Socket extends Emitter {
   Socket(this.options) {
     String hostname = options.host;
     if (options.host != null) {
-      final bool ipv6 = options.host.split(':').length > 2;
+      final bool ipv6 = options.host
+          .split(':')
+          .length > 2;
       if (ipv6) {
         final int start = hostname.indexOf('[');
         if (start != -1) hostname = hostname.substring(start + 1);
@@ -70,22 +72,26 @@ class Socket extends Emitter {
       }
     }
 
+    final Map<String, String> query = options.rawQuery != null ? ParseQS.decode(options.rawQuery) : <String, String>{};
+    query.addAll(options.query);
+
     options = options.copyWith(
       hostname: hostname,
       port: options.port != -1 ? options.port : options.secure ? 443 : 80,
-      query: options.rawQuery != null ? ParseQS.decode(options.rawQuery) : <String, String>{},
+      query: query,
       path: '${options.path.replaceAll('/\$', '')}/',
       policyPort: options.policyPort != 0 ? options.policyPort : 843,
     );
   }
 
-  Observable<Event> get _flush$ => new Observable<List<Packet>>(_writeBuffer.stream)
-      .doOnData((List<Packet> _) => log.d('flushing packets in socket ${transport.name} $_'))
-      .bufferTest((_) => transport.writable && transport.readyState != Transport.stateClosed && !_upgrading)
-      .expand((List<List<Packet>> items) => items)
-      .flatMap((List<Packet> packets) => transport.send(packets))
-      .doOnData((Event _) => emit(Socket.eventDrain))
-      .doOnData((Event _) => emit(Socket.eventFlush));
+  Observable<Event> get _flush$ =>
+      new Observable<List<Packet>>(_writeBuffer.stream)
+          .doOnData((List<Packet> _) => log.d('flushing packets in socket ${transport.name} $_'))
+          .bufferTest((_) => transport.writable && transport.readyState != Transport.stateClosed && !_upgrading)
+          .expand((List<List<Packet>> items) => items)
+          .flatMap((List<Packet> packets) => transport.send(packets))
+          .doOnData((Event _) => emit(Socket.eventDrain))
+          .doOnData((Event _) => emit(Socket.eventFlush));
 
   void open() {
     String transportName;
@@ -113,6 +119,7 @@ class Socket extends Emitter {
     if (id != null) query['sid'] = id;
 
     final TransportOptions tops = options.transportOptions[name];
+
     final TransportOptions transportOptions = options.copyWith(
       query: query,
       socket: this,
@@ -125,7 +132,7 @@ class Socket extends Emitter {
       policyPort: tops?.policyPort,
       securityContext: tops?.securityContext,
     );
-
+    log.e('THE PORT IS: ${transportOptions}');
     final Transport transport = name == WebSocket.NAME ? new WebSocket(transportOptions) : new PollingXhr(transportOptions);
     emit(eventTransport, <Transport>[transport]);
     return transport;
@@ -397,15 +404,9 @@ class Socket extends Emitter {
   @override
   String toString() {
     return (new ToStringHelper('Socket')
-          ..add('options', '$options')
-          ..add('id', '$id')
-          ..add('_priorWebSocketSuccess', '$_priorWebSocketSuccess')
-          ..add('_upgrading', '$_upgrading')
-          ..add('readyState', '$readyState')
-          ..add('transport', '$transport')
-          ..add('upgrades', '$_upgrades')
-          ..add('_pingInterval', '$_pingInterval')
-          ..add('_pingTimeout', '$_pingTimeout'))
+      ..add('options', '$options')..add('id', '$id')..add('_priorWebSocketSuccess', '$_priorWebSocketSuccess')..add(
+          '_upgrading', '$_upgrading')..add('readyState', '$readyState')..add('transport', '$transport')..add(
+          'upgrades', '$_upgrades')..add('_pingInterval', '$_pingInterval')..add('_pingTimeout', '$_pingTimeout'))
         .toString();
   }
 }
