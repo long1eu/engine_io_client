@@ -1,11 +1,9 @@
 import 'dart:async';
 
-import 'package:built_collection/built_collection.dart';
 import 'package:engine_io_client/src/engine_io/client/transport.dart';
 import 'package:engine_io_client/src/engine_io/parser/parser.dart';
 import 'package:engine_io_client/src/logger.dart';
 import 'package:engine_io_client/src/models/packet.dart';
-import 'package:engine_io_client/src/models/packet_type.dart';
 import 'package:engine_io_client/src/models/polling_event.dart';
 import 'package:engine_io_client/src/models/transport_event.dart';
 import 'package:engine_io_client/src/models/transport_options.dart';
@@ -15,19 +13,19 @@ import 'package:engine_io_client/src/yeast/yeast.dart';
 
 abstract class Polling extends Transport {
   static const String NAME = 'polling';
-  static final Log log = new Log('EngineIo.Polling');
+  static final Log log = Log('EngineIo.Polling');
 
   Polling(TransportOptions options) : super(options, NAME);
 
   bool _polling;
 
   @override
-  Future<Null> doOpen() async => await poll();
+  Future<void> doOpen() async => await poll();
 
-  Future<Null> pause(Future<Null> onPause()) async {
+  Future<void> pause(Future<void> onPause()) async {
     readyState = TransportState.paused;
 
-    Future<Null> pause() async {
+    Future<void> pause() async {
       log.d('paused');
       readyState = TransportState.paused;
       await onPause();
@@ -58,7 +56,7 @@ abstract class Polling extends Transport {
     }
   }
 
-  Future<Null> poll() async {
+  Future<void> poll() async {
     log.d('polling');
     _polling = true;
     await doPoll();
@@ -66,16 +64,16 @@ abstract class Polling extends Transport {
   }
 
   @override
-  Future<Null> onData(dynamic data) => _onData(data);
+  Future<void> onData(dynamic data) => _onData(data);
 
-  Future<Null> _onData(dynamic data) async {
+  Future<void> _onData(dynamic data) async {
     log.i('polling got data:${data.runtimeType} $data ');
 
-    final List<Packet> packets = data is String ? Parser.decodePayload(data) : Parser.decodeBinaryPayload(data);
+    final List<Packet> packets = data is String ? Parser.decodePayload(data) : Parser.decodeBinaryPayload(data as List<int>);
     for (Packet packet in packets) {
       if (readyState == TransportState.opening) await onOpen();
       if (packet.type == PacketType.close) await onClose();
-      await onPacket(packet);
+      await onPacket<dynamic>(packet);
     }
 
     if (readyState != TransportState.closed) {
@@ -91,13 +89,13 @@ abstract class Polling extends Transport {
   }
 
   @override
-  Future<Null> doClose() async {
-    Future<Null> close() async {
+  Future<void> doClose() async {
+    Future<void> close() async {
       log.d('writing close packet');
       try {
-        await write(<Packet>[new Packet.values(PacketType.close)]);
+        await write(<Packet<String>>[Packet<String>(PacketType.close)]);
       } catch (err) {
-        throw new Exception(err);
+        throw Exception(err);
       }
     }
 
@@ -113,9 +111,9 @@ abstract class Polling extends Transport {
   }
 
   @override
-  Future<Null> write(List<Packet> packets) async {
+  Future<void> write<T>(List<Packet<T>> packets) async {
     writable = false;
-    Future<Null> callback() async {
+    Future<void> callback() async {
       writable = true;
       await emit(TransportEvent.drain);
     }
@@ -130,7 +128,7 @@ abstract class Polling extends Transport {
   }
 
   String get uri {
-    final MapBuilder<String, String> query = options?.query?.toBuilder() ?? new MapBuilder<String, String>();
+    final Map<String, String> query = options?.query ?? <String, String>{};
     final String schema = options.secure ? 'https' : 'http';
 
     String port = '';
@@ -140,7 +138,7 @@ abstract class Polling extends Transport {
 
     if (options.timestampRequests) query[options.timestampParam] = Yeast.yeast();
 
-    String derivedQuery = ParseQS.encode(query.build());
+    String derivedQuery = ParseQS.encode(query);
     if (derivedQuery.isNotEmpty) {
       derivedQuery = '?$derivedQuery';
     }
@@ -149,7 +147,7 @@ abstract class Polling extends Transport {
     return '$schema://$hostname$port${options.path}$derivedQuery';
   }
 
-  Future<Null> doWrite(dynamic data, void callback());
+  Future<void> doWrite(dynamic data, void callback());
 
-  Future<Null> doPoll();
+  Future<void> doPoll();
 }

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:engine_io_client/src/emitter/emitter.dart';
-import 'package:engine_io_client/src/engine_io/client/engine_io_exception.dart';
+import 'package:engine_io_client/src/engine_io/client/engine_io_error.dart';
 import 'package:engine_io_client/src/engine_io/parser/parser.dart';
 import 'package:engine_io_client/src/logger.dart';
 import 'package:engine_io_client/src/models/packet.dart';
@@ -10,7 +10,7 @@ import 'package:engine_io_client/src/models/transport_options.dart';
 import 'package:engine_io_client/src/models/transport_state.dart';
 
 abstract class Transport extends Emitter {
-  static final Log log = new Log('EngineIo.Transport');
+  static final Log log = Log('EngineIo.Transport');
 
   Transport(this.options, this.name);
 
@@ -20,44 +20,45 @@ abstract class Transport extends Emitter {
   String readyState;
   bool writable = false;
 
-  Future<Null> onError(String message, dynamic desc) async {
-    await emit(TransportEvent.error, <Error>[new EngineIOException(message, desc)]);
+  Future<void> onError(String message, dynamic desc) async {
+    await emit(TransportEvent.error, <Error>[EngineIOError(message, desc)]);
   }
 
-  Future<Null> open() async {
+  Future<void> open() async {
     if (readyState == TransportState.closed || readyState == null) {
       readyState = TransportState.opening;
       await doOpen();
     }
   }
 
-  Future<Null> close() async {
+  Future<void> close() async {
     if (readyState == TransportState.opening || readyState == TransportState.open) {
       await doClose();
       await onClose();
     }
   }
 
-  Future<Null> send(List<Packet> packets) async {
+  Future<void> send<T>(List<Packet<T>> packets) async {
     if (readyState == TransportState.open) {
       try {
         await write(packets);
       } catch (err) {
-        throw new StateError(err);
+        log.d(err);
+        throw StateError(err?.toString());
       }
     } else {
-      throw new StateError('Transport not open');
+      throw StateError('Transport not open');
     }
   }
 
-  Future<Null> onOpen() async {
+  Future<void> onOpen() async {
     log.d('onOpen: ');
     readyState = TransportState.open;
     writable = true;
     await emit(TransportEvent.open);
   }
 
-  Future<Null> onData(dynamic data) async {
+  Future<void> onData(dynamic data) async {
     if (data is String) {
       await onPacket(Parser.decodePacket(data));
     } else if (data is List<int>) {
@@ -65,16 +66,16 @@ abstract class Transport extends Emitter {
     }
   }
 
-  Future<Null> onPacket(Packet packet) async => await emit(TransportEvent.packet, <Packet>[packet]);
+  Future<void> onPacket<T>(Packet<T> packet) async => await emit(TransportEvent.packet, <Packet<T>>[packet]);
 
-  Future<Null> onClose() async {
+  Future<void> onClose() async {
     readyState = TransportState.closed;
     await emit(TransportEvent.close);
   }
 
-  Future<Null> write(List<Packet> packets);
+  Future<void> write<T>(List<Packet<T>> packets);
 
-  Future<Null> doOpen();
+  Future<void> doOpen();
 
-  Future<Null> doClose();
+  Future<void> doClose();
 }

@@ -1,8 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 
-import 'package:built_collection/built_collection.dart';
 import 'package:engine_io_client/src/emitter/emitter.dart';
-import 'package:engine_io_client/src/engine_io/client/engine_io_exception.dart';
+import 'package:engine_io_client/src/engine_io/client/engine_io_error.dart';
 import 'package:engine_io_client/src/engine_io/client/transport.dart';
 import 'package:engine_io_client/src/engine_io/client/transports/polling.dart';
 import 'package:engine_io_client/src/engine_io/client/transports/web_socket.dart';
@@ -11,7 +11,6 @@ import 'package:engine_io_client/src/engine_io/parser/parser.dart';
 import 'package:engine_io_client/src/logger.dart';
 import 'package:engine_io_client/src/models/handshake_data.dart';
 import 'package:engine_io_client/src/models/packet.dart';
-import 'package:engine_io_client/src/models/packet_type.dart';
 import 'package:engine_io_client/src/models/socket_event.dart';
 import 'package:engine_io_client/src/models/socket_options.dart';
 import 'package:engine_io_client/src/models/socket_state.dart';
@@ -20,7 +19,7 @@ import 'package:engine_io_client/src/models/transport_options.dart';
 import 'package:engine_io_client/src/parse_qs/parse_qs.dart';
 
 class Socket extends Emitter {
-  static final Log log = new Log('EngineIo.Socket');
+  static final Log log = Log('EngineIo.Socket');
   static const String PROBE_ERROR = 'probe error';
 
   SocketOptions _options;
@@ -31,7 +30,7 @@ class Socket extends Emitter {
 
   String readyState;
   Transport transport;
-  BuiltList<String> upgrades;
+  List<String> upgrades;
 
   int _pingInterval;
   int _pingTimeout;
@@ -45,7 +44,6 @@ class Socket extends Emitter {
   Listener onHeartbeatAsListener;
 
   Socket(this._options) {
-    final SocketOptionsBuilder builder = _options.toBuilder();
     if (_options.host != null) {
       String hostname = _options.host;
       final bool ipv6 = _options.host.split(':').length > 2;
@@ -55,31 +53,32 @@ class Socket extends Emitter {
         final int end = hostname.lastIndexOf(']');
         if (end != -1) hostname = hostname.substring(0, end);
       }
-      builder.hostname = hostname;
+      _options = _options.copyWith(hostname: hostname);
     }
 
     if (_options.port == -1) {
       // if no port is specified manually, use the protocol default
-      builder.port = _options.secure ? 443 : 80;
+      _options = _options.copyWith(port: _options.secure ? 443 : 80);
     }
 
-    builder.query = _options.rawQuery != null ? ParseQS.decode(_options.rawQuery) : new MapBuilder<String, String>();
-    builder.path = '${_options.path.replaceAll('/\$', '')}/';
-    builder.policyPort = _options.policyPort != 0 ? _options.policyPort : 843;
-    _options = builder.build();
+    _options = _options.copyWith(
+      query: _options.rawQuery != null ? ParseQS.decode(_options.rawQuery) : <String, String>{},
+      path: '${_options.path.replaceAll('/\$', '')}/',
+      policyPort: _options.policyPort != 0 ? _options.policyPort : 843,
+    );
 
-    onHeartbeatAsListener = (List<dynamic> args) async => _onHeartbeat(args ?? -1);
+    onHeartbeatAsListener = (List<dynamic> args) async => _onHeartbeat(args as int ?? -1);
   }
 
   SocketOptions get options => _options;
 
-  Future<Null> open() async {
+  Future<void> open() async {
     String transportName;
     if (_options?.rememberUpgrade ?? true && _priorWebSocketSuccess && _options.transports.contains(WebSocket.NAME)) {
       transportName = WebSocket.NAME;
     } else if (_options.transports.isEmpty) {
-      await emit(SocketEvent.error, <Error>[new EngineIOException('No transports available', null)]);
-      return this;
+      await emit(SocketEvent.error, <Error>[EngineIOError('No transports available', null)]);
+      return;
     } else {
       transportName = _options.transports[0];
     }
@@ -92,7 +91,7 @@ class Socket extends Emitter {
   Future<Transport> _createTransport(String name) async {
     log.d('creating transport "$name"');
 
-    final MapBuilder<String, String> query = _options.query.toBuilder();
+    final Map<String, String> query = Map<String, String>.from(_options.query);
     query['EIO'] = Parser.PROTOCOL.toString();
     query['transport'] = name;
     if (id != null) query['sid'] = id;
@@ -100,27 +99,26 @@ class Socket extends Emitter {
     // per-transport options
     final TransportOptions options = _options.transportOptions[name];
 
-    final TransportOptions opts = new TransportOptions((TransportOptionsBuilder b) {
-      b
-        ..query = query
-        ..socket = this
-        ..hostname = options != null ? options.hostname : _options.hostname
-        ..port = options != null ? options.port : _options.port
-        ..secure = options != null ? options.secure : _options.secure
-        ..path = options != null ? options.path : _options.path
-        ..timestampRequests = options != null ? options.timestampRequests : _options?.timestampRequests ?? false
-        ..timestampParam = options != null ? options.timestampParam : _options.timestampParam
-        ..policyPort = options != null ? options.policyPort : _options.policyPort
-        ..securityContext = options != null ? options.securityContext : _options.securityContext;
-    });
+    final TransportOptions opts = TransportOptions(
+      query: query,
+      socket: this,
+      hostname: options != null ? options.hostname : _options.hostname,
+      port: options != null ? options.port : _options.port,
+      secure: options != null ? options.secure : _options.secure,
+      path: options != null ? options.path : _options.path,
+      timestampRequests: options != null ? options.timestampRequests : _options?.timestampRequests ?? false,
+      timestampParam: options != null ? options.timestampParam : _options.timestampParam,
+      policyPort: options != null ? options.policyPort : _options.policyPort,
+      securityContext: options != null ? options.securityContext : _options.securityContext,
+    );
 
     Transport transport;
     if (name == WebSocket.NAME) {
-      transport = new WebSocket(opts);
+      transport = WebSocket(opts);
     } else if (name == Polling.NAME) {
-      transport = new PollingXhr(opts);
+      transport = PollingXhr(opts);
     } else {
-      throw new Exception();
+      throw Exception();
     }
 
     await emit(SocketEvent.transport, <Transport>[transport]);
@@ -140,12 +138,12 @@ class Socket extends Emitter {
 
     transport
       ..on(TransportEvent.drain, (List<dynamic> args) async => await _onDrain())
-      ..on(TransportEvent.packet, (List<dynamic> args) async => await _onPacket(args.isNotEmpty ? args[0] : null))
-      ..on(TransportEvent.error, (List<dynamic> args) async => await _onError(args.isNotEmpty ? args[0] : null))
+      ..on(TransportEvent.packet, (List<dynamic> args) async => await _onPacket(args.isNotEmpty ? args[0] as Packet : null))
+      ..on(TransportEvent.error, (List<dynamic> args) async => await _onError(args.isNotEmpty ? args[0] as Error : null))
       ..on(TransportEvent.close, (List<dynamic> args) async => await _onClose('transport close'));
   }
 
-  Future<Null> _probe(String name) async {
+  Future<void> _probe(String name) async {
     log.d('probing transport $name');
 
     Transport transport = await _createTransport(name);
@@ -154,7 +152,7 @@ class Socket extends Emitter {
 
     Function cleanup;
 
-    Future<Null> onTransportOpen() async {
+    Future<void> onTransportOpen() async {
       if (failed) return;
       log.d('probe transport "$name" opened');
 
@@ -181,8 +179,8 @@ class Socket extends Emitter {
               cleanup();
 
               _setTransport(transport);
-              final Packet packet = new Packet.values(PacketType.upgrade);
-              await transport.send(<Packet>[packet]);
+              final Packet<String> packet = Packet<String>(PacketType.upgrade);
+              await transport.send(<Packet<String>>[packet]);
               await emit(SocketEvent.upgrade, <Transport>[transport]);
               //transport = null;
               upgrading = false;
@@ -192,13 +190,13 @@ class Socket extends Emitter {
         } else {
           log.d('probe transport "$name" failed');
 
-          await emit(SocketEvent.upgradeError, <Error>[new EngineIOException(transport.name, PROBE_ERROR)]);
+          await emit(SocketEvent.upgradeError, <Error>[EngineIOError(transport.name, PROBE_ERROR)]);
         }
       });
-      await transport.send(<Packet>[new Packet.values(PacketType.ping, 'probe')]);
+      await transport.send(<Packet<String>>[Packet<String>(PacketType.ping, 'probe')]);
     }
 
-    Future<Null> freezeTransport() async {
+    Future<void> freezeTransport() async {
       if (failed) return;
       failed = true;
       cleanup();
@@ -207,14 +205,14 @@ class Socket extends Emitter {
     }
 
     // Handle any error that happens while probing
-    Future<Null> onError(List<Error> err) async {
-      EngineIOException error;
-      if (err is Exception) {
-        error = new EngineIOException(transport?.name ?? 'unknown transport', PROBE_ERROR + err.toString());
+    Future<void> onError(List<Error> err) async {
+      EngineIOError error;
+      if (err is Error || err is Exception) {
+        error = EngineIOError(transport?.name ?? 'unknown transport', PROBE_ERROR + err.toString());
       } else if (err is String) {
-        error = new EngineIOException(transport?.name ?? 'unknown transport', 'probe error: $err');
+        error = EngineIOError(transport?.name ?? 'unknown transport', 'probe error: $err');
       } else {
-        error = new EngineIOException(transport?.name ?? 'unknown transport', PROBE_ERROR);
+        error = EngineIOError(transport?.name ?? 'unknown transport', PROBE_ERROR);
       }
 
       await freezeTransport();
@@ -224,10 +222,10 @@ class Socket extends Emitter {
       await emit(SocketEvent.upgradeError, <Error>[error]);
     }
 
-    Future<Null> onTransportClose() async => await onError(<Error>[new StateError('transport closed')]);
+    Future<void> onTransportClose() async => await onError(<Error>[StateError('transport closed')]);
 
     // When the socket is upgraded while we're probing
-    Future<Null> onUpgrade(Transport to) async {
+    Future<void> onUpgrade(Transport to) async {
       if (transport != null && to.name != transport.name) {
         log.d('"${to.name}" works - aborting "${transport.name}"');
         await freezeTransport();
@@ -236,25 +234,25 @@ class Socket extends Emitter {
 
     cleanup = () {
       transport.off(TransportEvent.open, (List<dynamic> args) => onTransportOpen());
-      transport.off(TransportEvent.error, (List<dynamic> error) => onError(error));
+      transport.off(TransportEvent.error, (List<dynamic> error) => onError(error as List<Error>));
       transport.off(TransportEvent.close, (List<dynamic> args) => onTransportClose());
       // When the socket is closed while we're probing
-      off(SocketEvent.close, (List<dynamic> args) => onError(<Error>[new StateError('transport closed')]));
-      off(SocketEvent.drain, (List<dynamic> args) => onUpgrade(args[0]));
+      off(SocketEvent.close, (List<dynamic> args) => onError(<Error>[StateError('transport closed')]));
+      off(SocketEvent.drain, (List<dynamic> args) => onUpgrade(args[0] as Transport));
     };
 
     transport.once(TransportEvent.open, (List<dynamic> args) async => await onTransportOpen());
-    transport.once(TransportEvent.error, (List<dynamic> error) async => await onError(error));
+    transport.once(TransportEvent.error, (List<dynamic> error) async => await onError(error as List<Error>));
     transport.once(TransportEvent.close, (List<dynamic> args) async => await onTransportClose());
 
     // When the socket is closed while we're probing
-    once(SocketEvent.close, (List<dynamic> args) async => await onError(<Error>[new StateError('transport closed')]));
-    once(SocketEvent.upgrading, (List<dynamic> args) async => await onUpgrade(args[0]));
+    once(SocketEvent.close, (List<dynamic> args) async => await onError(<Error>[StateError('transport closed')]));
+    once(SocketEvent.upgrading, (List<dynamic> args) async => await onUpgrade(args[0] as Transport));
 
     await transport.open();
   }
 
-  Future<Null> _onOpen() async {
+  Future<void> _onOpen() async {
     log.d('socket open');
     readyState = SocketState.open;
     _priorWebSocketSuccess = transport.name == WebSocket.NAME;
@@ -270,7 +268,7 @@ class Socket extends Emitter {
     }
   }
 
-  Future<Null> _onPacket(Packet packet) async {
+  Future<void> _onPacket(Packet packet) async {
     if (readyState == SocketState.opening || readyState == SocketState.open || readyState == SocketState.closing) {
       log.d('socket received: type "${packet.type}", data "${packet.data}"');
 
@@ -278,12 +276,12 @@ class Socket extends Emitter {
       await emit(SocketEvent.heartbeat);
 
       if (packet.type == PacketType.open) {
-        await _onHandshake(new HandshakeData.fromJson(packet.data));
+        await _onHandshake(HandshakeData.fromJson(jsonDecode(packet.data as String) as Map<String, dynamic>));
       } else if (packet.type == PacketType.pong) {
         _setPing();
         await emit(SocketEvent.pong);
       } else if (packet.type == PacketType.error) {
-        await _onError(new EngineIOException('server error', packet.data));
+        await _onError(EngineIOError('server error', packet.data));
       } else if (packet.type == PacketType.message) {
         log.d('packet.data ${packet.data}');
         await emit(SocketEvent.message, <dynamic>[packet.data]);
@@ -294,12 +292,11 @@ class Socket extends Emitter {
     }
   }
 
-  Future<Null> _onHandshake(HandshakeData data) async {
+  Future<void> _onHandshake(HandshakeData data) async {
     await emit(SocketEvent.handshake, <HandshakeData>[data]);
     id = data.sessionId;
-    transport.options = (transport.options.toBuilder()..query['sid'] = data.sessionId).build();
-
-    upgrades = new BuiltList<String>(data.upgrades.takeWhile((String upgrade) => _options.transports.contains(upgrade)));
+    transport.options.updateQuery('sid', data.sessionId);
+    upgrades = List<String>.from(data.upgrades.takeWhile((String upgrade) => _options.transports.contains(upgrade)));
 
     _pingInterval = data.pingInterval;
     _pingTimeout = data.pingTimeout;
@@ -317,7 +314,7 @@ class Socket extends Emitter {
     pingTimeoutTimer?.cancel();
     if (timeout <= 0) timeout = _pingInterval + _pingTimeout;
 
-    pingTimeoutTimer = new Timer(new Duration(milliseconds: timeout), () async {
+    pingTimeoutTimer = Timer(Duration(milliseconds: timeout), () async {
       if (readyState != SocketState.closed) await _onClose('ping timeout');
     });
   }
@@ -325,18 +322,18 @@ class Socket extends Emitter {
   void _setPing() {
     pingIntervalTimer?.cancel();
 
-    pingIntervalTimer = new Timer(new Duration(milliseconds: _pingInterval), () async {
+    pingIntervalTimer = Timer(Duration(milliseconds: _pingInterval), () async {
       log.d('writing ping packet - expecting pong within $_pingTimeout');
       await _ping();
       _onHeartbeat(_pingTimeout);
     });
   }
 
-  Future<Null> _ping() async {
-    return await _sendPacket(new Packet.values(PacketType.ping), () async => await emit(SocketEvent.ping));
+  Future<void> _ping() async {
+    return await _sendPacket(Packet<String>(PacketType.ping), () async => await emit(SocketEvent.ping));
   }
 
-  Future<Null> _onDrain() async {
+  Future<void> _onDrain() async {
     writeBuffer.take(_prevBufferLen).toList().forEach(writeBuffer.remove);
 
     _prevBufferLen = 0;
@@ -347,24 +344,24 @@ class Socket extends Emitter {
     }
   }
 
-  Future<Null> _flush() async {
+  Future<void> _flush() async {
     log.d('flushing ${writeBuffer.length} packets in socket');
     if (readyState != SocketState.closed && transport.writable && !upgrading && writeBuffer.isNotEmpty) {
       log.d('flushing ${writeBuffer.length} packets in socket');
 
       _prevBufferLen = writeBuffer.length;
-      await transport.send(writeBuffer.toList());
+      await transport.send<dynamic>(writeBuffer.toList());
       await emit(SocketEvent.flush);
     }
   }
 
-  Future<Null> write(dynamic message, [void callback()]) async => await send(message, callback);
+  Future<void> write<T>(T message, [void callback()]) async => await send(message, callback);
 
-  Future<Null> send(dynamic message, [void callback()]) async {
-    await _sendPacket(new Packet.values(PacketType.message, message), callback);
+  Future<void> send<T>(T message, [void callback()]) async {
+    await _sendPacket(Packet<T>(PacketType.message, message), callback);
   }
 
-  Future<Null> _sendPacket(Packet packet, void callback()) async {
+  Future<void> _sendPacket(Packet packet, void callback()) async {
     log.d('sendPacket: $packet');
     if (readyState == SocketState.closing || readyState == SocketState.closed) return;
 
@@ -378,13 +375,13 @@ class Socket extends Emitter {
     if (readyState == SocketState.opening || readyState == SocketState.open) {
       readyState = SocketState.closing;
 
-      Future<Null> close() async {
+      Future<void> close() async {
         await _onClose('forced close');
         log.d('socket closing - telling transport to close');
         await transport.close();
       }
 
-      Future<Null> cleanupAndClose() async {
+      Future<void> cleanupAndClose() async {
         off(SocketEvent.upgrade, (List<dynamic> args) async => await cleanupAndClose());
         off(SocketEvent.upgradeError, (List<dynamic> args) async => await cleanupAndClose());
         await close();
@@ -414,14 +411,14 @@ class Socket extends Emitter {
     return this;
   }
 
-  Future<Null> _onError(Error error) async {
+  Future<void> _onError(Error error) async {
     log.d('socket error $error');
     _priorWebSocketSuccess = false;
     await emit(SocketEvent.error, <Error>[error]);
     await _onClose('transport error', error);
   }
 
-  Future<Null> _onClose(String reason, [dynamic desc]) async {
+  Future<void> _onClose(String reason, [dynamic desc]) async {
     if (readyState == SocketState.opening || readyState == SocketState.open || readyState == SocketState.closing) {
       log.d('socket close with reason: $reason');
 

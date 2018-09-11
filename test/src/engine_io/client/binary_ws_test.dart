@@ -9,7 +9,8 @@ import 'package:test/test.dart';
 import 'connection.dart';
 
 void main() async {
-  final Log log = new Log('EngineIo.binary_ws_connection');
+  final Log log = Log('EngineIo.binary_ws_connection');
+  const SocketOptions opts = const SocketOptions(port: Connection.PORT);
   Socket socket;
 
   test('receiveBinaryData', () async {
@@ -19,11 +20,7 @@ void main() async {
       binaryData[i] = i;
     }
 
-    final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-      b..port = Connection.PORT;
-    });
-
-    socket = new Socket(opts);
+    socket = Socket(opts);
     socket.on(SocketEvent.open, (List<dynamic> args) {
       log.e('open');
       socket.on(SocketEvent.upgrade, (List<dynamic> args) async {
@@ -37,7 +34,7 @@ void main() async {
       });
     });
     await socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values.first, binaryData);
     await socket.close();
@@ -45,14 +42,10 @@ void main() async {
 
   test('receiveBinaryDataAndMultibyteUTF8String', () async {
     final List<dynamic> values = <dynamic>[];
-    final List<int> binaryData = new List<int>.generate(5, (_) => 0);
+    final List<int> binaryData = List<int>.generate(5, (_) => 0);
     for (int i = 0; i < binaryData.length; i++) binaryData[0] = i;
 
-    final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-      b..port = Connection.PORT;
-    });
-
-    socket = new Socket(opts);
+    socket = Socket(opts);
     socket.on(SocketEvent.open, (List<dynamic> args) {
       log.e('main: open');
       socket.on(SocketEvent.upgrade, (List<dynamic> args) async {
@@ -69,7 +62,7 @@ void main() async {
       });
     });
     await socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
     log.d(values.toString());
     expect(values[0], binaryData);
     expect(values[1], 'cash money €€€');

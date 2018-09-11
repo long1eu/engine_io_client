@@ -1,36 +1,17 @@
-library xhr_options;
-
 import 'dart:io';
 
-import 'package:built_value/built_value.dart';
-import 'package:built_value/serializer.dart';
+class XhrOptions {
+  XhrOptions(this.uri, this.method, this.client, this.data);
 
-part 'xhr_options.g.dart';
+  factory XhrOptions.get(String uri, dynamic data, HttpClient client) => XhrOptions(uri, 'GET', client, data);
 
-abstract class XhrOptions implements Built<XhrOptions, XhrOptionsBuilder> {
-  factory XhrOptions([XhrOptionsBuilder updates(XhrOptionsBuilder b)]) = _$XhrOptions;
+  factory XhrOptions.post(String uri, dynamic data, HttpClient client) => XhrOptions(uri, 'POST', client, data);
 
-  factory XhrOptions.get(String uri, dynamic data, HttpClient client, [String method = 'GET']) {
-    return new XhrOptions((XhrOptionsBuilder b) {
-      b
-        ..uri = uri
-        ..data = data
-        ..method = method
-        ..client = client;
-    });
-  }
+  final String uri;
 
-  XhrOptions._();
+  final String method;
 
-  String get uri;
+  final HttpClient client;
 
-  String get method;
-
-  @BuiltValueField(serialize: false)
-  HttpClient get client;
-
-  @nullable
-  Object get data;
-
-  static Serializer<XhrOptions> get serializer => _$xhrOptionsSerializer;
+  final Object data;
 }

@@ -13,7 +13,7 @@ const String BINARY_CONTENT_TYPE = 'application/octet-stream';
 const String TEXT_CONTENT_TYPE = 'text/plain; charset=UTF-8';
 
 class RequestXhr extends Emitter {
-  static final Log log = new Log('EngineIo.RequestXhr');
+  static final Log log = Log('EngineIo.RequestXhr');
 
   RequestXhr(this.options);
 
@@ -21,7 +21,7 @@ class RequestXhr extends Emitter {
 
   final XhrOptions options;
 
-  Future<Null> create() async {
+  Future<void> create() async {
     log.d('xhr open ${options.method}: ${options.uri}');
     final Map<String, List<String>> headers = <String, List<String>>{};
 
@@ -36,19 +36,18 @@ class RequestXhr extends Emitter {
     headers['Accept'] = <String>['*/*'];
 
     onRequestHeaders(headers);
-    await new Future<Null>.delayed(const Duration(milliseconds: 100));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
 
-    log.d('sending xhr with url ${options
-        .uri} | data ${options.data}');
+    log.d('sending xhr with url ${options.uri} | data ${options.data}');
 
-    final Request request = new Request(options.method, Uri.parse(options.uri));
+    final Request request = Request(options.method, Uri.parse(options.uri));
 
-    request.headers.addAll(headers.map((String key, List<String> value) => new MapEntry<String, String>(key, value.first)));
+    request.headers.addAll(headers.map((String key, List<String> value) => MapEntry<String, String>(key, value.first)));
 
     if (options.data is String) {
-      request.body = options.data;
+      request.body = options.data as String;
     } else if (options.data is List<int>) {
-      request.bodyBytes = options.data;
+      request.bodyBytes = options.data as List<int>;
     }
 
     try {
@@ -69,7 +68,7 @@ class RequestXhr extends Emitter {
       final Map<String, String> h = <String, String>{};
       rawResponse.headers.forEach((String key, List<String> values) => h[key] = values.join(','));
 
-      response = new StreamedResponse(
+      response = StreamedResponse(
         DelegatingStream.typed<List<int>>(rawResponse),
         rawResponse.statusCode,
         contentLength: rawResponse.contentLength == -1 ? null : rawResponse.contentLength,
@@ -81,7 +80,7 @@ class RequestXhr extends Emitter {
       );
 
       await onResponseHeaders(response.headers.map((String key, String value) {
-        return new MapEntry<String, List<String>>(key, <String>[value]);
+        return MapEntry<String, List<String>>(key, <String>[value]);
       }));
 
       print(response.statusCode);
@@ -89,7 +88,7 @@ class RequestXhr extends Emitter {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         await onLoad();
       } else {
-        onError(<Error>[new StateError(response.statusCode.toString())]);
+        onError(<Error>[StateError(response.statusCode.toString())]);
       }
     } catch (e) {
       log.e(e);
@@ -97,29 +96,30 @@ class RequestXhr extends Emitter {
     }
   }
 
-  Future<Null> onSuccess() async {
+  Future<void> onSuccess() async {
     await emit(XhrEvent.success);
   }
 
   /// Can be [String] or [List<int>]
-  Future<Null> onData(dynamic data) async {
+  Future<void> onData(dynamic data) async {
     await emit(XhrEvent.data, <dynamic>[data]);
     await onSuccess();
   }
 
-  Future<Null> onError(List<dynamic> error) async {
+  Future<void> onError(List<dynamic> error) async {
+    log.e((error.first as Error).stackTrace);
     await emit(XhrEvent.error, error);
   }
 
-  Future<Null> onRequestHeaders(Map<String, List<String>> headers) async {
+  Future<void> onRequestHeaders(Map<String, List<String>> headers) async {
     return await emit(XhrEvent.requestHeaders, <Map<String, List<String>>>[headers]);
   }
 
-  Future<Null> onResponseHeaders(Map<String, List<String>> headers) async {
+  Future<void> onResponseHeaders(Map<String, List<String>> headers) async {
     await emit(XhrEvent.responseHeaders, <Map<String, List<String>>>[headers]);
   }
 
-  Future<Null> onLoad() async {
+  Future<void> onLoad() async {
     final String contentType = response.headers['content-type'].split(';')[0];
     try {
       if (contentType.toLowerCase() == BINARY_CONTENT_TYPE) {

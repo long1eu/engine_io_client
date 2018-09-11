@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 
 void main() {
   test('on', () async {
-    final Emitter emitter = new Emitter();
+    final Emitter emitter = Emitter();
     final List<dynamic> calls = <dynamic>[];
 
     emitter.on('foo', (List<dynamic> args) {
@@ -26,7 +26,7 @@ void main() {
   });
 
   test('once', () async {
-    final Emitter emitter = new Emitter();
+    final Emitter emitter = Emitter();
     final List<dynamic> calls = <dynamic>[];
 
     emitter.once('foo', (List<dynamic> args) {
@@ -43,11 +43,11 @@ void main() {
   });
 
   test('off', () async {
-    final Emitter emitter = new Emitter();
+    final Emitter emitter = Emitter();
     final List<dynamic> calls = <dynamic>[];
 
-    Future<Null> one(List<dynamic> args) async => calls.add('one');
-    Future<Null> two(List<dynamic> args) async => calls.add('two');
+    Future<void> one(List<dynamic> args) async => calls.add('one');
+    Future<void> two(List<dynamic> args) async => calls.add('two');
 
     emitter.on('foo', one);
     emitter.on('foo', two);
@@ -59,10 +59,10 @@ void main() {
   });
 
   test('offWithOnce', () async {
-    final Emitter emitter = new Emitter();
+    final Emitter emitter = Emitter();
     final List<dynamic> calls = <dynamic>[];
 
-    Future<Null> one(List<dynamic> args) async => calls.add('one');
+    Future<void> one(List<dynamic> args) async => calls.add('one');
 
     emitter.once('foo', one);
     emitter.off('foo', one);
@@ -73,10 +73,10 @@ void main() {
   });
 
   test('offWhenCalledFromEvent', () async {
-    final Emitter emitter = new Emitter();
+    final Emitter emitter = Emitter();
     bool called = false;
 
-    Future<Null> b(List<dynamic> args) async {
+    Future<void> b(List<dynamic> args) async {
       called = true;
     }
 
@@ -92,11 +92,11 @@ void main() {
   });
 
   test('offEvent', () async {
-    final Emitter emitter = new Emitter();
+    final Emitter emitter = Emitter();
     final List<dynamic> calls = <dynamic>[];
 
-    Future<Null> one(List<dynamic> args) async => calls.add('one');
-    Future<Null> two(List<dynamic> args) async => calls.add('two');
+    Future<void> one(List<dynamic> args) async => calls.add('one');
+    Future<void> two(List<dynamic> args) async => calls.add('two');
 
     emitter.on('foo', one);
     emitter.on('foo', two);
@@ -109,11 +109,11 @@ void main() {
   });
 
   test('offAll', () async {
-    final Emitter emitter = new Emitter();
+    final Emitter emitter = Emitter();
     final List<dynamic> calls = <dynamic>[];
 
-    Future<Null> one(List<dynamic> args) async => calls.add('one');
-    Future<Null> two(List<dynamic> args) async => calls.add('two');
+    Future<void> one(List<dynamic> args) async => calls.add('one');
+    Future<void> two(List<dynamic> args) async => calls.add('two');
 
     emitter.on('foo', one);
     emitter.on('bar', two);
@@ -130,8 +130,8 @@ void main() {
   });
 
   test('listeners', () {
-    final Emitter emitter = new Emitter();
-    Future<Null> foo(List<dynamic> args) async {}
+    final Emitter emitter = Emitter();
+    Future<void> foo(List<dynamic> args) async {}
 
     emitter.on('foo', foo);
 
@@ -139,13 +139,13 @@ void main() {
   });
 
   test('listenersWithoutHandlers', () {
-    final Emitter emitter = new Emitter();
+    final Emitter emitter = Emitter();
     expect(emitter.listeners('foo'), equals(<Listener>[]));
   });
 
   test('hasListeners', () {
-    final Emitter emitter = new Emitter();
-    Future<Null> foo(List<dynamic> args) async {}
+    final Emitter emitter = Emitter();
+    Future<void> foo(List<dynamic> args) async {}
 
     emitter.on('foo', foo);
 
@@ -153,7 +153,7 @@ void main() {
   });
 
   test('hasListenersWithoutHandlers', () {
-    final Emitter emitter = new Emitter();
+    final Emitter emitter = Emitter();
     expect(emitter.hasListeners('foo'), isFalse);
   });
 }

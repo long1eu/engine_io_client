@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 void main() {
   void _waitUntilNextMillisecond() {
-    final int now = new DateTime.now().millisecondsSinceEpoch;
+    final int now = DateTime.now().millisecondsSinceEpoch;
     while (new DateTime.now().millisecondsSinceEpoch == now) {}
   }
 
@@ -35,7 +35,7 @@ void main() {
 
   test('doesNotCollide', () {
     final int length = 30000;
-    final List<String> ids = new List<String>(length);
+    final List<String> ids = List<String>(length);
 
     for (int i = 0; i < length; i++) ids[i] = Yeast.yeast();
 
@@ -49,7 +49,7 @@ void main() {
   test('canConvertIdToTimestamp', () {
     _waitUntilNextMillisecond();
 
-    final int now = new DateTime.now().millisecondsSinceEpoch;
+    final int now = DateTime.now().millisecondsSinceEpoch;
     final String id = Yeast.yeast();
 
     expect(Yeast.encode(now), equals(id));

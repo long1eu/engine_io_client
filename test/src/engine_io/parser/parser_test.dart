@@ -1,155 +1,153 @@
 import 'package:engine_io_client/src/engine_io/parser/parser.dart';
 import 'package:engine_io_client/src/models/packet.dart';
-import 'package:engine_io_client/src/models/packet_type.dart';
 import 'package:test/test.dart';
 
-// ignore_for_file: always_specify_types
 const String ERROR_DATA = 'parser error';
 
 void main() {
-  final Packet ping = new Packet.values(PacketType.ping);
-  final Packet pong = new Packet.values(PacketType.pong);
+  final Packet<String> ping = Packet<String>(PacketType.ping);
+  final Packet<String> pong = Packet<String>(PacketType.pong);
 
   test('encodeAsString', () {
-    final Packet packet = new Packet.values(PacketType.message, 'test');
-    final dynamic encode = Parser.encodePacket(packet);
+    final Packet<String> packet = Packet<String>(PacketType.message, 'test');
+    final String encode = Parser.encodePacket(packet);
     expect(encode.runtimeType, String);
   });
 
   test('decodeAsPacket', () {
-    final Packet packet = new Packet.values(PacketType.message, 'test');
+    final Packet<String> packet = Packet<String>(PacketType.message, 'test');
     final String encoded = Parser.encodePacket(packet);
-    final Packet decoded = Parser.decodePacket(encoded);
+    final Packet<String> decoded = Parser.decodePacket(encoded);
 
     expect(decoded.runtimeType, packet.runtimeType);
   });
 
   test('noData', () {
-    final Packet message = new Packet.values(PacketType.message);
+    final Packet<String> message = Packet<String>(PacketType.message);
     final String data = Parser.encodePacket(message);
-    final Packet package = Parser.decodePacket(data);
+    final Packet<String> package = Parser.decodePacket(data);
 
     expect(package.type, PacketType.message);
     expect(package.data, isNull);
   });
 
   test('encodeOpenPacket', () {
-    final Packet packet = new Packet.values(PacketType.open, '{"some":"json"}');
+    final Packet<String> packet = Packet<String>(PacketType.open, '{"some":"json"}');
     final String data = Parser.encodePacket(packet);
-    final Packet package = Parser.decodePacket(data);
+    final Packet<String> package = Parser.decodePacket(data);
 
     expect(package.type, PacketType.open);
     expect(package.data, '{"some":"json"}');
   });
 
   test('encodeClosePacket', () {
-    final Packet packet = new Packet.values(PacketType.close);
+    final Packet<String> packet = Packet<String>(PacketType.close);
     final String data = Parser.encodePacket(packet);
-    final Packet package = Parser.decodePacket(data);
+    final Packet<String> package = Parser.decodePacket(data);
 
     expect(package.type, PacketType.close);
   });
 
   test('encodePingPacket', () {
-    final Packet packet = new Packet.values(PacketType.ping, '1');
+    final Packet<String> packet = Packet<String>(PacketType.ping, '1');
     final String data = Parser.encodePacket(packet);
-    final Packet package = Parser.decodePacket(data);
+    final Packet<String> package = Parser.decodePacket(data);
 
     expect(package.type, PacketType.ping);
     expect(package.data, '1');
   });
 
   test('encodePongPacket', () {
-    final Packet packet = new Packet.values(PacketType.pong, '1');
+    final Packet<String> packet = Packet<String>(PacketType.pong, '1');
     final String data = Parser.encodePacket(packet);
-    final Packet package = Parser.decodePacket(data);
+    final Packet<String> package = Parser.decodePacket(data);
 
     expect(package.type, PacketType.pong);
     expect(package.data, '1');
   });
 
   test('encodeMessagePacket', () {
-    final Packet packet = new Packet.values(PacketType.message, 'aaa');
+    final Packet<String> packet = Packet<String>(PacketType.message, 'aaa');
     final String data = Parser.encodePacket(packet);
-    final Packet package = Parser.decodePacket(data);
+    final Packet<String> package = Parser.decodePacket(data);
 
     expect(package.type, PacketType.message);
     expect(package.data, 'aaa');
   });
 
   test('encodeUTF8SpecialCharsMessagePacket', () {
-    final Packet packet = new Packet.values(PacketType.message, 'utf8 — string');
+    final Packet<String> packet = Packet<String>(PacketType.message, 'utf8 — string');
     final String data = Parser.encodePacket(packet);
-    final Packet package = Parser.decodePacket(data);
+    final Packet<String> package = Parser.decodePacket(data);
 
     expect(package.type, PacketType.message);
     expect(package.data, 'utf8 — string');
   });
 
   test('encodeUpgradePacket', () {
-    final Packet packet = new Packet.values(PacketType.upgrade);
+    final Packet<String> packet = Packet<String>(PacketType.upgrade);
     final String data = Parser.encodePacket(packet);
-    final Packet package = Parser.decodePacket(data);
+    final Packet<String> package = Parser.decodePacket(data);
 
     expect(package.type, PacketType.upgrade);
   });
 
   test('encodingFormat', () {
-    Packet packet = new Packet.values(PacketType.message, 'test');
+    Packet<String> packet = Packet<String>(PacketType.message, 'test');
     String data = Parser.encodePacket(packet);
-    expect(new RegExp('[0-9].*').hasMatch(data), isTrue);
+    expect(RegExp('[0-9].*').hasMatch(data), isTrue);
 
-    packet = new Packet.values(PacketType.message);
+    packet = Packet<String>(PacketType.message);
     data = Parser.encodePacket(packet);
-    expect(new RegExp('[0-9]').hasMatch(data), isTrue);
+    expect(RegExp('[0-9]').hasMatch(data), isTrue);
   });
 
   test('encodingStringMessageWithLoneSurrogatesReplacedByUFFFD', () {
-    final String data = '\uDC00\uD834\uDF06\uDC00 \uD800\uD835\uDF07\uD800';
-    final Packet packet = new Packet.values(PacketType.message, data);
+    const String data = '\uDC00\uD834\uDF06\uDC00 \uD800\uD835\uDF07\uD800';
+    final Packet<String> packet = Packet<String>(PacketType.message, data);
     final String list = Parser.encodePacket(packet, true);
-    final Packet package = Parser.decodePacket(list, true);
+    final Packet<String> package = Parser.decodePacket(list, true);
 
     expect(package.type, PacketType.message);
     expect(package.data, '\uFFFD\uD834\uDF06\uFFFD \uFFFD\uD835\uDF07\uFFFD');
   });
 
   test('decodeEmptyPayload', () {
-    final Packet package = Parser.decodePacket(null);
+    final Packet<String> package = Parser.decodePacket(null);
 
     expect(package.type, PacketType.error);
     expect(package.data, ERROR_DATA);
   });
 
   test('decodeBadFormat', () {
-    final Packet package = Parser.decodePacket(':::');
+    final Packet<String> package = Parser.decodePacket(':::');
 
     expect(package.type, PacketType.error);
     expect(package.data, ERROR_DATA);
   });
 
   test('decodeWrongTypes', () {
-    final Packet package = Parser.decodePacket('94103');
+    final Packet<String> package = Parser.decodePacket('94103');
 
     expect(package.type, PacketType.error);
     expect(package.data, ERROR_DATA);
   });
 
   test('encodePayloads', () {
-    final List<Packet> packets = <Packet>[ping, pong];
+    final List<Packet<String>> packets = <Packet<String>>[ping, pong];
     final String data = Parser.encodePayload(packets);
 
     expect(data.runtimeType, String);
   });
 
   test('encodeAndDecodePayloads', () {
-    final Packet message = new Packet.values(PacketType.message, 'a');
+    final Packet<String> message = Packet<String>(PacketType.message, 'a');
 
-    String data = Parser.encodePayload(<Packet>[message]);
+    String data = Parser.encodePayload(<Packet<String>>[message]);
     List<Packet> packets = Parser.decodePayload(data);
     expect(packets.length, 1);
 
-    data = Parser.encodePayload(<Packet>[message, ping]);
+    data = Parser.encodePayload(<Packet<String>>[message, ping]) as String;
     packets = Parser.decodePayload(data);
     expect(packets.first.type, PacketType.message);
     expect(packets.last.type, PacketType.ping);
@@ -165,9 +163,9 @@ void main() {
   });
 
   test('notUTF8EncodeWhenDealingWithStringsOnly', () {
-    final List<Packet> packets = <Packet>[
-      new Packet.values(PacketType.message, '€€€'),
-      new Packet.values(PacketType.message, 'α')
+    final List<Packet<String>> packets = <Packet<String>>[
+      Packet<String>(PacketType.message, '€€€'),
+      Packet<String>(PacketType.message, 'α')
     ];
 
     final String encoded = Parser.encodePayload(packets);
@@ -223,12 +221,12 @@ void main() {
   });
 
   test('encodeBinaryMessage', () {
-    final List<int> data = new List<int>.generate(5, (_) => 0);
+    final List<int> data = List<int>.generate(5, (_) => 0);
     for (int i = 0; i < data.length; i++) {
       data[0] = i;
     }
 
-    final Packet message = new Packet.values(PacketType.message, data);
+    final Packet<List<int>> message = Packet<List<int>>(PacketType.message, data);
     final List<int> encoded = Parser.encodePacket(message);
 
     final Packet packet = Parser.decodeBytePacket(encoded);
@@ -237,18 +235,18 @@ void main() {
   });
 
   test('encodeBinaryContents', () {
-    final List<int> firstBuffer = new List<int>.generate(5, (_) => 0);
+    final List<int> firstBuffer = List<int>.generate(5, (_) => 0);
     for (int i = 0; i < firstBuffer.length; i++) {
       firstBuffer[0] = i;
     }
-    final List<int> secondBuffer = new List<int>.generate(4, (_) => 0);
+    final List<int> secondBuffer = List<int>.generate(4, (_) => 0);
     for (int i = 0; i < secondBuffer.length; i++) {
       secondBuffer[0] = firstBuffer.length + i;
     }
 
-    final List<Packet> list = <Packet>[
-      new Packet.values(PacketType.message, firstBuffer),
-      new Packet.values(PacketType.message, secondBuffer)
+    final List<Packet<List<int>>> list = <Packet<List<int>>>[
+      Packet<List<int>>(PacketType.message, firstBuffer),
+      Packet<List<int>>(PacketType.message, secondBuffer)
     ];
 
     final List<int> encoded = Parser.encodePayload(list);
@@ -261,19 +259,19 @@ void main() {
   });
 
   test('encodeMixedBinaryAndStringContents', () {
-    final List<int> firstBuffer = new List<int>.generate(5, (_) => 0);
+    final List<int> firstBuffer = List<int>.generate(5, (_) => 0);
     for (int i = 0; i < firstBuffer.length; i++) {
       firstBuffer[0] = i;
     }
 
-    final List<Packet> list = <Packet>[
-      new Packet.values(PacketType.message, firstBuffer),
-      new Packet.values(PacketType.message, 'hello'),
-      new Packet.values(PacketType.close),
+    final List<Packet<dynamic>> list = <Packet<dynamic>>[
+      Packet<List<int>>(PacketType.message, firstBuffer),
+      Packet<String>(PacketType.message, 'hello'),
+      Packet<String>(PacketType.close),
     ];
     final dynamic data = Parser.encodePayload(list);
 
-    final List<Packet> packets = Parser.decodeBinaryPayload(data);
+    final List<Packet> packets = Parser.decodeBinaryPayload(data as List<int>);
 
     expect(packets[0].type, PacketType.message);
     expect(packets[0].data, equals(firstBuffer));

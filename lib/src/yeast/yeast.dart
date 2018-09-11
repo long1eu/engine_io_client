@@ -27,7 +27,7 @@ class Yeast {
       num = (num / length).floor();
     } while (num > 0);
 
-    return new String.fromCharCodes(encoded);
+    return String.fromCharCodes(encoded);
   }
 
   static int decode(String str) {

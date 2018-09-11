@@ -9,35 +9,30 @@ import 'package:test/test.dart';
 import 'connection.dart';
 
 void main() {
-  final Log log = new Log('EngineIo.connection');
-  final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-    b
-      //..port = Connection.PORT
-      ..path = '/socket.io'
-      ..host = 'socket-io-chat.now.sh';
-  });
+  final Log log = Log('EngineIo.connection');
+  const SocketOptions opts = const SocketOptions(port: Connection.PORT);
 
   test('connectToLocalhost', () async {
     final List<dynamic> values = <dynamic>[];
 
-    final Socket socket = new Socket(opts);
+    final Socket socket = Socket(opts);
     socket.on(SocketEvent.open, (List<dynamic> args) {
       socket.on(SocketEvent.message, (List<dynamic> args) {
         values.add(args[0]);
       });
     });
     await socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: 20000), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
     log.d(values);
 
-    //expect(values.first, 'hi');
+    expect(values.first, 'hi');
     await socket.close();
   });
 
   test('receiveMultibyteUTF8StringsWithPolling', () async {
     final List<dynamic> values = <dynamic>[];
 
-    final Socket socket = new Socket(opts);
+    final Socket socket = Socket(opts);
     socket.on(SocketEvent.open, (List<dynamic> args) async {
       await socket.send('cash money €€€');
       socket.on(SocketEvent.message, (List<dynamic> args) async {
@@ -47,7 +42,7 @@ void main() {
       });
     });
     await socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values.first, 'cash money €€€');
   });
@@ -55,7 +50,7 @@ void main() {
   test('receiveEmoji', () async {
     final List<dynamic> values = <dynamic>[];
 
-    final Socket socket = new Socket(opts);
+    final Socket socket = Socket(opts);
     socket.on(SocketEvent.open, (List<dynamic> args) async {
       await socket.send('\uD800\uDC00-\uDB7F\uDFFF\uDB80\uDC00-\uDBFF\uDFFF\uE000-\uF8FF');
       socket.on(SocketEvent.message, (List<dynamic> args) async {
@@ -65,7 +60,7 @@ void main() {
       });
     });
     await socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values.first, '\uD800\uDC00-\uDB7F\uDFFF\uDB80\uDC00-\uDBFF\uDFFF\uE000-\uF8FF');
   });
@@ -73,7 +68,7 @@ void main() {
   test('notSendPacketsIfSocketCloses', () async {
     bool noPacket = true;
 
-    final Socket socket = new Socket(opts);
+    final Socket socket = Socket(opts);
     socket.on(SocketEvent.open, (List<dynamic> args) async {
       socket.on(SocketEvent.packetCreate, (List<dynamic> args) async {
         noPacket = false;
@@ -83,7 +78,7 @@ void main() {
       await socket.send('hi');
     });
     await socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(noPacket, isTrue);
   });
@@ -91,7 +86,7 @@ void main() {
   test('deferCloseWhenUpgrading', () async {
     bool upgraded = false;
 
-    final Socket socket = new Socket(opts);
+    final Socket socket = Socket(opts);
     socket.on(SocketEvent.open, (List<dynamic> args) {
       socket
         ..on(SocketEvent.upgrade, (List<dynamic> args) {
@@ -103,7 +98,7 @@ void main() {
         });
     });
     await socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(upgraded, isTrue);
   });
@@ -111,7 +106,7 @@ void main() {
   test('closeOnUpgradeErrorIfClosingIsDeferred', () async {
     bool upgradeError;
 
-    final Socket socket = new Socket(opts);
+    final Socket socket = Socket(opts);
     socket.on(SocketEvent.open, (List<dynamic> args) {
       socket
         ..on(SocketEvent.upgradeError, (List<dynamic> args) {
@@ -121,11 +116,11 @@ void main() {
         ..on(SocketEvent.upgrading, (List<dynamic> args) async {
           log.d('main: $args');
           await socket.close();
-          await socket.transport.onError('upgrade error c', new Exception());
+          await socket.transport.onError('upgrade error c', Exception());
         });
     });
     await socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(upgradeError, isTrue);
   });
@@ -133,7 +128,7 @@ void main() {
   test('notSendPacketsIfClosingIsDeferred', () async {
     bool noPacket = true;
 
-    final Socket socket = new Socket(opts);
+    final Socket socket = Socket(opts);
     socket.on(SocketEvent.open, (List<dynamic> args) {
       socket.on(SocketEvent.upgrading, (List<dynamic> args) async {
         socket.on(SocketEvent.packetCreate, (List<dynamic> args) async {
@@ -144,7 +139,7 @@ void main() {
       });
     });
     await socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(noPacket, isTrue);
   });
@@ -152,7 +147,7 @@ void main() {
   test('sendAllBufferedPacketsIfClosingIsDeferred', () async {
     int length;
 
-    final Socket socket = new Socket(opts);
+    final Socket socket = Socket(opts);
     socket.on(SocketEvent.open, (List<dynamic> args) {
       socket
         ..on(SocketEvent.upgrading, (List<dynamic> args) async {
@@ -165,7 +160,7 @@ void main() {
         });
     });
     await socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(length, 0);
   });

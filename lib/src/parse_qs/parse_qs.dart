@@ -1,11 +1,10 @@
-import 'package:built_collection/built_collection.dart';
 import 'package:engine_io_client/src/global/global.dart';
 
 class ParseQS {
   ParseQS._();
 
-  static String encode(BuiltMap<String, String> obj) {
-    final StringBuffer str = new StringBuffer();
+  static String encode(Map<String, String> obj) {
+    final StringBuffer str = StringBuffer();
 
     obj.forEach((String key, String value) {
       str
@@ -17,8 +16,8 @@ class ParseQS {
     return str.toString();
   }
 
-  static MapBuilder<String, String> decode(String qs) {
-    final MapBuilder<String, String> query = new MapBuilder<String, String>();
+  static Map<String, String> decode(String qs) {
+    final Map<String, String> query = <String, String>{};
     final List<String> pairs = qs.split('&');
     for (String _pair in pairs) {
       final List<String> pair = _pair.split('=');

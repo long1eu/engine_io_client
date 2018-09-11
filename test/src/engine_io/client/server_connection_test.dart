@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:built_collection/built_collection.dart';
 import 'package:engine_io_client/engine_io_client.dart';
 import 'package:engine_io_client/src/engine_io/client/socket.dart';
 import 'package:engine_io_client/src/engine_io/client/transport.dart';
@@ -15,25 +14,23 @@ import 'package:test/test.dart';
 import 'connection.dart';
 
 void main() {
-  final Log log = new Log('server_connection_test');
+  final Log log = Log('server_connection_test');
 
-  final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-    b..port = Connection.PORT;
-  });
+  const SocketOptions opts = const SocketOptions(port: Connection.PORT);
 
   test('openAndClose', () async {
     final List<dynamic> values = <dynamic>[];
 
-    final Socket socket = new Socket(opts);
+    final Socket socket = Socket(opts);
     socket
       ..on(SocketEvent.open, (List<dynamic> args) async => values.add('onOpen'))
       ..on(SocketEvent.close, (List<dynamic> args) async => values.add('onClose'));
 
     await socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
     expect(values.first, 'onOpen');
     await socket.close();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
     expect(values.length, 2);
     expect(values.last, 'onClose');
   });
@@ -41,13 +38,13 @@ void main() {
   test('messages', () async {
     final List<dynamic> values = <dynamic>[];
 
-    final Socket socket = new Socket(opts);
+    final Socket socket = Socket(opts);
     socket
       ..on(SocketEvent.open, (List<dynamic> args) => socket.send('hello'))
       ..on(SocketEvent.message, (List<dynamic> args) async => values.add(args[0]));
 
     await socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values[0], 'hi');
     expect(values[1], 'hello');
@@ -57,10 +54,10 @@ void main() {
   test('handshake', () async {
     final List<dynamic> values = <dynamic>[];
 
-    final Socket socket = new Socket(opts);
+    final Socket socket = Socket(opts);
     socket.on(SocketEvent.handshake, (List<dynamic> args) async => values.add(args));
     await socket.open();
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     final List<dynamic> args = values[0];
     final HandshakeData handshakeData = args[0];
@@ -76,13 +73,13 @@ void main() {
   test('upgrade', () async {
     final List<dynamic> values = <dynamic>[];
 
-    final Socket socket = new Socket(opts);
+    final Socket socket = Socket(opts);
     socket
       ..on(SocketEvent.upgrading, (List<dynamic> args) async => values.add(args[0]))
       ..on(SocketEvent.upgrade, (List<dynamic> args) async => values.add(args[0]));
     await socket.open();
 
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values[0] is Transport, isTrue);
     expect(values[0], isNotNull);
@@ -95,13 +92,9 @@ void main() {
   test('pollingHeaders', () async {
     final List<dynamic> messages = <dynamic>[];
 
-    final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-      b
-        ..port = Connection.PORT
-        ..transports = new ListBuilder<String>(<String>[Polling.NAME]);
-    });
+    const SocketOptions opts = const SocketOptions(port: Connection.PORT, transports: const <String>[Polling.NAME]);
 
-    final Socket socket = new Socket(opts);
+    final Socket socket = Socket(opts);
     socket.on(SocketEvent.transport, (List<dynamic> args) async {
       final Transport transport = args[0];
       transport
@@ -122,7 +115,7 @@ void main() {
     });
     await socket.open();
 
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(messages[0], 'hi');
     expect(messages[1], 'foo');
@@ -135,13 +128,13 @@ void main() {
   test('websocketHandshakeHeaders', () async {
     final List<dynamic> messages = <dynamic>[];
 
-    final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
+    final SocketOptions opts = SocketOptions((SocketOptionsBuilder b) {
       b
         ..port = Connection.PORT
-        ..transports = new ListBuilder<String>(<String>[WebSocket.NAME]);
+        ..transports = ListBuilder<String>(<String>[WebSocket.NAME]);
     });
 
-    final Socket socket = new Socket(opts);
+    final Socket socket = Socket(opts);
     socket.on(SocketEvent.transport.name, (dynamic args) {
       final Transport transport = args;
       transport.on(TransportEvent.requestHeaders.name, (dynamic args) {
@@ -158,7 +151,7 @@ void main() {
     });
     await socket.open();
 
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await  Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(messages[0], 'hi');
     expect(messages[1], 'foo');
@@ -170,19 +163,15 @@ void main() {
   test('rememberWebsocket', () async {
     final List<dynamic> values = <dynamic>[];
 
-    final Socket socket = new Socket(opts);
+    final Socket socket = Socket(opts);
     socket.on(SocketEvent.upgrade, (List<dynamic> args) async {
       final Transport transport = args[0];
       await socket.close();
 
       if (transport.name == WebSocket.NAME) {
-        final SocketOptions opts = new SocketOptions((SocketOptionsBuilder b) {
-          b
-            ..port = Connection.PORT
-            ..rememberUpgrade = true;
-        });
+        const SocketOptions opts = const SocketOptions(port: Connection.PORT, rememberUpgrade: true);
 
-        final Socket socket2 = new Socket(opts);
+        final Socket socket2 = Socket(opts);
         await socket2.open();
         values.add(socket2.transport.name);
         await socket2.close();
@@ -191,7 +180,7 @@ void main() {
     await socket.open();
     values.add(socket.transport.name);
 
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values[0], Polling.NAME);
     expect(values[1], WebSocket.NAME);
@@ -202,19 +191,15 @@ void main() {
   test('notRememberWebsocket', () async {
     final List<dynamic> values = <dynamic>[];
 
-    final Socket socket = new Socket(opts);
+    final Socket socket = Socket(opts);
     socket.on(SocketEvent.upgrade, (List<dynamic> args) async {
       final Transport transport = args[0];
       await socket.close();
 
       if (transport.name == WebSocket.NAME) {
-        final SocketOptions opts = new SocketOptions((b) {
-          b
-            ..port = Connection.PORT
-            ..rememberUpgrade = false;
-        });
+        const SocketOptions opts = const SocketOptions(port: Connection.PORT, rememberUpgrade: false);
 
-        final Socket socket2 = new Socket(opts);
+        final Socket socket2 = Socket(opts);
         await socket2.open();
         values.add(socket2.transport.name);
         await socket2.close();
@@ -223,7 +208,7 @@ void main() {
     await socket.open();
     values.add(socket.transport.name);
 
-    await new Future<Null>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values[0], Polling.NAME);
     expect(values[1], Polling.NAME);

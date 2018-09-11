@@ -1,7 +1,6 @@
 import 'dart:async';
 
-import 'package:built_collection/built_collection.dart';
-import 'package:engine_io_client/src/engine_io/client/engine_io_exception.dart';
+import 'package:engine_io_client/src/engine_io/client/engine_io_error.dart';
 import 'package:engine_io_client/src/engine_io/client/transport.dart';
 import 'package:engine_io_client/src/engine_io/parser/parser.dart';
 import 'package:engine_io_client/src/logger.dart';
@@ -15,45 +14,45 @@ import 'package:web_socket_channel/io.dart';
 
 class WebSocket extends Transport {
   static const String NAME = 'websocket';
-  static final Log log = new Log('EngineIo.WebSocket');
+  static final Log log = Log('EngineIo.WebSocket');
 
   WebSocket(TransportOptions options) : super(options, NAME);
 
   IOWebSocketChannel socket;
 
   @override
-  Future<Null> doOpen() async {
+  Future<void> doOpen() async {
     final Map<String, List<String>> headers = <String, List<String>>{};
     await emit(TransportEvent.requestHeaders, <Map<String, List<String>>>[headers]);
 
-    socket = new IOWebSocketChannel.connect(uri, headers: headers);
+    socket = IOWebSocketChannel.connect(uri, headers: headers);
     socket.stream.listen(onMessage, onError: onSocketError, onDone: onClose);
     await onOpen();
   }
 
-  Future<Null> onMessage(dynamic event) async {
+  Future<void> onMessage(dynamic event) async {
     log.d('onMessage: $event');
     if (event == null) return;
     if (event is String || event is List<int>) {
       await onData(event);
     } else
-      throw new EngineIOException(name, '$event is not String nor List<int>.');
+      throw EngineIOError(name, '$event is not String nor List<int>.');
   }
 
-  void onSocketError(dynamic e) async => await onError('websocket error', e);
+  void onSocketError(dynamic e, StackTrace s) async => await onError('websocket error', e);
 
   @override
-  Future<Null> write(List<Packet> packets) async {
+  Future<void> write<T>(List<Packet<T>> packets) async {
     writable = false;
 
     int total = packets.length;
-    for (Packet packet in packets) {
+    for (Packet<T> packet in packets) {
       if (readyState != TransportState.opening && readyState != TransportState.open) {
         // Ensure we don't try to send anymore packets if the socket ends up being closed due to an exception
         break;
       }
 
-      final dynamic encoded = Parser.encodePacket(packet);
+      final T encoded = Parser.encodePacket<T>(packet);
       try {
         socket.sink.add(encoded);
       } catch (e) {
@@ -68,13 +67,13 @@ class WebSocket extends Transport {
   }
 
   @override
-  Future<Null> doClose() async {
+  Future<void> doClose() async {
     await socket?.sink?.close(1000, '');
     socket = null;
   }
 
   String get uri {
-    final MapBuilder<String, String> query = options?.query?.toBuilder() ?? new MapBuilder<String, String>();
+    final Map<String, String> query = options?.query ?? <String, String>{};
     final String schema = options.secure ? 'wss' : 'ws';
 
     String port = '';
@@ -85,7 +84,7 @@ class WebSocket extends Transport {
 
     if (options.timestampRequests) query[options.timestampParam] = Yeast.yeast();
 
-    String derivedQuery = ParseQS.encode(query.build());
+    String derivedQuery = ParseQS.encode(query);
     if (derivedQuery.isNotEmpty) {
       derivedQuery = '?$derivedQuery';
     }

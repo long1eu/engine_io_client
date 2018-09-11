@@ -10,14 +10,14 @@ import 'package:engine_io_client/src/models/xhr_event.dart';
 import 'package:engine_io_client/src/models/xhr_options.dart';
 
 class PollingXhr extends Polling {
-  static final Log log = new Log('EngineIo.PollingXhr');
+  static final Log log = Log('EngineIo.PollingXhr');
 
   PollingXhr(TransportOptions options) : super(options);
 
   RequestXhr request([XhrOptions options]) {
-    options = options ?? new XhrOptions.get(uri, null, new HttpClient(context: this.options.securityContext));
+    options = options ?? XhrOptions.get(uri, null, HttpClient(context: this.options.securityContext));
 
-    final RequestXhr request = new RequestXhr(options);
+    final RequestXhr request = RequestXhr(options);
     request
       ..on(XhrEvent.requestHeaders, (List<dynamic> args) async => await emit(TransportEvent.requestHeaders, args))
       ..on(XhrEvent.responseHeaders, (List<dynamic> args) async => await emit(TransportEvent.responseHeaders, args));
@@ -26,15 +26,8 @@ class PollingXhr extends Polling {
   }
 
   @override
-  Future<Null> doWrite(dynamic data, void callback()) async {
-    final XhrOptions opts = new XhrOptions((XhrOptionsBuilder b) {
-      b
-        ..method = 'POST'
-        ..data = data
-        ..client = new HttpClient(context: options.securityContext)
-        ..uri = uri;
-    });
-
+  Future<void> doWrite(dynamic data, void callback()) async {
+    final XhrOptions opts = XhrOptions.post(uri, data, HttpClient(context: options.securityContext));
     final RequestXhr req = request(opts);
     req.on(XhrEvent.success, (List<dynamic> args) async => callback());
 
@@ -43,7 +36,7 @@ class PollingXhr extends Polling {
   }
 
   @override
-  Future<Null> doPoll() async {
+  Future<void> doPoll() async {
     log.d('xhr poll');
     final RequestXhr req = request();
     req.on(XhrEvent.data, (List<dynamic> args) async => await onData(args.isNotEmpty ? args[0] : null));

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-typedef Future<Null> Listener(List<dynamic> args);
+typedef Future<void> Listener(List<dynamic> args);
 
 class Emitter {
   final Map<String, Set<Listener>> _callbacks = <String, Set<Listener>>{};
@@ -12,7 +12,7 @@ class Emitter {
   /// @return a reference to this object.
   void on(String event, Listener callback) {
     assert(callback != null);
-    final Set<Listener> callbacks = _callbacks[event] ?? new Set<Listener>();
+    final Set<Listener> callbacks = _callbacks[event] ?? Set<Listener>();
     callbacks.add(callback);
     _callbacks[event] = callbacks;
   }
@@ -24,7 +24,7 @@ class Emitter {
   /// @return a reference to this object.
   void once(final String event, final Listener callback) {
     assert(callback != null);
-    final Set<Listener> callbacks = _onceCallbacks[event] ?? new Set<Listener>();
+    final Set<Listener> callbacks = _onceCallbacks[event] ?? Set<Listener>();
     callbacks.add(callback);
     _onceCallbacks[event] = callbacks;
   }
@@ -52,7 +52,7 @@ class Emitter {
   /// @param event an event name.
   /// @param args
   /// @return a reference to this object.
-  Future<Null> emit(String event, [List<dynamic> args]) async {
+  Future<void> emit(String event, [List<dynamic> args]) async {
     final List<Listener> removed = _onceCallbacks?.remove(event)?.toList();
     if (removed != null) for (Listener listener in removed) await listener(args);
 
@@ -64,7 +64,7 @@ class Emitter {
   ///
   /// @param event an event name.
   /// @return a reference to this object.
-  Set<Listener> listeners(String event) => _callbacks[event] ?? new Set<Listener>();
+  Set<Listener> listeners(String event) => _callbacks[event] ?? Set<Listener>();
 
   /// Check if this emitter has listeners for the specified event.
   ///
