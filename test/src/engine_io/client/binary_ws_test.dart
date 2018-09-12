@@ -33,11 +33,11 @@ void main() async {
         await socket.send(binaryData);
       });
     });
-    await socket.open();
+    socket.open();
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values.first, binaryData);
-    await socket.close();
+    socket.close();
   });
 
   test('receiveBinaryDataAndMultibyteUTF8String', () async {
@@ -61,12 +61,12 @@ void main() async {
         await socket.send('cash money ss €€€');
       });
     });
-    await socket.open();
+    socket.open();
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
     log.d(values.toString());
     expect(values[0], binaryData);
     expect(values[1], 'cash money €€€');
     expect(values[2], 'cash money ss €€€');
-    await socket.close();
+    socket.close();
   });
 }

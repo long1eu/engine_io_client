@@ -26,10 +26,10 @@ void main() {
       ..on(SocketEvent.open, (List<dynamic> args) async => values.add('onOpen'))
       ..on(SocketEvent.close, (List<dynamic> args) async => values.add('onClose'));
 
-    await socket.open();
+    socket.open();
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
     expect(values.first, 'onOpen');
-    await socket.close();
+    socket.close();
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
     expect(values.length, 2);
     expect(values.last, 'onClose');
@@ -43,12 +43,12 @@ void main() {
       ..on(SocketEvent.open, (List<dynamic> args) => socket.send('hello'))
       ..on(SocketEvent.message, (List<dynamic> args) async => values.add(args[0]));
 
-    await socket.open();
+    socket.open();
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values[0], 'hi');
     expect(values[1], 'hello');
-    await socket.close();
+    socket.close();
   });
 
   test('handshake', () async {
@@ -56,7 +56,7 @@ void main() {
 
     final Socket socket = Socket(opts);
     socket.on(SocketEvent.handshake, (List<dynamic> args) async => values.add(args));
-    await socket.open();
+    socket.open();
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     final List<dynamic> args = values[0];
@@ -67,7 +67,7 @@ void main() {
     expect(handshakeData.pingTimeout > 0, isTrue);
     expect(handshakeData.pingInterval > 0, isTrue);
 
-    await socket.close();
+    socket.close();
   });
 
   test('upgrade', () async {
@@ -77,7 +77,7 @@ void main() {
     socket
       ..on(SocketEvent.upgrading, (List<dynamic> args) async => values.add(args[0]))
       ..on(SocketEvent.upgrade, (List<dynamic> args) async => values.add(args[0]));
-    await socket.open();
+    socket.open();
 
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
@@ -86,7 +86,7 @@ void main() {
     expect(values[1] is Transport, isTrue);
     expect(values[1], isNotNull);
 
-    await socket.close();
+    socket.close();
   });
 
   test('pollingHeaders', () async {
@@ -113,14 +113,14 @@ void main() {
           messages.add(values[1]);
         });
     });
-    await socket.open();
+    socket.open();
 
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(messages[0], 'hi');
     expect(messages[1], 'foo');
 
-    await socket.close();
+    socket.close();
   });
 
   /*
@@ -149,7 +149,7 @@ void main() {
         messages.add(values[1]);
       });
     });
-    await socket.open();
+    socket.open();
 
     await  Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
@@ -166,18 +166,18 @@ void main() {
     final Socket socket = Socket(opts);
     socket.on(SocketEvent.upgrade, (List<dynamic> args) async {
       final Transport transport = args[0];
-      await socket.close();
+      socket.close();
 
       if (transport.name == WebSocket.NAME) {
         const SocketOptions opts = const SocketOptions(port: Connection.PORT, rememberUpgrade: true);
 
         final Socket socket2 = Socket(opts);
-        await socket2.open();
+        socket2.open();
         values.add(socket2.transport.name);
-        await socket2.close();
+        socket2.close();
       }
     });
-    await socket.open();
+    socket.open();
     values.add(socket.transport.name);
 
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
@@ -185,7 +185,7 @@ void main() {
     expect(values[0], Polling.NAME);
     expect(values[1], WebSocket.NAME);
 
-    await socket.close();
+    socket.close();
   });
 
   test('notRememberWebsocket', () async {
@@ -194,18 +194,18 @@ void main() {
     final Socket socket = Socket(opts);
     socket.on(SocketEvent.upgrade, (List<dynamic> args) async {
       final Transport transport = args[0];
-      await socket.close();
+      socket.close();
 
       if (transport.name == WebSocket.NAME) {
         const SocketOptions opts = const SocketOptions(port: Connection.PORT, rememberUpgrade: false);
 
         final Socket socket2 = Socket(opts);
-        await socket2.open();
+        socket2.open();
         values.add(socket2.transport.name);
-        await socket2.close();
+        socket2.close();
       }
     });
-    await socket.open();
+    socket.open();
     values.add(socket.transport.name);
 
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
@@ -213,6 +213,6 @@ void main() {
     expect(values[0], Polling.NAME);
     expect(values[1], Polling.NAME);
 
-    await socket.close();
+    socket.close();
   });
 }

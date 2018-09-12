@@ -21,12 +21,12 @@ void main() {
         values.add(args[0]);
       });
     });
-    await socket.open();
+    socket.open();
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
     log.d(values);
 
     expect(values.first, 'hi');
-    await socket.close();
+    socket.close();
   });
 
   test('receiveMultibyteUTF8StringsWithPolling', () async {
@@ -38,10 +38,10 @@ void main() {
       socket.on(SocketEvent.message, (List<dynamic> args) async {
         if (args[0] == 'hi') return;
         values.add(args[0]);
-        await socket.close();
+        socket.close();
       });
     });
-    await socket.open();
+    socket.open();
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values.first, 'cash money €€€');
@@ -56,10 +56,10 @@ void main() {
       socket.on(SocketEvent.message, (List<dynamic> args) async {
         if (args[0] == 'hi') return;
         values.add(args[0]);
-        await socket.close();
+        socket.close();
       });
     });
-    await socket.open();
+    socket.open();
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values.first, '\uD800\uDC00-\uDB7F\uDFFF\uDB80\uDC00-\uDBFF\uDFFF\uE000-\uF8FF');
@@ -74,10 +74,10 @@ void main() {
         noPacket = false;
       });
 
-      await socket.close();
+      socket.close();
       await socket.send('hi');
     });
-    await socket.open();
+    socket.open();
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(noPacket, isTrue);
@@ -94,10 +94,10 @@ void main() {
           upgraded = true;
         })
         ..on(SocketEvent.upgrading, (List<dynamic> args) async {
-          await socket.close();
+          socket.close();
         });
     });
-    await socket.open();
+    socket.open();
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(upgraded, isTrue);
@@ -115,11 +115,11 @@ void main() {
         })
         ..on(SocketEvent.upgrading, (List<dynamic> args) async {
           log.d('main: $args');
-          await socket.close();
+          socket.close();
           await socket.transport.onError('upgrade error c', Exception());
         });
     });
-    await socket.open();
+    socket.open();
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(upgradeError, isTrue);
@@ -134,11 +134,11 @@ void main() {
         socket.on(SocketEvent.packetCreate, (List<dynamic> args) async {
           noPacket = false;
         });
-        await socket.close();
+        socket.close();
         await socket.send('hi');
       });
     });
-    await socket.open();
+    socket.open();
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(noPacket, isTrue);
@@ -152,14 +152,14 @@ void main() {
       socket
         ..on(SocketEvent.upgrading, (List<dynamic> args) async {
           await socket.send('hsi');
-          await socket.close();
+          socket.close();
         })
         ..on(SocketEvent.close, (List<dynamic> args) {
           log.d('close.name');
           length = socket.writeBuffer.length;
         });
     });
-    await socket.open();
+    socket.open();
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(length, 0);

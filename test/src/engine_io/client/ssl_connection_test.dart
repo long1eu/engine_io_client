@@ -36,11 +36,11 @@ void main() {
       });
       await socket.send(binaryData);
     });
-    await socket.open();
+    socket.open();
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(values[0], binaryData);
-    await socket.close();
+    socket.close();
   });
 
   test('receiveBinaryDataAndMultibyteUTF8String_PollingSSL', () async {
@@ -72,7 +72,7 @@ void main() {
       await socket.send('cash money ss €€€');
       await socket.send('20["getAckBinary",""]');
     });
-    await socket.open();
+    socket.open();
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     log.d(values.toString());
@@ -80,7 +80,7 @@ void main() {
     expect(values[1], 'cash money €€€');
     expect(values[2], 'cash money ss €€€');
     expect(values[3], '20["getAckBinary",""]');
-    await socket.close();
+    socket.close();
   });
 
   test('receiveBinaryData_WebSocketSSL', () async {
@@ -113,11 +113,11 @@ void main() {
           await socket.send(binaryData);
         });
       });
-      await socket.open();
+      socket.open();
       await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
       expect(values.first, binaryData);
-      await socket.close();
+      socket.close();
     }, createHttpClient: (_) {
       return HttpClient(context: context);
     });
@@ -154,13 +154,13 @@ void main() {
           await socket.send('cash money ss €€€');
         });
       });
-      await socket.open();
+      socket.open();
       await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
       log.d(values.toString());
       expect(values[0], binaryData);
       expect(values[1], 'cash money €€€');
       expect(values[2], 'cash money ss €€€');
-      await socket.close();
+      socket.close();
     }, createHttpClient: (_) {
       return HttpClient(context: context);
     });

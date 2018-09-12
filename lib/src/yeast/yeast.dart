@@ -42,7 +42,7 @@ class Yeast {
   }
 
   static String yeast() {
-    final String now = encode(new DateTime.now().millisecondsSinceEpoch);
+    final String now = encode(DateTime.now().millisecondsSinceEpoch);
 
     if (now != prev) {
       seed = 0;

@@ -62,6 +62,7 @@ class SocketOptions extends TransportOptions {
 
   final Map<String, TransportOptions> transportOptions;
 
+  @override
   SocketOptions copyWith({
     String host,
     String rawQuery,

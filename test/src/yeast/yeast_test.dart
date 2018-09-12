@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 void main() {
   void _waitUntilNextMillisecond() {
     final int now = DateTime.now().millisecondsSinceEpoch;
-    while (new DateTime.now().millisecondsSinceEpoch == now) {}
+    while (DateTime.now().millisecondsSinceEpoch == now) {}
   }
 
   test('prependsIteratedSeedWhenSamePreviousId', () {
@@ -34,7 +34,7 @@ void main() {
   });
 
   test('doesNotCollide', () {
-    final int length = 30000;
+    const int length = 30000;
     final List<String> ids = List<String>(length);
 
     for (int i = 0; i < length; i++) ids[i] = Yeast.yeast();

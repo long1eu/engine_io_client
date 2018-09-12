@@ -72,7 +72,7 @@ class Socket extends Emitter {
 
   SocketOptions get options => _options;
 
-  Future<void> open() async {
+  void open() async {
     String transportName;
     if (_options?.rememberUpgrade ?? true && _priorWebSocketSuccess && _options.transports.contains(WebSocket.NAME)) {
       transportName = WebSocket.NAME;
@@ -85,7 +85,7 @@ class Socket extends Emitter {
     readyState = SocketState.opening;
     final Transport transport = await _createTransport(transportName);
     _setTransport(transport);
-    await transport.open();
+    transport.open();
   }
 
   Future<Transport> _createTransport(String name) async {
@@ -371,7 +371,7 @@ class Socket extends Emitter {
     await _flush();
   }
 
-  Future<Socket> close() async {
+  void close() async {
     if (readyState == SocketState.opening || readyState == SocketState.open) {
       readyState = SocketState.closing;
 
@@ -407,8 +407,6 @@ class Socket extends Emitter {
         await close();
       }
     }
-
-    return this;
   }
 
   Future<void> _onError(Error error) async {

@@ -5,3 +5,4 @@
 .packages
 .pub/
 packages
+test/resources/node_modules/
