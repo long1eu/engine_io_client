@@ -15,7 +15,7 @@ abstract class Transport extends Emitter {
   Transport(this.options, this.name);
 
   final String name;
-  TransportOptions options;
+  final TransportOptions options;
 
   String readyState;
   bool writable = false;

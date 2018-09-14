@@ -28,6 +28,7 @@ class WebSocket extends Transport {
       onRequestHeaders: options.onRequestHeaders,
       onResponseHeaders: options.onResponseHeaders,
       httpClient: io.HttpClient(context: options.securityContext)..badCertificateCallback = (_, __, ___) => true,
+      cookieJar: options.cookieJar,
     );
     socket.listen(onMessage, onError: onSocketError, onDone: onClose);
     await onOpen();
@@ -85,7 +86,9 @@ class WebSocket extends Transport {
       port = ':${options.port}';
     }
 
-    if (options.timestampRequests) query[options.timestampParam] = Yeast.yeast();
+    if (options.timestampRequests) {
+      query[options.timestampParam] = Yeast.yeast();
+    }
 
     String derivedQuery = ParseQS.encode(query);
     if (derivedQuery.isNotEmpty) {

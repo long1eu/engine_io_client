@@ -11,6 +11,7 @@ import 'dart:typed_data';
 import 'package:cookie_jar/cookie_jar.dart';
 
 part 'crypto.dart';
+
 part 'helpers.dart';
 
 const String _webSocketGUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
@@ -788,7 +789,7 @@ class QwilWebSocket {
     Iterable<String> protocols,
     CompressionOptions compression: CompressionOptions.compressionDefault,
     HttpClient httpClient,
-    PersistCookieJar cookieJar,
+    CookieJar cookieJar,
     OnResponseHeaders onResponseHeaders,
     OnRequestHeaders onRequestHeaders,
   }) async {
@@ -796,6 +797,7 @@ class QwilWebSocket {
         protocols: protocols,
         compression: compression,
         httpClient: httpClient,
+        cookieJar: cookieJar,
         onResponseHeaders: onResponseHeaders,
         onRequestHeaders: onRequestHeaders);
   }
@@ -900,12 +902,13 @@ class _WebSocketImpl extends Stream<dynamic> with _ServiceObject implements WebS
     Iterable<String> protocols,
     CompressionOptions compression: CompressionOptions.compressionDefault,
     HttpClient httpClient,
-    PersistCookieJar cookieJar,
+    CookieJar cookieJar,
     OnResponseHeaders onResponseHeaders,
     OnRequestHeaders onRequestHeaders,
   }) {
     cookieJar ??= PersistCookieJar();
     Uri uri = Uri.parse(url);
+    print(uri);
     if (uri.scheme != 'ws' && uri.scheme != 'wss') {
       throw WebSocketException('Unsupported URL scheme "${uri.scheme}"');
     }
@@ -927,6 +930,7 @@ class _WebSocketImpl extends Stream<dynamic> with _ServiceObject implements WebS
         query: uri.query,
         fragment: uri.fragment);
     httpClient ??= HttpClient();
+
     return httpClient.openUrl('GET', uri).then((HttpClientRequest request) {
       // Setup the initial handshake.
       Map<String, String> headers = <String, String>{

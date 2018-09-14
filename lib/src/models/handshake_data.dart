@@ -12,7 +12,7 @@ class HandshakeData {
   factory HandshakeData.fromJson(Map<String, dynamic> json) {
     return HandshakeData(
       sessionId: json['sid'] as String,
-      upgrades: (json['upgrades'] as List).cast<String>(),
+      upgrades: (json['upgrades'] as List<dynamic>).cast<String>(),
       pingInterval: json['pingInterval'] as int,
       pingTimeout: json['pingTimeout'] as int,
     );

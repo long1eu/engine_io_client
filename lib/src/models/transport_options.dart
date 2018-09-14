@@ -5,6 +5,7 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:engine_io_client/src/engine_io/client/socket.dart';
 import 'package:engine_io_client/src/engine_io/custom/websocket_impl.dart';
 
+// Note to self: When adding new filed make sure to add the to the [_createTransport] method in socket.dart
 class TransportOptions {
   const TransportOptions({
     this.hostname,
@@ -53,6 +54,7 @@ class TransportOptions {
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'cookieJar': cookieJar,
       'hostname': hostname,
       'path': path,
       'timestampParam': timestampParam,
@@ -66,6 +68,11 @@ class TransportOptions {
   }
 
   void updateQuery(String key, String value) => query[key] = value;
+
+  void setQuery(Map<String, String> values) {
+    query.clear();
+    query.addAll(values);
+  }
 
   TransportOptions copyWith({
     String hostname,

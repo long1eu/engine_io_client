@@ -62,7 +62,9 @@ class Socket extends Emitter {
     }
 
     _options = _options.copyWith(
-      query: _options.rawQuery != null ? ParseQS.decode(_options.rawQuery) : <String, String>{},
+      query: _options.rawQuery != null
+          ? ParseQS.decode(_options.rawQuery)
+          : _options.query != null ? _options.query : <String, String>{},
       path: '${_options.path.replaceAll('/\$', '')}/',
       policyPort: _options.policyPort != 0 ? _options.policyPort : 843,
     );
@@ -100,18 +102,19 @@ class Socket extends Emitter {
     final TransportOptions options = _options.transportOptions[name];
 
     final TransportOptions opts = TransportOptions(
-      query: query,
-      socket: this,
       hostname: options != null ? options.hostname : _options.hostname,
-      port: options != null ? options.port : _options.port,
-      secure: options != null ? options.secure : _options.secure,
       path: options != null ? options.path : _options.path,
-      timestampRequests: options != null ? options.timestampRequests : _options?.timestampRequests ?? false,
       timestampParam: options != null ? options.timestampParam : _options.timestampParam,
+      secure: options != null ? options.secure : _options.secure,
+      timestampRequests: options != null ? options.timestampRequests : _options?.timestampRequests ?? false,
+      port: options != null ? options.port : _options.port,
       policyPort: options != null ? options.policyPort : _options.policyPort,
+      query: query,
       onRequestHeaders: options != null ? options.onRequestHeaders : _options.onRequestHeaders,
       onResponseHeaders: options != null ? options.onResponseHeaders : _options.onResponseHeaders,
+      socket: this,
       securityContext: options != null ? options.securityContext : _options.securityContext,
+      cookieJar: options != null ? options.cookieJar : _options.cookieJar,
     );
 
     Transport transport;
