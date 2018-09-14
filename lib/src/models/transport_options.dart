@@ -95,7 +95,7 @@ class TransportOptions {
       onResponseHeaders: onResponseHeaders ?? this.onResponseHeaders,
       socket: socket ?? this.socket,
       securityContext: securityContext ?? this.securityContext,
-      cookieJar: cookieJar,
+      cookieJar: cookieJar ?? this.cookieJar,
     );
   }
 
