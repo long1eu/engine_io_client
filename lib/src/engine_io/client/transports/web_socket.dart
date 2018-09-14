@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io' as io;
 
 import 'package:engine_io_client/src/engine_io/client/engine_io_error.dart';
 import 'package:engine_io_client/src/engine_io/client/transport.dart';
+import 'package:engine_io_client/src/engine_io/custom/websocket_impl.dart';
 import 'package:engine_io_client/src/engine_io/parser/parser.dart';
 import 'package:engine_io_client/src/logger.dart';
 import 'package:engine_io_client/src/models/packet.dart';
@@ -10,7 +12,6 @@ import 'package:engine_io_client/src/models/transport_options.dart';
 import 'package:engine_io_client/src/models/transport_state.dart';
 import 'package:engine_io_client/src/parse_qs/parse_qs.dart';
 import 'package:engine_io_client/src/yeast/yeast.dart';
-import 'package:web_socket_channel/io.dart';
 
 class WebSocket extends Transport {
   static const String NAME = 'websocket';
@@ -18,13 +19,17 @@ class WebSocket extends Transport {
 
   WebSocket(TransportOptions options) : super(options, NAME);
 
-  IOWebSocketChannel socket;
+  io.WebSocket socket;
 
   @override
   Future<void> doOpen() async {
-    final Map<String, String> headers = options.onRequestHeaders?.call(<String, String>{}) ?? <String, String>{};
-    socket = IOWebSocketChannel.connect(uri, headers: headers);
-    socket.stream.listen(onMessage, onError: onSocketError, onDone: onClose);
+    socket = await QwilWebSocket.connect(
+      uri,
+      onRequestHeaders: options.onRequestHeaders,
+      onResponseHeaders: options.onResponseHeaders,
+      httpClient: io.HttpClient(context: options.securityContext)..badCertificateCallback = (_, __, ___) => true,
+    );
+    socket.listen(onMessage, onError: onSocketError, onDone: onClose);
     await onOpen();
   }
 
@@ -52,7 +57,7 @@ class WebSocket extends Transport {
 
       final Object encoded = Parser.encodePacket(packet);
       try {
-        socket.sink.add(encoded);
+        socket.add(encoded);
       } catch (e) {
         log.e('WebSocket closed before we could write.');
       }
@@ -66,7 +71,7 @@ class WebSocket extends Transport {
 
   @override
   Future<void> doClose() async {
-    await socket?.sink?.close(1000, '');
+    await socket?.close(1000, '');
     socket = null;
   }
 

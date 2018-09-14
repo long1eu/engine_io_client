@@ -2,9 +2,7 @@ import 'dart:convert';
 import 'dart:io' show SecurityContext;
 
 import 'package:engine_io_client/src/engine_io/client/socket.dart';
-
-typedef Map<String, String> OnRequestHeaders(Map<String, String> headers);
-typedef void OnResponseHeaders(Map<String, String> headers);
+import 'package:engine_io_client/src/engine_io/custom/websocket_impl.dart';
 
 class TransportOptions {
   const TransportOptions({

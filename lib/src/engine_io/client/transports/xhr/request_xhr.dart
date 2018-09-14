@@ -4,8 +4,8 @@ import 'dart:typed_data';
 
 import 'package:async/async.dart';
 import 'package:engine_io_client/src/emitter/emitter.dart';
+import 'package:engine_io_client/src/engine_io/custom/websocket_impl.dart';
 import 'package:engine_io_client/src/logger.dart';
-import 'package:engine_io_client/src/models/transport_options.dart';
 import 'package:engine_io_client/src/models/xhr_event.dart';
 import 'package:engine_io_client/src/models/xhr_options.dart';
 import 'package:http/http.dart';

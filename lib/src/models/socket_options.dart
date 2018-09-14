@@ -3,6 +3,7 @@ import 'dart:io' show SecurityContext;
 import 'package:engine_io_client/src/engine_io/client/socket.dart';
 import 'package:engine_io_client/src/engine_io/client/transports/polling.dart';
 import 'package:engine_io_client/src/engine_io/client/transports/web_socket.dart';
+import 'package:engine_io_client/src/engine_io/custom/websocket_impl.dart';
 import 'package:engine_io_client/src/models/transport_options.dart';
 
 class SocketOptions extends TransportOptions {

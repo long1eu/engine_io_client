@@ -119,42 +119,36 @@ void main() {
     socket.close();
   });
 
-  /*
-  //This will fail because WebSocket doesn't have a way to retrieve the headers
   test('websocketHandshakeHeaders', () async {
     final List<dynamic> messages = <dynamic>[];
 
-    final SocketOptions opts = SocketOptions((SocketOptionsBuilder b) {
-      b
-        ..port = Connection.PORT
-        ..transports = ListBuilder<String>(<String>[WebSocket.NAME]);
-    });
+    final SocketOptions opts = SocketOptions(
+        port: Connection.PORT,
+        transports: const <String>[WebSocket.NAME],
+        onRequestHeaders: (Map<String, String> headers) {
+          log.e('main: requestHeaders $headers');
+          headers['X-EngineIO'] = 'foo';
+          return headers;
+        },
+        onResponseHeaders: (Map<String, String> headers) {
+          log.e('main: responseHeaders $headers');
+
+          final List<String> values = headers['X-EngineIO'.toLowerCase()].split(',');
+          messages.add(values[0]);
+          messages.add(values[1]);
+        });
 
     final Socket socket = Socket(opts);
-    socket.on(SocketEvent.transport.name, (dynamic args) {
-      final Transport transport = args;
-      transport.on(TransportEvent.requestHeaders.name, (dynamic args) {
-        final Map<String, List<String>> headers = args;
-        headers['X-EngineIO'] = <String>['foo'];
-      }).on(TransportEvent.responseHeaders.name, (dynamic args) {
-        final Map<String, List<String>> headers = args;
-        print(headers);
 
-        final List<String> values = headers['X-EngineIO'.toLowerCase()][0].split(',');
-        messages.add(values[0]);
-        messages.add(values[1]);
-      });
-    });
     socket.open();
 
-    await  Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
+    await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});
 
     expect(messages[0], 'hi');
     expect(messages[1], 'foo');
 
     socket.close();
   });
-  */
 
   test('rememberWebsocket', () async {
     final List<dynamic> values = <dynamic>[];
