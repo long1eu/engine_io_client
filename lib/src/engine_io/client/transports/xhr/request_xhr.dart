@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:async/async.dart';
+import 'package:cookie_jar/cookie_jar.dart';
 import 'package:engine_io_client/src/emitter/emitter.dart';
 import 'package:engine_io_client/src/engine_io/custom/websocket_impl.dart';
 import 'package:engine_io_client/src/logger.dart';
@@ -16,13 +17,14 @@ const String TEXT_CONTENT_TYPE = 'text/plain; charset=UTF-8';
 class RequestXhr extends Emitter {
   static final Log log = Log('EngineIo.RequestXhr');
 
-  RequestXhr(this.options, this.onResponseHeaders, this.onRequestHeaders);
+  RequestXhr(this.options, this.onResponseHeaders, this.onRequestHeaders, this.cookieJar);
 
   StreamedResponse response;
 
   final XhrOptions options;
   final OnRequestHeaders onRequestHeaders;
   final OnResponseHeaders onResponseHeaders;
+  final CookieJar cookieJar;
 
   Future<void> create() async {
     log.d('xhr open ${options.method}: ${options.uri}');
@@ -42,9 +44,11 @@ class RequestXhr extends Emitter {
 
     await Future<void>.delayed(const Duration(milliseconds: 100));
 
-    log.d('sending xhr with url ${options.uri} | data ${options.data}');
+    final Uri url = Uri.parse(options.uri);
 
-    final Request request = Request(options.method, Uri.parse(options.uri));
+    log.d('sending xhr with url $url | data ${options.data}');
+
+    final Request request = Request(options.method, url);
 
     request.headers.addAll(headers);
 
@@ -57,9 +61,10 @@ class RequestXhr extends Emitter {
     try {
       final ByteStream stream = request.finalize();
 
-      final HttpClientRequest httpClientRequest = await options.client.openUrl(options.method, Uri.parse(options.uri));
+      final HttpClientRequest httpClientRequest = await options.client.openUrl(options.method, url);
 
       headers.forEach(httpClientRequest.headers.set);
+      httpClientRequest.cookies.addAll(cookieJar.loadForRequest(url));
 
       httpClientRequest
         ..followRedirects = true
@@ -71,6 +76,7 @@ class RequestXhr extends Emitter {
 
       final Map<String, String> h = <String, String>{};
       rawResponse.headers.forEach((String key, List<String> values) => h[key] = values.join(','));
+      cookieJar.saveFromResponse(url, rawResponse.cookies);
 
       response = StreamedResponse(
         DelegatingStream.typed<List<int>>(rawResponse),

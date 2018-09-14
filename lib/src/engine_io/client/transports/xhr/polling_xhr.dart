@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cookie_jar/cookie_jar.dart';
 import 'package:engine_io_client/src/engine_io/client/transports/polling.dart';
 import 'package:engine_io_client/src/engine_io/client/transports/xhr/request_xhr.dart';
 import 'package:engine_io_client/src/logger.dart';
@@ -15,7 +16,12 @@ class PollingXhr extends Polling {
 
   RequestXhr request([XhrOptions options]) {
     options = options ?? XhrOptions.get(uri, null, HttpClient(context: this.options.securityContext));
-    return RequestXhr(options, this.options.onResponseHeaders, this.options.onRequestHeaders);
+    return RequestXhr(
+      options,
+      this.options.onResponseHeaders,
+      this.options.onRequestHeaders,
+      this.options.cookieJar ?? PersistCookieJar(),
+    );
   }
 
   @override

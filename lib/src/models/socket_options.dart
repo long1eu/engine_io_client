@@ -1,5 +1,6 @@
 import 'dart:io' show SecurityContext;
 
+import 'package:cookie_jar/cookie_jar.dart';
 import 'package:engine_io_client/src/engine_io/client/socket.dart';
 import 'package:engine_io_client/src/engine_io/client/transports/polling.dart';
 import 'package:engine_io_client/src/engine_io/client/transports/web_socket.dart';
@@ -26,6 +27,7 @@ class SocketOptions extends TransportOptions {
     OnResponseHeaders onResponseHeaders,
     Socket socket,
     SecurityContext securityContext,
+    CookieJar cookieJar,
   })  : upgrade = upgrade ?? true,
         rememberUpgrade = rememberUpgrade ?? false,
         transportOptions = transportOptions ?? const <String, TransportOptions>{},
@@ -43,6 +45,7 @@ class SocketOptions extends TransportOptions {
           onResponseHeaders: onResponseHeaders,
           socket: socket,
           securityContext: securityContext,
+          cookieJar: cookieJar,
         );
 
   factory SocketOptions.fromUri(Uri uri, [SocketOptions options]) {
@@ -86,6 +89,7 @@ class SocketOptions extends TransportOptions {
     OnResponseHeaders onResponseHeaders,
     Socket socket,
     SecurityContext securityContext,
+    CookieJar cookieJar,
   }) {
     return SocketOptions(
       host: host ?? this.host,
@@ -106,6 +110,7 @@ class SocketOptions extends TransportOptions {
       onResponseHeaders: onResponseHeaders ?? this.onResponseHeaders,
       socket: socket ?? this.socket,
       securityContext: securityContext ?? this.securityContext,
+      cookieJar: cookieJar,
     );
   }
 

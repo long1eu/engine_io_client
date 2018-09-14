@@ -26,10 +26,8 @@ abstract class _ServiceObject {
   }
 }
 
-/**
- * The [CompressionOptions] class allows you to control
- * the options of WebSocket compression.
- */
+/// The [CompressionOptions] class allows you to control
+/// the options of WebSocket compression.
 class CompressionOptions {
   /// Default WebSocket Compression options.
   ///
@@ -40,12 +38,12 @@ class CompressionOptions {
   /// * `clientMaxWindowBits`: 15
   /// * `serverMaxWindowBits`: 15
   static const CompressionOptions compressionDefault = const CompressionOptions();
-  @Deprecated("Use compressionDefault instead")
+  @Deprecated('Use compressionDefault instead')
   static const CompressionOptions DEFAULT = compressionDefault;
 
   /// Disables WebSocket Compression.
   static const CompressionOptions compressionOff = const CompressionOptions(enabled: false);
-  @Deprecated("Use compressionOff instead")
+  @Deprecated('Use compressionOff instead')
   static const CompressionOptions OFF = compressionOff;
 
   /// Controls whether the client will reuse its compression instances.

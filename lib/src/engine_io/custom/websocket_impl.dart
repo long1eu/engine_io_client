@@ -110,8 +110,9 @@ class _WebSocketProtocolTransformer extends StreamTransformerBase<List<int>, dyn
 
   _WebSocketProtocolTransformer([this._serverSide = false, this._deflate]);
 
+  @override
   Stream<dynamic /*List<int>|_WebSocketPing|_WebSocketPong*/ > bind(Stream<List<int>> stream) {
-    return Stream.eventTransformed(stream, (EventSink eventSink) {
+    return Stream<dynamic>.eventTransformed(stream, (EventSink<dynamic> eventSink) {
       if (_eventSink != null) {
         throw StateError('WebSocket transformer already used.');
       }
@@ -491,7 +492,7 @@ class _WebSocketPerMessageDeflate {
 }
 
 // TODO(ajohnsen): Make this transformer reusable.
-class _WebSocketOutgoingTransformer extends StreamTransformerBase<dynamic, List<int>> implements EventSink {
+class _WebSocketOutgoingTransformer extends StreamTransformerBase<dynamic, List<int>> implements EventSink<dynamic> {
   final _WebSocketImpl webSocket;
   EventSink<List<int>> _eventSink;
 
@@ -502,7 +503,7 @@ class _WebSocketOutgoingTransformer extends StreamTransformerBase<dynamic, List<
   }
 
   @override
-  Stream<List<int>> bind(Stream stream) {
+  Stream<List<int>> bind(Stream<dynamic> stream) {
     return Stream<List<int>>.eventTransformed(stream, (EventSink<List<int>> eventSink) {
       if (_eventSink != null) {
         throw StateError('WebSocket transformer already used');
@@ -572,9 +573,7 @@ class _WebSocketOutgoingTransformer extends StreamTransformerBase<dynamic, List<
   void addFrame(int opcode, List<int> data) {
     createFrame(opcode, data, webSocket._serverSide,
             _deflateHelper != null && (opcode == _WebSocketOpcode.TEXT || opcode == _WebSocketOpcode.BINARY))
-        .forEach((List<int> e) {
-      _eventSink.add(e);
-    });
+        .forEach(_eventSink.add);
   }
 
   static Iterable<List<int>> createFrame(int opcode, List<int> data, bool serverSide, bool compressed) {
@@ -659,20 +658,20 @@ class _WebSocketOutgoingTransformer extends StreamTransformerBase<dynamic, List<
     if (data == null) {
       return <Uint8List>[header];
     } else {
-      return [header, data];
+      return <List<int>>[header, data];
     }
   }
 }
 
-class _WebSocketConsumer implements StreamConsumer {
+class _WebSocketConsumer implements StreamConsumer<dynamic> {
   final _WebSocketImpl webSocket;
   final Socket socket;
-  StreamController _controller;
-  StreamSubscription _subscription;
+  StreamController<dynamic> _controller;
+  StreamSubscription<dynamic> _subscription;
   bool _issuedPause = false;
   bool _closed = false;
   final Completer<WebSocket> _closeCompleter = Completer<WebSocket>();
-  Completer _completer;
+  Completer<WebSocket> _completer;
 
   _WebSocketConsumer(this.webSocket, this.socket);
 
@@ -700,7 +699,7 @@ class _WebSocketConsumer implements StreamConsumer {
 
   void _cancel() {
     if (_subscription != null) {
-      final StreamSubscription subscription = _subscription;
+      final StreamSubscription<dynamic> subscription = _subscription;
       _subscription = null;
       subscription.cancel();
     }
@@ -708,12 +707,12 @@ class _WebSocketConsumer implements StreamConsumer {
 
   void _ensureController() {
     if (_controller != null) return;
-    _controller = StreamController(sync: true, onPause: _onPause, onResume: _onResume, onCancel: _onListen);
+    _controller = StreamController<dynamic>(sync: true, onPause: _onPause, onResume: _onResume, onCancel: _onListen);
     final Stream<List<int>> stream = _controller.stream.transform(_WebSocketOutgoingTransformer(webSocket));
     socket.addStream(stream).then((_) {
       _done();
       _closeCompleter.complete(webSocket);
-    }, onError: (error, StackTrace stackTrace) {
+    }, onError: (dynamic error, StackTrace stackTrace) {
       _closed = true;
       _cancel();
       if (error is ArgumentError) {
@@ -727,7 +726,7 @@ class _WebSocketConsumer implements StreamConsumer {
     });
   }
 
-  bool _done([error, StackTrace stackTrace]) {
+  bool _done([dynamic error, StackTrace stackTrace]) {
     if (_completer == null) return false;
     if (error != null) {
       _completer.completeError(error, stackTrace);
@@ -738,14 +737,15 @@ class _WebSocketConsumer implements StreamConsumer {
     return true;
   }
 
-  Future addStream(var stream) {
+  @override
+  Future<WebSocket> addStream(Stream<dynamic> stream) {
     if (_closed) {
       stream.listen(null).cancel();
-      return Future.value(webSocket);
+      return Future<WebSocket>.value(webSocket);
     }
     _ensureController();
-    _completer = Completer();
-    _subscription = stream.listen((data) {
+    _completer = Completer<WebSocket>();
+    _subscription = stream.listen((dynamic data) {
       _controller.add(data);
     }, onDone: _done, onError: _done, cancelOnError: true);
     if (_issuedPause) {
@@ -755,9 +755,10 @@ class _WebSocketConsumer implements StreamConsumer {
     return _completer.future;
   }
 
-  Future close() {
+  @override
+  Future<WebSocket> close() {
     _ensureController();
-    Future closeSocket() {
+    Future<WebSocket> closeSocket() {
       return socket.close().catchError((_) {}).then((_) => webSocket);
     }
 
@@ -765,7 +766,7 @@ class _WebSocketConsumer implements StreamConsumer {
     return _closeCompleter.future.then((_) => closeSocket());
   }
 
-  void add(data) {
+  void add(dynamic data) {
     if (_closed) return;
     _ensureController();
     _controller.add(data);
@@ -829,6 +830,70 @@ class _WebSocketImpl extends Stream<dynamic> with _ServiceObject implements WebS
   String _outCloseReason;
   Timer _closeTimer;
   _WebSocketPerMessageDeflate _deflate;
+
+  _WebSocketImpl._fromSocket(
+    this._socket,
+    this.protocol,
+    CompressionOptions compression, [
+    this._serverSide = false,
+    _WebSocketPerMessageDeflate deflate,
+  ]) {
+    _consumer = _WebSocketConsumer(this, _socket);
+    _sink = _StreamSinkImpl<dynamic>(_consumer);
+    _readyState = WebSocket.open;
+    _deflate = deflate;
+
+    final _WebSocketProtocolTransformer transformer = _WebSocketProtocolTransformer(_serverSide, _deflate);
+    _subscription = _socket.transform(transformer).listen((dynamic data) {
+      if (data is _WebSocketPing) {
+        if (!_writeClosed) _consumer.add(_WebSocketPong(data.payload));
+      } else if (data is _WebSocketPong) {
+        // Simply set pingInterval, as it'll cancel any timers.
+        pingInterval = _pingInterval;
+      } else {
+        _controller.add(data);
+      }
+    }, onError: (dynamic error, StackTrace stackTrace) {
+      if (_closeTimer != null) _closeTimer.cancel();
+      if (error is FormatException) {
+        _close(WebSocketStatus.invalidFramePayloadData);
+      } else {
+        _close(WebSocketStatus.protocolError);
+      }
+      // An error happened, set the close code set above.
+      _closeCode = _outCloseCode;
+      _closeReason = _outCloseReason;
+      _controller.close();
+    }, onDone: () {
+      if (_closeTimer != null) _closeTimer.cancel();
+      if (_readyState == WebSocket.open) {
+        _readyState = WebSocket.closing;
+        if (!_isReservedStatusCode(transformer.closeCode)) {
+          _close(transformer.closeCode, transformer.closeReason);
+        } else {
+          _close();
+        }
+        _readyState = WebSocket.closed;
+      }
+      // Protocol close, use close code from transformer.
+      _closeCode = transformer.closeCode;
+      _closeReason = transformer.closeReason;
+      _controller.close();
+    }, cancelOnError: true);
+    _subscription.pause();
+    _controller = StreamController<dynamic>(
+      sync: true,
+      onListen: _subscription.resume,
+      onCancel: () {
+        _subscription.cancel();
+        _subscription = null;
+      },
+      onPause: _subscription.pause,
+      onResume: _subscription.resume,
+    );
+
+    _webSockets[_serviceId] = this;
+  }
 
   static Future<WebSocket> connect(
     String url, {
@@ -909,7 +974,7 @@ class _WebSocketImpl extends Stream<dynamic> with _ServiceObject implements WebS
 
       if (response.statusCode != HttpStatus.switchingProtocols ||
           response.headers[HttpHeaders.connectionHeader] == null ||
-          !response.headers[HttpHeaders.connectionHeader].any((value) => value.toLowerCase() == 'upgrade') ||
+          !response.headers[HttpHeaders.connectionHeader].any((String value) => value.toLowerCase() == 'upgrade') ||
           response.headers.value(HttpHeaders.upgradeHeader).toLowerCase() != 'websocket') {
         error('Connection to "$uri" was not upgraded to websocket');
       }
@@ -958,7 +1023,7 @@ class _WebSocketImpl extends Stream<dynamic> with _ServiceObject implements WebS
           return DEFAULT_WINDOW_BITS;
         }
 
-        return int.parse(o, onError: (s) => DEFAULT_WINDOW_BITS);
+        return int.tryParse(o) ?? DEFAULT_WINDOW_BITS;
       }
 
       return _WebSocketPerMessageDeflate(
@@ -971,71 +1036,16 @@ class _WebSocketImpl extends Stream<dynamic> with _ServiceObject implements WebS
     return null;
   }
 
-  _WebSocketImpl._fromSocket(this._socket, this.protocol, CompressionOptions compression,
-      [this._serverSide = false, _WebSocketPerMessageDeflate deflate]) {
-    _consumer = _WebSocketConsumer(this, _socket);
-    _sink = _StreamSinkImpl(_consumer);
-    _readyState = WebSocket.open;
-    _deflate = deflate;
-
-    var transformer = _WebSocketProtocolTransformer(_serverSide, _deflate);
-    _subscription = _socket.transform(transformer).listen((data) {
-      if (data is _WebSocketPing) {
-        if (!_writeClosed) _consumer.add(_WebSocketPong(data.payload));
-      } else if (data is _WebSocketPong) {
-        // Simply set pingInterval, as it'll cancel any timers.
-        pingInterval = _pingInterval;
-      } else {
-        _controller.add(data);
-      }
-    }, onError: (dynamic error, StackTrace stackTrace) {
-      if (_closeTimer != null) _closeTimer.cancel();
-      if (error is FormatException) {
-        _close(WebSocketStatus.INVALID_FRAME_PAYLOAD_DATA);
-      } else {
-        _close(WebSocketStatus.PROTOCOL_ERROR);
-      }
-      // An error happened, set the close code set above.
-      _closeCode = _outCloseCode;
-      _closeReason = _outCloseReason;
-      _controller.close();
-    }, onDone: () {
-      if (_closeTimer != null) _closeTimer.cancel();
-      if (_readyState == WebSocket.open) {
-        _readyState = WebSocket.closing;
-        if (!_isReservedStatusCode(transformer.closeCode)) {
-          _close(transformer.closeCode, transformer.closeReason);
-        } else {
-          _close();
-        }
-        _readyState = WebSocket.closed;
-      }
-      // Protocol close, use close code from transformer.
-      _closeCode = transformer.closeCode;
-      _closeReason = transformer.closeReason;
-      _controller.close();
-    }, cancelOnError: true);
-    _subscription.pause();
-    _controller = StreamController(
-        sync: true,
-        onListen: _subscription.resume,
-        onCancel: () {
-          _subscription.cancel();
-          _subscription = null;
-        },
-        onPause: _subscription.pause,
-        onResume: _subscription.resume);
-
-    _webSockets[_serviceId] = this;
-  }
-
-  StreamSubscription listen(void onData(message), {Function onError, void onDone(), bool cancelOnError}) {
+  @override
+  StreamSubscription<dynamic> listen(void onData(dynamic message), {Function onError, void onDone(), bool cancelOnError}) {
     return _controller.stream.listen(onData, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
 
+  @override
   Duration get pingInterval => _pingInterval;
 
-  void set pingInterval(Duration interval) {
+  @override
+  set pingInterval(Duration interval) {
     if (_writeClosed) return;
     if (_pingTimer != null) _pingTimer.cancel();
     _pingInterval = interval;
@@ -1047,23 +1057,29 @@ class _WebSocketImpl extends Stream<dynamic> with _ServiceObject implements WebS
       _consumer.add(_WebSocketPing());
       _pingTimer = Timer(_pingInterval, () {
         // No pong received.
-        _close(WebSocketStatus.GOING_AWAY);
+        _close(WebSocketStatus.goingAway);
       });
     });
   }
 
+  @override
   int get readyState => _readyState;
 
+  @override
   String get extensions => null;
 
+  @override
   int get closeCode => _closeCode;
 
+  @override
   String get closeReason => _closeReason;
 
-  void add(data) {
+  @override
+  void add(dynamic data) {
     _sink.add(data);
   }
 
+  @override
   void addUtf8Text(List<int> bytes) {
     if (bytes is! List<int>) {
       throw ArgumentError.value(bytes, 'bytes', 'Is not a list of bytes');
@@ -1071,15 +1087,19 @@ class _WebSocketImpl extends Stream<dynamic> with _ServiceObject implements WebS
     _sink.add(_EncodedString(bytes));
   }
 
-  void addError(error, [StackTrace stackTrace]) {
+  @override
+  void addError(dynamic error, [StackTrace stackTrace]) {
     _sink.addError(error, stackTrace);
   }
 
-  Future addStream(Stream stream) => _sink.addStream(stream);
+  @override
+  Future<dynamic> addStream(Stream<dynamic> stream) => _sink.addStream(stream);
 
-  Future get done => _sink.done;
+  @override
+  Future<dynamic> get done => _sink.done;
 
-  Future close([int code, String reason]) {
+  @override
+  Future<dynamic> close([int code, String reason]) {
     if (_isReservedStatusCode(code)) {
       throw WebSocketException('Reserved status code $code');
     }
@@ -1094,7 +1114,7 @@ class _WebSocketImpl extends Stream<dynamic> with _ServiceObject implements WebS
       //   2) set a timer terminate the connection if a close frame is
       //      not received.
       if (!_controller.hasListener && _subscription != null) {
-        _controller.stream.drain().catchError((_) => {});
+        _controller.stream.drain().catchError((dynamic _) {});
       }
       _closeTimer ??= Timer(const Duration(seconds: 5), () {
         // Reuse code and reason from the local close.
@@ -1132,6 +1152,7 @@ class _WebSocketImpl extends Stream<dynamic> with _ServiceObject implements WebS
   @override
   String get _serviceTypeName => 'WebSocket';
 
+  @override
   Map<String, dynamic> _toJSON(bool ref) {
     final String name = '${_socket.address.host}:${_socket.port}';
     final Map<String, dynamic> r = <String, dynamic>{

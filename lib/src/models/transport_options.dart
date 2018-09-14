@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io' show SecurityContext;
 
+import 'package:cookie_jar/cookie_jar.dart';
 import 'package:engine_io_client/src/engine_io/client/socket.dart';
 import 'package:engine_io_client/src/engine_io/custom/websocket_impl.dart';
 
@@ -18,6 +19,7 @@ class TransportOptions {
     this.onResponseHeaders,
     this.socket,
     this.securityContext,
+    this.cookieJar,
   })  : secure = secure ?? false,
         timestampRequests = timestampRequests ?? false,
         port = port ?? -1,
@@ -46,6 +48,8 @@ class TransportOptions {
   final Socket socket;
 
   final SecurityContext securityContext;
+
+  final CookieJar cookieJar;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -76,6 +80,7 @@ class TransportOptions {
     OnResponseHeaders onResponseHeaders,
     Socket socket,
     SecurityContext securityContext,
+    CookieJar cookieJar,
   }) {
     return TransportOptions(
       hostname: hostname ?? this.hostname,
@@ -90,9 +95,10 @@ class TransportOptions {
       onResponseHeaders: onResponseHeaders ?? this.onResponseHeaders,
       socket: socket ?? this.socket,
       securityContext: securityContext ?? this.securityContext,
+      cookieJar: cookieJar,
     );
   }
 
   @override
-  String toString() => jsonEncode(toJson(), toEncodable: (it) => it.toString());
+  String toString() => jsonEncode(toJson(), toEncodable: (Object it) => it.toString());
 }
