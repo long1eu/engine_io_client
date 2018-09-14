@@ -3,6 +3,9 @@ import 'dart:io' show SecurityContext;
 
 import 'package:engine_io_client/src/engine_io/client/socket.dart';
 
+typedef Map<String, String> OnRequestHeaders(Map<String, String> headers);
+typedef void OnResponseHeaders(Map<String, String> headers);
+
 class TransportOptions {
   const TransportOptions({
     this.hostname,
@@ -13,6 +16,8 @@ class TransportOptions {
     int port,
     int policyPort,
     this.query,
+    this.onRequestHeaders,
+    this.onResponseHeaders,
     this.socket,
     this.securityContext,
   })  : secure = secure ?? false,
@@ -35,6 +40,10 @@ class TransportOptions {
   final int policyPort;
 
   final Map<String, String> query;
+
+  final OnRequestHeaders onRequestHeaders;
+
+  final OnResponseHeaders onResponseHeaders;
 
   final Socket socket;
 
@@ -65,6 +74,8 @@ class TransportOptions {
     int port,
     int policyPort,
     Map<String, String> query,
+    OnRequestHeaders onRequestHeaders,
+    OnResponseHeaders onResponseHeaders,
     Socket socket,
     SecurityContext securityContext,
   }) {
@@ -77,6 +88,8 @@ class TransportOptions {
       port: port ?? this.port,
       policyPort: policyPort ?? this.policyPort,
       query: query ?? this.query,
+      onRequestHeaders: onRequestHeaders ?? this.onRequestHeaders,
+      onResponseHeaders: onResponseHeaders ?? this.onResponseHeaders,
       socket: socket ?? this.socket,
       securityContext: securityContext ?? this.securityContext,
     );

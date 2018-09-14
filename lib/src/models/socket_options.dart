@@ -22,6 +22,8 @@ class SocketOptions extends TransportOptions {
     int port,
     int policyPort,
     Map<String, String> query,
+    OnRequestHeaders onRequestHeaders,
+    OnResponseHeaders onResponseHeaders,
     Socket socket,
     SecurityContext securityContext,
   })  : upgrade = upgrade ?? true,
@@ -37,6 +39,8 @@ class SocketOptions extends TransportOptions {
           port: port ?? -1,
           policyPort: policyPort ?? -1,
           query: query,
+          onRequestHeaders: onRequestHeaders,
+          onResponseHeaders: onResponseHeaders,
           socket: socket,
           securityContext: securityContext,
         );
@@ -78,6 +82,8 @@ class SocketOptions extends TransportOptions {
     int port,
     int policyPort,
     Map<String, String> query,
+    OnRequestHeaders onRequestHeaders,
+    OnResponseHeaders onResponseHeaders,
     Socket socket,
     SecurityContext securityContext,
   }) {
@@ -96,6 +102,8 @@ class SocketOptions extends TransportOptions {
       port: port ?? this.port,
       policyPort: policyPort ?? this.policyPort,
       query: query ?? this.query,
+      onRequestHeaders: onRequestHeaders ?? this.onRequestHeaders,
+      onResponseHeaders: onResponseHeaders ?? this.onResponseHeaders,
       socket: socket ?? this.socket,
       securityContext: securityContext ?? this.securityContext,
     );

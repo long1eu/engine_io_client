@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:engine_io_client/src/engine_io/client/transports/polling.dart';
 import 'package:engine_io_client/src/engine_io/client/transports/xhr/request_xhr.dart';
 import 'package:engine_io_client/src/logger.dart';
-import 'package:engine_io_client/src/models/transport_event.dart';
 import 'package:engine_io_client/src/models/transport_options.dart';
 import 'package:engine_io_client/src/models/xhr_event.dart';
 import 'package:engine_io_client/src/models/xhr_options.dart';
@@ -16,13 +15,7 @@ class PollingXhr extends Polling {
 
   RequestXhr request([XhrOptions options]) {
     options = options ?? XhrOptions.get(uri, null, HttpClient(context: this.options.securityContext));
-
-    final RequestXhr request = RequestXhr(options);
-    request
-      ..on(XhrEvent.requestHeaders, (List<dynamic> args) async => await emit(TransportEvent.requestHeaders, args))
-      ..on(XhrEvent.responseHeaders, (List<dynamic> args) async => await emit(TransportEvent.responseHeaders, args));
-
-    return request;
+    return RequestXhr(options, this.options.onResponseHeaders, this.options.onRequestHeaders);
   }
 
   @override

@@ -109,6 +109,8 @@ class Socket extends Emitter {
       timestampRequests: options != null ? options.timestampRequests : _options?.timestampRequests ?? false,
       timestampParam: options != null ? options.timestampParam : _options.timestampParam,
       policyPort: options != null ? options.policyPort : _options.policyPort,
+      onRequestHeaders: options != null ? options.onRequestHeaders : _options.onRequestHeaders,
+      onResponseHeaders: options != null ? options.onResponseHeaders : _options.onResponseHeaders,
       securityContext: options != null ? options.securityContext : _options.securityContext,
     );
 

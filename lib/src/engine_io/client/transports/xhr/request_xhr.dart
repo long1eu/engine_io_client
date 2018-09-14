@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:async/async.dart';
 import 'package:engine_io_client/src/emitter/emitter.dart';
 import 'package:engine_io_client/src/logger.dart';
+import 'package:engine_io_client/src/models/transport_options.dart';
 import 'package:engine_io_client/src/models/xhr_event.dart';
 import 'package:engine_io_client/src/models/xhr_options.dart';
 import 'package:http/http.dart';
@@ -15,34 +16,37 @@ const String TEXT_CONTENT_TYPE = 'text/plain; charset=UTF-8';
 class RequestXhr extends Emitter {
   static final Log log = Log('EngineIo.RequestXhr');
 
-  RequestXhr(this.options);
+  RequestXhr(this.options, this.onResponseHeaders, this.onRequestHeaders);
 
   StreamedResponse response;
 
   final XhrOptions options;
+  final OnRequestHeaders onRequestHeaders;
+  final OnResponseHeaders onResponseHeaders;
 
   Future<void> create() async {
     log.d('xhr open ${options.method}: ${options.uri}');
-    final Map<String, List<String>> headers = <String, List<String>>{};
+    Map<String, String> headers = <String, String>{};
 
     if (options.method == 'POST') {
       if (options.data is List<int>) {
-        headers['content-type'] = <String>[BINARY_CONTENT_TYPE];
+        headers['content-type'] = BINARY_CONTENT_TYPE;
       } else {
-        headers['content-type'] = <String>[TEXT_CONTENT_TYPE];
+        headers['content-type'] = TEXT_CONTENT_TYPE;
       }
     }
 
-    headers['Accept'] = <String>['*/*'];
+    headers['Accept'] = '*/*';
+    log.d('onRequestHeaders: $onRequestHeaders');
+    headers = onRequestHeaders?.call(headers) ?? headers;
 
-    onRequestHeaders(headers);
     await Future<void>.delayed(const Duration(milliseconds: 100));
 
     log.d('sending xhr with url ${options.uri} | data ${options.data}');
 
     final Request request = Request(options.method, Uri.parse(options.uri));
 
-    request.headers.addAll(headers.map((String key, List<String> value) => MapEntry<String, String>(key, value.first)));
+    request.headers.addAll(headers);
 
     if (options.data is String) {
       request.body = options.data as String;
@@ -79,10 +83,7 @@ class RequestXhr extends Emitter {
         reasonPhrase: rawResponse.reasonPhrase,
       );
 
-      await onResponseHeaders(response.headers.map((String key, String value) {
-        return MapEntry<String, List<String>>(key, <String>[value]);
-      }));
-
+      onResponseHeaders?.call(response.headers);
       print(response.statusCode);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -109,14 +110,6 @@ class RequestXhr extends Emitter {
   Future<void> onError(List<dynamic> error) async {
     log.e((error.first as Error).stackTrace);
     await emit(XhrEvent.error, error);
-  }
-
-  Future<void> onRequestHeaders(Map<String, List<String>> headers) async {
-    return await emit(XhrEvent.requestHeaders, <Map<String, List<String>>>[headers]);
-  }
-
-  Future<void> onResponseHeaders(Map<String, List<String>> headers) async {
-    await emit(XhrEvent.responseHeaders, <Map<String, List<String>>>[headers]);
   }
 
   Future<void> onLoad() async {

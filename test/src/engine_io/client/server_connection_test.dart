@@ -8,7 +8,6 @@ import 'package:engine_io_client/src/engine_io/client/transports/web_socket.dart
 import 'package:engine_io_client/src/models/handshake_data.dart';
 import 'package:engine_io_client/src/models/socket_event.dart';
 import 'package:engine_io_client/src/models/socket_options.dart';
-import 'package:engine_io_client/src/models/transport_event.dart';
 import 'package:test/test.dart';
 
 import 'connection.dart';
@@ -92,27 +91,24 @@ void main() {
   test('pollingHeaders', () async {
     final List<dynamic> messages = <dynamic>[];
 
-    const SocketOptions opts = const SocketOptions(port: Connection.PORT, transports: const <String>[Polling.NAME]);
-
-    final Socket socket = Socket(opts);
-    socket.on(SocketEvent.transport, (List<dynamic> args) async {
-      final Transport transport = args[0];
-      transport
-        ..on(TransportEvent.requestHeaders, (List<dynamic> args) {
+    final SocketOptions opts = SocketOptions(
+        port: Connection.PORT,
+        transports: const <String>[Polling.NAME],
+        onRequestHeaders: (Map<String, String> headers) {
           log.e('main: requestHeaders');
-          final Map<String, List<String>> headers = args[0];
-          headers['X-EngineIO'] = <String>['foo'];
-        })
-        ..on(TransportEvent.responseHeaders, (List<dynamic> args) {
+          headers['X-EngineIO'] = 'foo';
+          return headers;
+        },
+        onResponseHeaders: (Map<String, String> headers) {
           log.e('main: responseHeaders');
-          final Map<String, List<String>> headers = args[0];
           print(headers);
 
-          final List<String> values = headers['X-EngineIO'.toLowerCase()][0].split(',');
+          final List<String> values = headers['X-EngineIO'.toLowerCase()].split(',');
           messages.add(values[0]);
           messages.add(values[1]);
         });
-    });
+
+    final Socket socket = Socket(opts);
     socket.open();
 
     await Future<void>.delayed(const Duration(milliseconds: Connection.TIMEOUT), () {});

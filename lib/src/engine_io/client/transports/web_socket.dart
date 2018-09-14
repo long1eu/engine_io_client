@@ -22,9 +22,7 @@ class WebSocket extends Transport {
 
   @override
   Future<void> doOpen() async {
-    final Map<String, List<String>> headers = <String, List<String>>{};
-    await emit(TransportEvent.requestHeaders, <Map<String, List<String>>>[headers]);
-
+    final Map<String, String> headers = options.onRequestHeaders?.call(<String, String>{}) ?? <String, String>{};
     socket = IOWebSocketChannel.connect(uri, headers: headers);
     socket.stream.listen(onMessage, onError: onSocketError, onDone: onClose);
     await onOpen();
