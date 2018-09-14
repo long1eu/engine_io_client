@@ -1,5 +1,5 @@
 class Packet<T> {
-  final String type;
+  final PacketType type;
   final T data;
 
   Packet(this.type, [this.data]);
@@ -13,18 +13,25 @@ class Packet<T> {
 }
 
 class PacketType {
-  const PacketType._();
+  final int i;
 
-  static const String open = 'open';
-  static const String close = 'close';
-  static const String ping = 'ping';
-  static const String pong = 'pong';
-  static const String message = 'message';
-  static const String upgrade = 'upgrade';
-  static const String noop = 'noop';
-  static const String error = 'error';
+  const PacketType._(this.i);
 
-  static const List<String> values = const <String>[open, close, ping, pong, message, upgrade, noop, error];
+  static const PacketType open = const PacketType._(0);
+  static const PacketType close = const PacketType._(1);
+  static const PacketType ping = const PacketType._(2);
+  static const PacketType pong = const PacketType._(3);
+  static const PacketType message = const PacketType._(4);
+  static const PacketType upgrade = const PacketType._(5);
+  static const PacketType noop = const PacketType._(6);
+  static const PacketType error = const PacketType._(7);
 
-  static int index(String value) => values.indexOf(value);
+  static const List<String> _strings = const <String>['open', 'close', 'ping', 'pong', 'message', 'upgrade', 'noop', 'error'];
+
+  static const List<PacketType> values = const <PacketType>[open, close, ping, pong, message, upgrade, noop, error];
+
+  static int index(String value) => _strings.indexOf(value);
+
+  @override
+  String toString() => _strings[i];
 }

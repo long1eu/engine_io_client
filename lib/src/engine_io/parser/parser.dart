@@ -19,13 +19,13 @@ class Parser {
     if (data is List<int>) {
       final int length = data.length + 1;
       final Int8List list = Int8List(1 + data.length);
-      list[0] = PacketType.index(packet.type);
+      list[0] = packet.type.i;
       for (int i = 1; i < length; i++) list[i] = data[i - 1] ?? 0;
 
       return list as T;
     }
 
-    String encoded = PacketType.index(packet.type).toString();
+    String encoded = packet.type.i.toString();
     if (data != null) {
       encoded += utf8encode ? String.fromCharCodes(encodeUtf8(data as String)) : data.toString();
     }
