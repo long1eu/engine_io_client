@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Packet<T> {
   final PacketType type;
   final T data;
@@ -8,8 +10,15 @@ class Packet<T> {
 
   static Packet<List<int>> binaryError = Packet<List<int>>(PacketType.error, <int>[]);
 
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'type': type,
+      'data': data,
+    };
+  }
+
   @override
-  String toString() => 'Packet{type: $type, data: $data}';
+  String toString() => jsonEncode(toJson(), toEncodable: (Object it) => it.toString());
 }
 
 class PacketType {

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 class XhrOptions {
@@ -14,4 +15,15 @@ class XhrOptions {
   final HttpClient client;
 
   final Object data;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'uri': uri,
+      'method': method,
+      'data': data,
+    };
+  }
+
+  @override
+  String toString() => jsonEncode(toJson(), toEncodable: (Object it) => it.toString());
 }
