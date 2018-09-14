@@ -73,7 +73,7 @@ abstract class Polling extends Transport {
     for (Packet packet in packets) {
       if (readyState == TransportState.opening) await onOpen();
       if (packet.type == PacketType.close) await onClose();
-      await onPacket<dynamic>(packet);
+      await onPacket(packet);
     }
 
     if (readyState != TransportState.closed) {
@@ -93,7 +93,7 @@ abstract class Polling extends Transport {
     Future<void> close() async {
       log.d('writing close packet');
       try {
-        await write(<Packet<String>>[Packet<String>(PacketType.close)]);
+        await write(<Packet>[Packet(PacketType.close)]);
       } catch (err) {
         throw Exception(err);
       }
@@ -111,7 +111,7 @@ abstract class Polling extends Transport {
   }
 
   @override
-  Future<void> write<T>(List<Packet<T>> packets) async {
+  Future<void> write(List<Packet> packets) async {
     writable = false;
     Future<void> callback() async {
       writable = true;

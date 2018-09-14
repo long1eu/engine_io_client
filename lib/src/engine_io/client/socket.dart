@@ -181,8 +181,8 @@ class Socket extends Emitter {
               cleanup();
 
               _setTransport(transport);
-              final Packet<String> packet = Packet<String>(PacketType.upgrade);
-              await transport.send(<Packet<String>>[packet]);
+              final Packet packet = Packet(PacketType.upgrade);
+              await transport.send(<Packet>[packet]);
               await emit(SocketEvent.upgrade, <Transport>[transport]);
               //transport = null;
               upgrading = false;
@@ -195,7 +195,7 @@ class Socket extends Emitter {
           await emit(SocketEvent.upgradeError, <Error>[EngineIOError(transport.name, PROBE_ERROR)]);
         }
       });
-      await transport.send(<Packet<String>>[Packet<String>(PacketType.ping, 'probe')]);
+      await transport.send(<Packet>[Packet(PacketType.ping, 'probe')]);
     }
 
     Future<void> freezeTransport() async {
@@ -332,7 +332,7 @@ class Socket extends Emitter {
   }
 
   Future<void> _ping() async {
-    return await _sendPacket(Packet<String>(PacketType.ping), () async => await emit(SocketEvent.ping));
+    return await _sendPacket(Packet(PacketType.ping), () async => await emit(SocketEvent.ping));
   }
 
   Future<void> _onDrain() async {
@@ -352,15 +352,15 @@ class Socket extends Emitter {
       log.d('flushing ${writeBuffer.length} packets in socket');
 
       _prevBufferLen = writeBuffer.length;
-      await transport.send<dynamic>(writeBuffer.toList());
+      await transport.send(writeBuffer.toList());
       await emit(SocketEvent.flush);
     }
   }
 
-  Future<void> write<T>(T message, [void callback()]) async => await send(message, callback);
+  Future<void> write(dynamic message, [void callback()]) async => await send(message, callback);
 
-  Future<void> send<T>(T message, [void callback()]) async {
-    await _sendPacket(Packet<T>(PacketType.message, message), callback);
+  Future<void> send(dynamic message, [void callback()]) async {
+    await _sendPacket(Packet(PacketType.message, message), callback);
   }
 
   Future<void> _sendPacket(Packet packet, void callback()) async {

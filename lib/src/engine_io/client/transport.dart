@@ -38,7 +38,7 @@ abstract class Transport extends Emitter {
     }
   }
 
-  Future<void> send<T>(List<Packet<T>> packets) async {
+  Future<void> send(List<Packet> packets) async {
     if (readyState == TransportState.open) {
       try {
         await write(packets);
@@ -66,14 +66,14 @@ abstract class Transport extends Emitter {
     }
   }
 
-  Future<void> onPacket<T>(Packet<T> packet) async => await emit(TransportEvent.packet, <Packet<T>>[packet]);
+  Future<void> onPacket(Packet packet) async => await emit(TransportEvent.packet, <Packet>[packet]);
 
   Future<void> onClose() async {
     readyState = TransportState.closed;
     await emit(TransportEvent.close);
   }
 
-  Future<void> write<T>(List<Packet<T>> packets);
+  Future<void> write(List<Packet> packets);
 
   Future<void> doOpen();
 

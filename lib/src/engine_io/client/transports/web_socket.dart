@@ -40,17 +40,17 @@ class WebSocket extends Transport {
   void onSocketError(dynamic e, StackTrace s) async => await onError('websocket error', e);
 
   @override
-  Future<void> write<T>(List<Packet<T>> packets) async {
+  Future<void> write(List<Packet> packets) async {
     writable = false;
 
     int total = packets.length;
-    for (Packet<T> packet in packets) {
+    for (Packet packet in packets) {
       if (readyState != TransportState.opening && readyState != TransportState.open) {
         // Ensure we don't try to send anymore packets if the socket ends up being closed due to an exception
         break;
       }
 
-      final T encoded = Parser.encodePacket<T>(packet);
+      final Object encoded = Parser.encodePacket(packet);
       try {
         socket.sink.add(encoded);
       } catch (e) {

@@ -96,5 +96,5 @@ class TransportOptions {
   }
 
   @override
-  String toString() => jsonEncode(toJson());
+  String toString() => jsonEncode(toJson(), toEncodable: (it) => it.toString());
 }

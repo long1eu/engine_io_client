@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io' show SecurityContext;
 
 import 'package:engine_io_client/src/engine_io/client/socket.dart';
@@ -120,7 +119,4 @@ class SocketOptions extends TransportOptions {
       'transportOptions': transportOptions,
     }..addAll(super.toJson());
   }
-
-  @override
-  String toString() => jsonEncode(toJson());
 }

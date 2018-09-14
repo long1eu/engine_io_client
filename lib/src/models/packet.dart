@@ -1,14 +1,14 @@
 import 'dart:convert';
 
-class Packet<T> {
+class Packet {
   final PacketType type;
-  final T data;
+  final Object data;
 
   Packet(this.type, [this.data]);
 
-  static Packet<String> error = Packet<String>(PacketType.error, 'parser error');
+  static Packet error = Packet(PacketType.error, 'parser error');
 
-  static Packet<List<int>> binaryError = Packet<List<int>>(PacketType.error, <int>[]);
+  static Packet binaryError = Packet(PacketType.error, <int>[]);
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{

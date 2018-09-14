@@ -108,7 +108,6 @@ class RequestXhr extends Emitter {
   }
 
   Future<void> onError(List<dynamic> error) async {
-    log.e((error.first as Error).stackTrace);
     await emit(XhrEvent.error, error);
   }
 

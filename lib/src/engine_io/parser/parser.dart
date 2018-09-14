@@ -14,15 +14,15 @@ class Parser {
 
   Parser._();
 
-  static T encodePacket<T>(Packet<T> packet, [bool utf8encode = false]) {
-    final T data = packet.data;
+  static Object encodePacket(Packet packet, [bool utf8encode = false]) {
+    final Object data = packet.data;
     if (data is List<int>) {
       final int length = data.length + 1;
       final Int8List list = Int8List(1 + data.length);
       list[0] = packet.type.i;
       for (int i = 1; i < length; i++) list[i] = data[i - 1] ?? 0;
 
-      return list as T;
+      return list;
     }
 
     String encoded = packet.type.i.toString();
@@ -30,10 +30,10 @@ class Parser {
       encoded += utf8encode ? String.fromCharCodes(encodeUtf8(data as String)) : data.toString();
     }
 
-    return encoded as T;
+    return encoded;
   }
 
-  static Packet<String> decodePacket(String data, [bool utf8decode = false]) {
+  static Packet decodePacket(String data, [bool utf8decode = false]) {
     if (data == null) return Packet.error;
 
     int type;
@@ -54,19 +54,19 @@ class Parser {
     if (type < 0 || type >= PacketType.values.length) return Packet.error;
 
     if (data.length > 1) {
-      return Packet<String>(PacketType.values[type], data.substring(1));
+      return Packet(PacketType.values[type], data.substring(1));
     } else {
-      return Packet<String>(PacketType.values[type]);
+      return Packet(PacketType.values[type]);
     }
   }
 
-  static Packet<List<int>> decodeBytePacket(List<int> data) {
+  static Packet decodeBytePacket(List<int> data) {
     final int type = data[0];
     final List<int> intArray = <int>[];
 
     intArray.addAll(data.sublist(1));
 
-    return Packet<List<int>>(PacketType.values[type], intArray);
+    return Packet(PacketType.values[type], intArray);
   }
 
   static dynamic /*String/List<int>*/ encodePayload(List<Packet> packets) {
@@ -81,28 +81,28 @@ class Parser {
     final StringBuffer result = StringBuffer();
 
     for (Packet packet in packets) {
-      result.write(setLengthHeader(encodePacket<String>(packet as Packet<String>, false)));
+      result.write(setLengthHeader(encodePacket(packet, false)));
     }
 
     return result.toString();
   }
 
-  static String setLengthHeader(String message) => '${message.length}:$message';
+  static String setLengthHeader(dynamic message) => '${message.length}:$message';
 
-  static List<int> encodeBinaryPayload(List<Packet<dynamic>> packets) {
+  static List<int> encodeBinaryPayload(List<Packet> packets) {
     if (packets.isEmpty) return Int8List(0);
 
     final List<Int8List> results = List<Int8List>.generate(packets.length, (_) => Int8List(0));
 
-    for (Packet<dynamic> packet in packets) {
-      results.add(encodeOneBinaryPacket<dynamic>(packet));
+    for (Packet packet in packets) {
+      results.add(encodeOneBinaryPacket(packet));
     }
 
     return results.fold<List<int>>(Int8List(0), (l1, l2) => l1 + l2);
   }
 
-  static Int8List encodeOneBinaryPacket<T>(Packet<T> package) {
-    final T packet = encodePacket<T>(package, true);
+  static Int8List encodeOneBinaryPacket(Packet package) {
+    final Object packet = encodePacket(package, true);
     if (packet is String) {
       final String encodingLength = packet.length.toString();
       final Int8List sizeBuffer = Int8List.fromList(List<int>.generate(encodingLength.length + 2, (_) => 0));
@@ -169,7 +169,7 @@ class Parser {
 
         packets.add(packet);
       } else {
-        final Packet packet = Packet<String>(PacketType.values[n]);
+        final Packet packet = Packet(PacketType.values[n]);
         packets.add(packet);
       }
 
