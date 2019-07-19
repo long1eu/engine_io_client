@@ -5,12 +5,12 @@ author:
 homepage:
 
 dependencies:
-  logging: ^0.11.3+2
-  stream: ^2.0.0+1
-  uuid: ^1.0.3
-  utf: ^0.9.0+5
-  web_socket_channel: ^1.0.9
-  rxdart: ^0.18.1
+  logging: any
+  stream: any
+  uuid: any
+  utf: any
+  web_socket_channel: any
+  rxdart: any
   cookie_jar:
     git: https://github.com/flutterchina/cookie_jar.git
 

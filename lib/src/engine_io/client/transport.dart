@@ -20,11 +20,8 @@ import 'package:meta/meta.dart';
 import 'package:rxdart/rxdart.dart';
 
 part 'transports/polling.dart';
-
 part 'transports/web_socket.dart';
-
 part 'transports/xhr/polling_xhr.dart';
-
 part 'transports/xhr/request_xhr.dart';
 
 abstract class Transport extends Emitter {
